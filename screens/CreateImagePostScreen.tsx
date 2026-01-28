@@ -123,7 +123,7 @@ export default function CreateImagePostScreen() {
             <ScrollView 
               horizontal 
               showsHorizontalScrollIndicator={false}
-              style={styles.optionsScroll}
+              contentContainerStyle={styles.optionsScrollContent}
             >
               {boxes.map((box) => (
                 <TouchableOpacity
@@ -325,8 +325,9 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 14,
   },
-  optionsScroll: {
-    flexDirection: 'row-reverse',
+  optionsScrollContent: {
+    paddingRight: 4,
+    gap: 8,
   },
   optionChip: {
     flexDirection: 'row-reverse',

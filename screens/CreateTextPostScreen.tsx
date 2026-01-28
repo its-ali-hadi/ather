@@ -88,7 +88,7 @@ export default function CreateTextPostScreen() {
             <ScrollView 
               horizontal 
               showsHorizontalScrollIndicator={false}
-              style={styles.optionsScroll}
+              contentContainerStyle={styles.optionsScrollContent}
             >
               {boxes.map((box) => (
                 <TouchableOpacity
@@ -272,8 +272,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Cairo_600SemiBold',
     textAlign: 'right',
   },
-  optionsScroll: {
-    flexDirection: 'row-reverse',
+  optionsScrollContent: {
+    paddingRight: 4,
+    gap: 8,
   },
   optionChip: {
     flexDirection: 'row-reverse',
