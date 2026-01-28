@@ -47,7 +47,7 @@ export default function ProfileScreen() {
   const handlePress = (screen: keyof RootStackParamList | null) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (screen) {
-      navigation.navigate(screen);
+      navigation.navigate(screen as any);
     }
   };
 
@@ -116,7 +116,7 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInUp.delay(700).springify()} style={styles.logoutContainer}>
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={handlePress}
+            onPress={() => handlePress(null)}
             style={[styles.logoutButton, { backgroundColor: COLORS.cardBg }]}
           >
             <Ionicons name="log-out-outline" size={24} color="#E94B3C" />
