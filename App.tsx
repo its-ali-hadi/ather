@@ -6,8 +6,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { useColorScheme, Platform } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { useColorScheme, Platform, View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useState } from 'react';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import HomeScreen from './screens/HomeScreen';
 import ExploreScreen from './screens/ExploreScreen';
@@ -15,6 +18,9 @@ import CreateScreen from './screens/CreateScreen';
 import PrivateScreen from './screens/PrivateScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import BoxDetailScreen from './screens/BoxDetailScreen';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -163,8 +169,58 @@ export default function App() {
     Tajawal_700Bold,
   });
 
-  if (!fontsLoaded) {
-    return null;
+  const [appIsReady, setAppIsReady] = useState(false);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Wait for fonts to load
+        if (fontsLoaded) {
+          // Artificially delay for 2 seconds to show splash screen
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+      }
+    }
+
+    prepare();
+  }, [fontsLoaded]);
+
+  useEffect(() => {
+    if (appIsReady) {
+      SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady) {
+    return (
+      <View style={splashStyles.container}>
+        <LinearGradient
+          colors={['#FAF8F5', '#F5E6D3', '#E8B86D']}
+          style={splashStyles.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Animated.View entering={FadeIn.duration(800)} style={splashStyles.content}>
+            <View style={splashStyles.iconContainer}>
+              <LinearGradient
+                colors={['#E8B86D', '#D4A574', '#C9956A']}
+                style={splashStyles.iconGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Ionicons name="bulb" size={80} color="#FFF" />
+              </LinearGradient>
+            </View>
+            <Text style={splashStyles.title}>أثر</Text>
+            <Text style={splashStyles.subtitle}>منصة لمشاركة الأفكار</Text>
+          </Animated.View>
+        </LinearGradient>
+      </View>
+    );
   }
 
   return (
@@ -184,3 +240,52 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const splashStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  gradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    alignItems: 'center',
+    gap: 24,
+  },
+  iconContainer: {
+    marginBottom: 16,
+  },
+  iconGradient: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#E8B86D',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.4,
+        shadowRadius: 24,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  },
+  title: {
+    fontSize: 56,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+    color: '#4A3F35',
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 20,
+    fontFamily: 'Tajawal_400Regular',
+    color: '#7A6F65',
+    textAlign: 'center',
+  },
+});

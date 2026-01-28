@@ -24,8 +24,11 @@ export default function PrivateScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top', 'bottom']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
+      >
         {/* Header */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
           <LinearGradient

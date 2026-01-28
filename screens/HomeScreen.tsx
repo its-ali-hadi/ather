@@ -101,11 +101,12 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <ScrollView 
         showsVerticalScrollIndicator={false}
         bounces={true}
         scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
       >
         {/* Hero Header with Gradient */}
         <LinearGradient

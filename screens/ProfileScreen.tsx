@@ -44,8 +44,11 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top', 'bottom']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
+      >
         {/* Profile Header */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.profileHeader}>
           <LinearGradient
