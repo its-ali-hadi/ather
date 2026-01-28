@@ -18,6 +18,10 @@ import CreateScreen from './screens/CreateScreen';
 import PrivateScreen from './screens/PrivateScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import BoxDetailScreen from './screens/BoxDetailScreen';
+import CreateTextPostScreen from './screens/CreateTextPostScreen';
+import CreateImagePostScreen from './screens/CreateImagePostScreen';
+import CreateVideoPostScreen from './screens/CreateVideoPostScreen';
+import CreateLinkPostScreen from './screens/CreateLinkPostScreen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -25,6 +29,10 @@ SplashScreen.preventAutoHideAsync();
 export type RootStackParamList = {
   MainTabs: undefined;
   BoxDetail: { boxId: string };
+  CreateTextPost: undefined;
+  CreateImagePost: undefined;
+  CreateVideoPost: undefined;
+  CreateLinkPost: undefined;
 };
 
 export type TabParamList = {
@@ -234,6 +242,10 @@ export default function App() {
         >
           <Stack.Screen name="MainTabs" component={MainTabs} />
           <Stack.Screen name="BoxDetail" component={BoxDetailScreen} />
+          <Stack.Screen name="CreateTextPost" component={CreateTextPostScreen} />
+          <Stack.Screen name="CreateImagePost" component={CreateImagePostScreen} />
+          <Stack.Screen name="CreateVideoPost" component={CreateVideoPostScreen} />
+          <Stack.Screen name="CreateLinkPost" component={CreateLinkPostScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="auto" />

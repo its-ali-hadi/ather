@@ -12,9 +12,15 @@ import {
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function CreateScreen() {
   const colorScheme = useColorScheme();
+  const navigation = useNavigation<NavigationProp>();
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -32,6 +38,7 @@ export default function CreateScreen() {
       description: 'شارك أفكارك وآرائك',
       icon: 'document-text',
       color: '#4A90E2',
+      screen: 'CreateTextPost' as const,
     },
     {
       id: '2',
@@ -39,6 +46,7 @@ export default function CreateScreen() {
       description: 'أضف صورة مع وصف',
       icon: 'image',
       color: '#E94B3C',
+      screen: 'CreateImagePost' as const,
     },
     {
       id: '3',
@@ -46,6 +54,7 @@ export default function CreateScreen() {
       description: 'شارك مقطع فيديو',
       icon: 'videocam',
       color: '#9B59B6',
+      screen: 'CreateVideoPost' as const,
     },
     {
       id: '4',
@@ -53,11 +62,13 @@ export default function CreateScreen() {
       description: 'شارك رابط مفيد',
       icon: 'link',
       color: '#50C878',
+      screen: 'CreateLinkPost' as const,
     },
   ];
 
-  const handlePress = () => {
+  const handlePress = (screen: keyof RootStackParamList) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate(screen);
   };
 
   return (
@@ -91,7 +102,7 @@ export default function CreateScreen() {
             >
               <TouchableOpacity
                 activeOpacity={0.85}
-                onPress={handlePress}
+                onPress={() => handlePress(option.screen)}
                 style={[styles.optionCard, { backgroundColor: COLORS.cardBg }]}
               >
                 <View style={styles.optionContent}>
