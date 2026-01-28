@@ -3,336 +3,502 @@ import { Image as ExpoImage } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, useColorScheme, View, Platform } from 'react-native';
 import Animated, { 
   FadeInDown, 
   FadeInRight, 
+  FadeInUp,
   useAnimatedStyle, 
   useSharedValue, 
   withSpring,
   withRepeat,
-  withSequence
+  withSequence,
+  withTiming,
+  interpolate,
+  Extrapolate
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import ParallaxScrollView from '../components/parallax-scroll-view';
-import { ThemedText } from '../components/themed-text';
-import { ThemedView } from '../components/themed-view';
 import SeedData from '../constants/seed-data.json';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+const CARD_WIDTH = width * 0.88;
+const BANNER_HEIGHT = 280;
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export default function HomeScreen() {
   const { banners, about, cards } = SeedData;
   const colorScheme = useColorScheme();
 
-  // Animated values for floating effect
+  // Animated values
   const floatAnim = useSharedValue(0);
+  const pulseAnim = useSharedValue(0);
+  const scrollY = useSharedValue(0);
 
   useEffect(() => {
     floatAnim.value = withRepeat(
       withSequence(
-        withSpring(1, { damping: 2, stiffness: 80 }),
-        withSpring(0, { damping: 2, stiffness: 80 })
+        withTiming(1, { duration: 3000 }),
+        withTiming(0, { duration: 3000 })
       ),
       -1,
       true
     );
-  }, [floatAnim]);
 
-  // Theme Colors - Enhanced
-  const COFFEE_PRIMARY = '#6F4E37';
-  const COFFEE_SECONDARY = '#A67B5B';
-  const COFFEE_ACCENT = '#D4A574';
-  const COFFEE_LIGHT = '#F5F5DC';
-  const COFFEE_TEXT = colorScheme === 'dark' ? '#FFE4C4' : '#4B3621';
-  const BG_COLOR = colorScheme === 'dark' ? '#2C1810' : '#FFF8F0';
-  const CARD_BG = colorScheme === 'dark' ? '#3E2723' : '#FFFFFF';
+    pulseAnim.value = withRepeat(
+      withSequence(
+        withSpring(1.1, { damping: 2, stiffness: 100 }),
+        withSpring(1, { damping: 2, stiffness: 100 })
+      ),
+      -1,
+      true
+    );
+  }, []);
+
+  // Theme Colors - Premium
+  const COLORS = {
+    primary: colorScheme === 'dark' ? '#D4A574' : '#6F4E37',
+    secondary: colorScheme === 'dark' ? '#C19A6B' : '#8B6F47',
+    accent: '#FFD700',
+    background: colorScheme === 'dark' ? '#1A0F0A' : '#FFF9F5',
+    cardBg: colorScheme === 'dark' ? '#2D1810' : '#FFFFFF',
+    text: colorScheme === 'dark' ? '#F5E6D3' : '#3E2723',
+    textSecondary: colorScheme === 'dark' ? '#C4A57B' : '#6F5E53',
+    overlay: colorScheme === 'dark' ? 'rgba(26, 15, 10, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+  };
 
   const floatingStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateY: floatAnim.value * 10 }],
+      transform: [
+        { translateY: interpolate(floatAnim.value, [0, 1], [0, -15]) },
+        { scale: interpolate(floatAnim.value, [0, 1], [1, 1.02]) }
+      ],
     };
   });
 
-  const handleCardPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  const pulseStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: pulseAnim.value }],
+    };
+  });
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D2B48C', dark: '#3E2723' }}
-      headerImage={
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+        scrollEventThrottle={16}
+      >
+        {/* Hero Header with Gradient */}
         <LinearGradient
           colors={colorScheme === 'dark' 
-            ? ['#6F4E37', '#3E2723', '#2C1810'] 
-            : ['#D4A574', '#C19A6B', '#A67B5B']}
-          style={StyleSheet.absoluteFillObject}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+            ? ['#3E2723', '#2D1810', COLORS.background] 
+            : ['#D4A574', '#C19A6B', COLORS.background]}
+          style={styles.heroSection}
         >
-          <Animated.View style={[floatingStyle, styles.logoContainer]}>
-            <ExpoImage
-              source={require('../assets/images/partial-react-logo.png')}
-              style={[styles.reactLogo, { tintColor: 'rgba(255, 255, 255, 0.3)' }]}
-            />
+          <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.heroContent}>
+            <View style={styles.heroIconContainer}>
+              <Animated.View style={pulseStyle}>
+                <LinearGradient
+                  colors={['#FFD700', '#FFA500', '#FF8C00']}
+                  style={styles.heroIconGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name="cafe" size={48} color="#FFF" />
+                </LinearGradient>
+              </Animated.View>
+            </View>
+            
+            <Text style={[styles.heroTitle, { color: colorScheme === 'dark' ? '#F5E6D3' : '#FFF' }]}>
+              عالم القهوة الفاخرة
+            </Text>
+            <Text style={[styles.heroSubtitle, { color: colorScheme === 'dark' ? '#C4A57B' : 'rgba(255,255,255,0.9)' }]}>
+              اكتشف أجود أنواع القهوة المختارة بعناية
+            </Text>
           </Animated.View>
         </LinearGradient>
-      }>
 
-      <View style={[styles.contentContainer, { backgroundColor: BG_COLOR }]}>
-        {/* Banner Section with Enhanced Design */}
-        <ThemedView style={[styles.sectionContainer, { backgroundColor: 'transparent' }]}>
-          <Animated.View entering={FadeInDown.delay(100).springify()}>
-            <ThemedText type="subtitle" style={[styles.mainTitle, { color: COFFEE_PRIMARY }]}>
-              ☕ اكتشف عالم القهوة
-            </ThemedText>
+        {/* Premium Banners */}
+        <View style={styles.section}>
+          <Animated.View entering={FadeInRight.delay(200).springify()} style={styles.sectionHeader}>
+            <View style={styles.sectionTitleContainer}>
+              <View style={[styles.sectionDot, { backgroundColor: COLORS.accent }]} />
+              <Text style={[styles.sectionTitle, { color: COLORS.text }]}>
+                عروض مميزة
+              </Text>
+            </View>
+            <TouchableOpacity onPress={handlePress}>
+              <Text style={[styles.seeAll, { color: COLORS.primary }]}>
+                عرض الكل
+              </Text>
+            </TouchableOpacity>
           </Animated.View>
-          
+
           <ScrollView 
             horizontal 
-            showsHorizontalScrollIndicator={false} 
-            snapToInterval={width * 0.85 + 20} 
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={CARD_WIDTH + 20}
             decelerationRate="fast"
-            contentContainerStyle={styles.bannerScrollContent}
+            contentContainerStyle={styles.bannersContainer}
           >
             {banners.map((item, index) => (
               <Animated.View 
-                key={index} 
-                entering={FadeInRight.delay(200 + index * 100).springify()}
+                key={index}
+                entering={FadeInRight.delay(300 + index * 100).springify()}
               >
                 <TouchableOpacity 
-                  activeOpacity={0.95}
-                  onPress={handleCardPress}
-                  style={[styles.bannerCard, { width: width * 0.85 }]}
+                  activeOpacity={0.9}
+                  onPress={handlePress}
+                  style={[styles.bannerCard, { width: CARD_WIDTH }]}
                 >
-                  <ExpoImage source={{ uri: item.image }} style={styles.bannerImage} />
-                  
-                  {/* Gradient Overlay */}
-                  <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(62, 39, 35, 0.95)']}
-                    style={styles.bannerGradient}
+                  <ExpoImage 
+                    source={{ uri: item.image }} 
+                    style={styles.bannerImage}
+                    contentFit="cover"
                   />
                   
-                  {/* Glass Effect Overlay */}
-                  <BlurView intensity={20} tint="dark" style={styles.bannerOverlay}>
-                    <View style={styles.bannerContent}>
-                      <View style={styles.iconCircle}>
-                        <Ionicons name={item.icon as any || 'cafe'} size={32} color="#FFD700" />
-                      </View>
-                      <Text style={styles.bannerText}>{item.text}</Text>
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.85)']}
+                    style={styles.bannerGradient}
+                  />
+
+                  <View style={styles.bannerBadge}>
+                    <LinearGradient
+                      colors={['#FFD700', '#FFA500']}
+                      style={styles.badgeGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Ionicons name="star" size={14} color="#FFF" />
+                      <Text style={styles.badgeText}>جديد</Text>
+                    </LinearGradient>
+                  </View>
+
+                  <BlurView intensity={30} tint="dark" style={styles.bannerContent}>
+                    <View style={styles.bannerIconWrapper}>
+                      <LinearGradient
+                        colors={['rgba(255, 215, 0, 0.3)', 'rgba(255, 165, 0, 0.2)']}
+                        style={styles.bannerIconBg}
+                      >
+                        <Ionicons name={item.icon as any || 'cafe'} size={28} color="#FFD700" />
+                      </LinearGradient>
+                    </View>
+                    <Text style={styles.bannerTitle}>{item.text}</Text>
+                    <View style={styles.bannerArrow}>
+                      <Ionicons name="arrow-back" size={20} color="#FFD700" />
                     </View>
                   </BlurView>
-
-                  {/* Decorative Corner */}
-                  <View style={styles.cornerDecoration}>
-                    <Ionicons name="sparkles" size={16} color="#FFD700" />
-                  </View>
                 </TouchableOpacity>
               </Animated.View>
             ))}
           </ScrollView>
-        </ThemedView>
+        </View>
 
-        {/* About Section with Glass Effect */}
-        <Animated.View entering={FadeInDown.delay(400).springify()}>
-          <ThemedView style={[styles.sectionContainer, { backgroundColor: 'transparent' }]}>
-            <View style={[styles.aboutCard, { backgroundColor: CARD_BG }]}>
-              <LinearGradient
-                colors={colorScheme === 'dark' 
-                  ? ['rgba(111, 78, 55, 0.2)', 'rgba(62, 39, 35, 0.1)'] 
-                  : ['rgba(212, 165, 116, 0.15)', 'rgba(255, 255, 255, 0.9)']}
-                style={styles.aboutGradient}
-              >
-                {/* Decorative Top Bar */}
-                <View style={styles.decorativeBar}>
-                  <View style={[styles.barDot, { backgroundColor: COFFEE_PRIMARY }]} />
-                  <View style={[styles.barLine, { backgroundColor: COFFEE_ACCENT }]} />
-                  <View style={[styles.barDot, { backgroundColor: COFFEE_PRIMARY }]} />
+        {/* About Section - Premium Card */}
+        <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.section}>
+          <View style={[styles.aboutCard, { backgroundColor: COLORS.cardBg }]}>
+            <LinearGradient
+              colors={colorScheme === 'dark'
+                ? ['rgba(212, 165, 116, 0.1)', 'rgba(139, 111, 71, 0.05)']
+                : ['rgba(212, 165, 116, 0.08)', 'rgba(255, 255, 255, 0.95)']}
+              style={styles.aboutGradient}
+            >
+              {/* Decorative Elements */}
+              <View style={styles.decorativeTop}>
+                <View style={[styles.decorativeLine, { backgroundColor: COLORS.accent }]} />
+                <Ionicons name="diamond" size={16} color={COLORS.accent} />
+                <View style={[styles.decorativeLine, { backgroundColor: COLORS.accent }]} />
+              </View>
+
+              <View style={styles.aboutHeader}>
+                <View style={[styles.aboutIconContainer, { backgroundColor: COLORS.primary }]}>
+                  <Ionicons name="cafe" size={32} color="#FFF" />
                 </View>
+                <Text style={[styles.aboutTitle, { color: COLORS.text }]}>
+                  {about.title}
+                </Text>
+              </View>
 
-                <View style={styles.aboutHeader}>
-                  <Ionicons name="cafe" size={32} color={COFFEE_PRIMARY} />
-                  <ThemedText type="subtitle" style={[styles.sectionTitle, { color: COFFEE_PRIMARY }]}>
-                    {about.title}
-                  </ThemedText>
-                </View>
-                
-                <ThemedText style={[styles.aboutDescription, { color: COFFEE_SECONDARY }]}>
-                  {about.description}
-                </ThemedText>
+              <Text style={[styles.aboutDescription, { color: COLORS.textSecondary }]}>
+                {about.description}
+              </Text>
 
-                <View style={styles.listContainer}>
-                  {about.list.map((item, index) => (
-                    <Animated.View 
-                      key={index} 
-                      entering={FadeInRight.delay(500 + index * 100).springify()}
-                      style={[styles.listItem, { backgroundColor: colorScheme === 'dark' ? 'rgba(111, 78, 55, 0.2)' : 'rgba(245, 245, 220, 0.5)' }]}
-                    >
-                      <View style={[styles.listIconContainer, { backgroundColor: COFFEE_LIGHT }]}>
-                        <Ionicons name={item.icon as any || 'checkmark-circle'} size={22} color={COFFEE_PRIMARY} />
-                      </View>
-                      <ThemedText style={[styles.listItemText, { color: COFFEE_TEXT }]}>
-                        {item.text}
-                      </ThemedText>
-                    </Animated.View>
-                  ))}
-                </View>
-
-                <TouchableOpacity 
-                  activeOpacity={0.8}
-                  onPress={handleCardPress}
-                  style={styles.buttonContainer}
-                >
-                  <LinearGradient
-                    colors={['#8B6F47', COFFEE_PRIMARY, '#5C3D2E']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.button}
+              <View style={styles.featuresList}>
+                {about.list.map((item, index) => (
+                  <Animated.View
+                    key={index}
+                    entering={FadeInRight.delay(600 + index * 80).springify()}
                   >
-                    <Text style={styles.buttonText}>{about.button}</Text>
-                    <Ionicons name="arrow-back" size={20} color="#FFF" />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </LinearGradient>
-            </View>
-          </ThemedView>
+                    <TouchableOpacity 
+                      activeOpacity={0.8}
+                      onPress={handlePress}
+                      style={[styles.featureItem, { 
+                        backgroundColor: colorScheme === 'dark' 
+                          ? 'rgba(212, 165, 116, 0.12)' 
+                          : 'rgba(111, 78, 55, 0.06)' 
+                      }]}
+                    >
+                      <View style={[styles.featureIconBg, { backgroundColor: COLORS.primary }]}>
+                        <Ionicons name={item.icon as any} size={20} color="#FFF" />
+                      </View>
+                      <Text style={[styles.featureText, { color: COLORS.text }]}>
+                        {item.text}
+                      </Text>
+                      <Ionicons name="chevron-back" size={18} color={COLORS.textSecondary} />
+                    </TouchableOpacity>
+                  </Animated.View>
+                ))}
+              </View>
+
+              <TouchableOpacity 
+                activeOpacity={0.85}
+                onPress={handlePress}
+                style={styles.ctaButton}
+              >
+                <LinearGradient
+                  colors={['#8B6F47', '#6F4E37', '#5C3D2E']}
+                  style={styles.ctaGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Text style={styles.ctaText}>{about.button}</Text>
+                  <View style={styles.ctaIconBg}>
+                    <Ionicons name="arrow-back" size={18} color="#6F4E37" />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
         </Animated.View>
 
-        {/* Cards Section with Premium Design */}
-        <ThemedView style={[styles.sectionContainer, { backgroundColor: 'transparent' }]}>
-          <Animated.View entering={FadeInDown.delay(600).springify()}>
-            <View style={styles.cardsHeader}>
-              <ThemedText type="subtitle" style={[styles.sectionTitle, { color: COFFEE_PRIMARY }]}>
+        {/* Premium Cards Grid */}
+        <View style={styles.section}>
+          <Animated.View entering={FadeInRight.delay(700).springify()} style={styles.sectionHeader}>
+            <View style={styles.sectionTitleContainer}>
+              <View style={[styles.sectionDot, { backgroundColor: COLORS.accent }]} />
+              <Text style={[styles.sectionTitle, { color: COLORS.text }]}>
                 صناديقك المميزة
-              </ThemedText>
-              <Ionicons name="gift" size={28} color={COFFEE_PRIMARY} />
+              </Text>
+            </View>
+            <View style={[styles.countBadge, { backgroundColor: COLORS.primary }]}>
+              <Text style={styles.countText}>{cards.length}</Text>
             </View>
           </Animated.View>
 
-          {cards.map((card, index) => (
-            <Animated.View 
-              key={index}
-              entering={FadeInDown.delay(700 + index * 150).springify()}
-            >
-              <AnimatedTouchable 
-                activeOpacity={0.95}
-                onPress={handleCardPress}
+          <View style={styles.cardsGrid}>
+            {cards.map((card, index) => (
+              <Animated.View
+                key={index}
+                entering={FadeInUp.delay(800 + index * 120).springify()}
+                style={styles.cardWrapper}
               >
-                <View style={[styles.card, { backgroundColor: CARD_BG }]}>
-                  {/* Image with Gradient Overlay */}
-                  <View style={styles.cardImageContainer}>
-                    <ExpoImage 
-                      source={{ uri: card.image }} 
-                      style={styles.cardImage} 
-                      contentFit="cover" 
-                    />
-                    <LinearGradient
-                      colors={['transparent', 'rgba(0,0,0,0.3)']}
-                      style={styles.cardImageGradient}
-                    />
-                    
-                    {/* Floating Badge */}
-                    <View style={[styles.floatingBadge, { backgroundColor: COFFEE_PRIMARY }]}>
-                      <Ionicons name="star" size={16} color="#FFD700" />
-                      <Text style={styles.badgeText}>مميز</Text>
-                    </View>
-                  </View>
-
-                  {/* Card Content with Glass Effect */}
-                  <LinearGradient
-                    colors={colorScheme === 'dark' 
-                      ? ['rgba(62, 39, 35, 0.95)', 'rgba(44, 24, 16, 0.98)'] 
-                      : ['rgba(255, 255, 255, 0.98)', 'rgba(245, 245, 220, 0.95)']}
-                    style={styles.cardContent}
-                  >
-                    <View style={styles.cardHeader}>
-                      <ThemedText type="defaultSemiBold" style={[styles.cardTitle, { color: COFFEE_PRIMARY }]}>
-                        {card.title}
-                      </ThemedText>
-                      <Ionicons name="chevron-back" size={24} color={COFFEE_ACCENT} />
-                    </View>
-                    
-                    <ThemedText style={[styles.cardDescription, { color: COFFEE_SECONDARY }]}>
-                      {card.description}
-                    </ThemedText>
-                    
-                    <View style={styles.cardFooter}>
-                      <View style={[styles.categoryBadge, { backgroundColor: COFFEE_LIGHT }]}>
-                        <Ionicons name="pricetag" size={14} color={COFFEE_PRIMARY} />
-                        <Text style={[styles.categoryText, { color: COFFEE_PRIMARY }]}>
-                          {card.category}
-                        </Text>
-                      </View>
+                <TouchableOpacity
+                  activeOpacity={0.92}
+                  onPress={handlePress}
+                >
+                  <Animated.View style={[floatingStyle, styles.premiumCard, { backgroundColor: COLORS.cardBg }]}>
+                    {/* Card Image */}
+                    <View style={styles.cardImageWrapper}>
+                      <ExpoImage
+                        source={{ uri: card.image }}
+                        style={styles.cardImage}
+                        contentFit="cover"
+                      />
+                      <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.4)']}
+                        style={styles.cardImageOverlay}
+                      />
                       
-                      <View style={styles.arrowCircle}>
-                        <Ionicons name="arrow-back" size={18} color={COFFEE_PRIMARY} />
+                      {/* Premium Badge */}
+                      <View style={styles.premiumBadge}>
+                        <LinearGradient
+                          colors={['#FFD700', '#FFA500']}
+                          style={styles.premiumBadgeGradient}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        >
+                          <Ionicons name="star" size={12} color="#FFF" />
+                          <Text style={styles.premiumBadgeText}>Premium</Text>
+                        </LinearGradient>
                       </View>
+
+                      {/* Favorite Icon */}
+                      <TouchableOpacity 
+                        style={styles.favoriteButton}
+                        onPress={handlePress}
+                      >
+                        <BlurView intensity={40} tint="dark" style={styles.favoriteBlur}>
+                          <Ionicons name="heart-outline" size={20} color="#FFF" />
+                        </BlurView>
+                      </TouchableOpacity>
                     </View>
-                  </LinearGradient>
-                </View>
-              </AnimatedTouchable>
-            </Animated.View>
-          ))}
-        </ThemedView>
+
+                    {/* Card Content */}
+                    <LinearGradient
+                      colors={colorScheme === 'dark'
+                        ? ['rgba(45, 24, 16, 0.98)', 'rgba(26, 15, 10, 0.95)']
+                        : ['rgba(255, 255, 255, 0.98)', 'rgba(245, 245, 220, 0.95)']}
+                      style={styles.cardContentWrapper}
+                    >
+                      <View style={styles.cardHeader}>
+                        <Text style={[styles.cardTitle, { color: COLORS.text }]} numberOfLines={1}>
+                          {card.title}
+                        </Text>
+                        <View style={[styles.ratingBadge, { backgroundColor: COLORS.primary }]}>
+                          <Ionicons name="star" size={12} color="#FFD700" />
+                          <Text style={styles.ratingText}>4.9</Text>
+                        </View>
+                      </View>
+
+                      <Text style={[styles.cardDescription, { color: COLORS.textSecondary }]} numberOfLines={2}>
+                        {card.description}
+                      </Text>
+
+                      <View style={styles.cardFooter}>
+                        <View style={[styles.categoryTag, { backgroundColor: colorScheme === 'dark' ? 'rgba(212, 165, 116, 0.15)' : 'rgba(111, 78, 55, 0.08)' }]}>
+                          <Ionicons name="pricetag" size={12} color={COLORS.primary} />
+                          <Text style={[styles.categoryText, { color: COLORS.primary }]}>
+                            {card.category}
+                          </Text>
+                        </View>
+
+                        <View style={[styles.actionButton, { backgroundColor: COLORS.primary }]}>
+                          <Ionicons name="arrow-back" size={16} color="#FFF" />
+                        </View>
+                      </View>
+                    </LinearGradient>
+                  </Animated.View>
+                </TouchableOpacity>
+              </Animated.View>
+            ))}
+          </View>
+        </View>
 
         {/* Bottom Spacing */}
         <View style={{ height: 40 }} />
-      </View>
-    </ParallaxScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  contentContainer: {
-    paddingBottom: 20,
-  },
-  logoContainer: {
+  container: {
     flex: 1,
-    justifyContent: 'center',
+  },
+
+  // Hero Section
+  heroSection: {
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+  },
+  heroContent: {
     alignItems: 'center',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    opacity: 0.3,
+  heroIconContainer: {
+    marginBottom: 20,
   },
-  mainTitle: {
-    fontSize: 28,
+  heroIconGradient: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#FFD700',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  },
+  heroTitle: {
+    fontSize: 32,
     fontWeight: 'bold',
-    textAlign: 'right',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    letterSpacing: 0.5,
+    textAlign: 'center',
+    marginBottom: 8,
+    fontFamily: 'PlayfairDisplay_700Bold',
   },
-  sectionContainer: {
-    marginBottom: 16,
-    paddingVertical: 8,
+  heroSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    fontFamily: 'Inter_300Light',
+  },
+
+  // Section
+  section: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
+  },
+  sectionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    textAlign: 'right',
+    fontFamily: 'PlayfairDisplay_700Bold',
   },
-  
-  // Banner Styles
-  bannerScrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+  seeAll: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Inter_400Regular',
+  },
+  countBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  countText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+
+  // Banners
+  bannersContainer: {
+    paddingHorizontal: 24,
+    gap: 20,
   },
   bannerCard: {
-    marginRight: 20,
-    borderRadius: 24,
+    height: BANNER_HEIGHT,
+    borderRadius: 28,
     overflow: 'hidden',
-    height: 240,
-    position: 'relative',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
   },
   bannerImage: {
     width: '100%',
@@ -343,240 +509,320 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: '60%',
+    height: '70%',
   },
-  bannerOverlay: {
+  bannerBadge: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  badgeGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  bannerContent: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
-    overflow: 'hidden',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-  },
-  bannerContent: {
+    padding: 24,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 16,
+    overflow: 'hidden',
   },
-  iconCircle: {
+  bannerIconWrapper: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  bannerIconBg: {
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(255, 215, 0, 0.4)',
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
-  bannerText: {
+  bannerTitle: {
+    flex: 1,
     fontSize: 20,
     fontWeight: 'bold',
     color: '#FFF',
-    flex: 1,
     textAlign: 'right',
+    fontFamily: 'PlayfairDisplay_700Bold',
   },
-  cornerDecoration: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 215, 0, 0.3)',
+  bannerArrow: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  // About Card Styles
+  // About Card
   aboutCard: {
-    marginHorizontal: 20,
-    borderRadius: 24,
+    marginHorizontal: 24,
+    borderRadius: 28,
     overflow: 'hidden',
-    elevation: 6,
-    shadowColor: '#6F4E37',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#6F4E37',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   aboutGradient: {
-    padding: 24,
+    padding: 28,
   },
-  decorativeBar: {
+  decorativeTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
-    gap: 8,
+    gap: 12,
+    marginBottom: 24,
   },
-  barDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  barLine: {
-    width: 60,
+  decorativeLine: {
+    width: 40,
     height: 2,
     borderRadius: 1,
   },
   aboutHeader: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
     marginBottom: 16,
   },
-  aboutDescription: {
-    textAlign: 'right',
-    marginBottom: 24,
-    fontSize: 16,
-    lineHeight: 26,
-  },
-  listContainer: {
-    gap: 12,
-    marginBottom: 24,
-  },
-  listItem: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 16,
-  },
-  listIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  aboutIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  listItemText: {
-    fontSize: 16,
-    fontWeight: '600',
+  aboutTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
     flex: 1,
     textAlign: 'right',
+    fontFamily: 'PlayfairDisplay_700Bold',
   },
-  buttonContainer: {
-    alignSelf: 'flex-end',
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+  aboutDescription: {
+    fontSize: 16,
+    lineHeight: 26,
+    textAlign: 'right',
+    marginBottom: 24,
+    fontFamily: 'Inter_300Light',
   },
-  button: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
+  featuresList: {
+    gap: 12,
+    marginBottom: 28,
+  },
+  featureItem: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 10,
+    gap: 14,
+    padding: 16,
+    borderRadius: 20,
   },
-  buttonText: {
+  featureIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'right',
+    fontFamily: 'Inter_400Regular',
+  },
+  ctaButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#6F4E37',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  ctaGradient: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+  },
+  ctaText: {
     color: '#FFF',
-    fontWeight: 'bold',
     fontSize: 17,
+    fontWeight: 'bold',
+    fontFamily: 'Inter_400Regular',
+  },
+  ctaIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
-  // Cards Styles
-  cardsHeader: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 16,
+  // Premium Cards
+  cardsGrid: {
+    paddingHorizontal: 24,
+    gap: 20,
   },
-  card: {
-    marginHorizontal: 20,
+  cardWrapper: {
+    marginBottom: 4,
+  },
+  premiumCard: {
     borderRadius: 24,
     overflow: 'hidden',
-    marginBottom: 24,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
-  cardImageContainer: {
+  cardImageWrapper: {
     width: '100%',
-    height: 240,
+    height: 220,
     position: 'relative',
   },
   cardImage: {
     width: '100%',
     height: '100%',
   },
-  cardImageGradient: {
+  cardImageOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: '40%',
+    height: '50%',
   },
-  floatingBadge: {
+  premiumBadge: {
     position: 'absolute',
     top: 16,
     left: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  premiumBadgeGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  badgeText: {
+  premiumBadgeText: {
     color: '#FFF',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: 'bold',
   },
-  cardContent: {
+  favoriteButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  favoriteBlur: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  cardContentWrapper: {
     padding: 20,
   },
   cardHeader: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   cardTitle: {
-    fontSize: 22,
+    fontSize: 19,
+    fontWeight: 'bold',
     flex: 1,
     textAlign: 'right',
+    fontFamily: 'PlayfairDisplay_700Bold',
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  ratingText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   cardDescription: {
+    fontSize: 14,
+    lineHeight: 22,
     textAlign: 'right',
-    fontSize: 15,
-    lineHeight: 24,
     marginBottom: 16,
+    fontFamily: 'Inter_300Light',
   },
   cardFooter: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  categoryBadge: {
+  categoryTag: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: 14,
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
+    fontFamily: 'Inter_400Regular',
   },
-  arrowCircle: {
+  actionButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(111, 78, 55, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
