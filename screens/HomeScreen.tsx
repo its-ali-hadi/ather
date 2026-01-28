@@ -116,10 +116,10 @@ export default function HomeScreen() {
             </View>
             
             <Text style={[styles.heroTitle, { color: colorScheme === 'dark' ? '#F5E6D3' : '#FFF' }]}>
-              منصة الأفكار والإبداع
+              أثر
             </Text>
             <Text style={[styles.heroSubtitle, { color: colorScheme === 'dark' ? '#D4C4B0' : 'rgba(255,255,255,0.95)' }]}>
-              شارك أفكارك واكتشف مواضيع ملهمة
+              شارك أفكارك واترك أثرك في العالم
             </Text>
           </Animated.View>
         </LinearGradient>
@@ -423,16 +423,17 @@ const styles = StyleSheet.create({
     }),
   },
   heroTitle: {
-    fontSize: 32,
+    fontSize: 48,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'Cairo_700Bold',
+    letterSpacing: 2,
   },
   heroSubtitle: {
-    fontSize: 16,
+    fontSize: 17,
     textAlign: 'center',
-    fontFamily: 'Inter_300Light',
+    fontFamily: 'Tajawal_400Regular',
   },
 
   // Section
@@ -457,14 +458,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'Cairo_700Bold',
   },
   seeAll: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'Tajawal_500Medium',
   },
   countBadge: {
     paddingHorizontal: 12,
@@ -475,6 +476,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 14,
     fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
   },
 
   // Banners
@@ -525,8 +527,9 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: '#FFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
   },
   bannerContent: {
     position: 'absolute',
@@ -554,11 +557,11 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: 'bold',
     color: '#FFF',
     textAlign: 'right',
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'Cairo_700Bold',
   },
   bannerArrow: {
     width: 40,
@@ -615,18 +618,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   aboutTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'right',
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'Cairo_700Bold',
   },
   aboutDescription: {
     fontSize: 16,
-    lineHeight: 26,
+    lineHeight: 28,
     textAlign: 'right',
     marginBottom: 24,
-    fontFamily: 'Inter_300Light',
+    fontFamily: 'Tajawal_400Regular',
   },
   featuresList: {
     gap: 12,
@@ -651,7 +654,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'right',
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'Tajawal_500Medium',
   },
   ctaButton: {
     borderRadius: 20,
@@ -678,9 +681,9 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     color: '#FFF',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: 'bold',
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'Cairo_700Bold',
   },
   ctaIconBg: {
     width: 32,
@@ -746,8 +749,9 @@ const styles = StyleSheet.create({
   },
   premiumBadgeText: {
     color: '#FFF',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
   },
   favoriteButton: {
     position: 'absolute',
@@ -777,7 +781,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'right',
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: 'Cairo_700Bold',
   },
   ratingBadge: {
     flexDirection: 'row',
@@ -789,15 +793,16 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     color: '#FFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
   },
   cardDescription: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 24,
     textAlign: 'right',
     marginBottom: 16,
-    fontFamily: 'Inter_300Light',
+    fontFamily: 'Tajawal_400Regular',
   },
   cardFooter: {
     flexDirection: 'row-reverse',
@@ -813,9 +818,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   categoryText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'Tajawal_700Bold',
   },
   actionButton: {
     width: 40,

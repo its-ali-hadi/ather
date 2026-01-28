@@ -878,6 +878,11 @@
     "@eslint/core" "^0.15.2"
     levn "^0.4.1"
 
+"@expo-google-fonts/cairo@^0.4.2":
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/@expo-google-fonts/cairo/-/cairo-0.4.2.tgz#ce7e9ffd354fa12fb90d3c751112bf7dd1c5ee9b"
+  integrity sha512-iWXHgE4MH6BfFqs8IxhbjNphAboUsb8NSEVIf1kWVGkiwCkAXDHxotgASabuPhhM1SQQXrgOPdmjT9VyeakM3Q==
+
 "@expo-google-fonts/inter@^0.4.1":
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/@expo-google-fonts/inter/-/inter-0.4.2.tgz#2d37ffb1cb16600cff616b6c4c0efee9b6c47c28"
@@ -887,6 +892,11 @@
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/@expo-google-fonts/playfair-display/-/playfair-display-0.4.2.tgz#a2ce52b803eebf5e8fa62cdbb26e85b08f0665b7"
   integrity sha512-mWhBV59RUjSS3aYpytUb7UyHHTnXcHh7epAn7gq+M4XAEh5PuMKUrP8eiUfkJLb6UwHZCi7EhQpUzxHu5OL96w==
+
+"@expo-google-fonts/tajawal@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@expo-google-fonts/tajawal/-/tajawal-0.4.1.tgz#f5a9d574dc1913ed819267b6619be158e8689fd7"
+  integrity sha512-cxbpKCUn8784UwrUQz/YLz8eHbqXN1vWjx5oyvf481pxho+CQR8QfoaeCS0LJ03Op2HG8SMCxRbPopNHebPR5Q==
 
 "@expo/cli@54.0.22":
   version "54.0.22"
