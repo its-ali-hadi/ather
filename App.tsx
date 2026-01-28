@@ -4,7 +4,7 @@ import { useFonts, Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold } from '@e
 import { Tajawal_300Light, Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold } from '@expo-google-fonts/tajawal';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import HomeScreen from './screens/HomeScreen';
+import BoxDetailScreen from './screens/BoxDetailScreen';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -24,7 +24,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <View style={styles.container}>
-        <HomeScreen />
+        <BoxDetailScreen />
         <StatusBar style="auto" />
       </View>
     </SafeAreaProvider>
