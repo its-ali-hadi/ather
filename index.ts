@@ -1,5 +1,6 @@
 import "@expo/metro-runtime";
 import './utils/global-error-handler';
+import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 
 import App from './App';
