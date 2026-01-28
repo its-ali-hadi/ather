@@ -39,7 +39,7 @@ export default function ProfileScreen() {
 
   const menuItems = [
     { id: '1', title: 'تعديل الملف الشخصي', icon: 'create', color: '#4A90E2', screen: 'EditProfile' as const },
-    { id: '2', title: 'الإعدادات', icon: 'settings', color: '#50C878', screen: null },
+    { id: '2', title: 'الإعدادات', icon: 'settings', color: '#50C878', screen: 'Settings' as const },
     { id: '3', title: 'المفضلة', icon: 'heart', color: '#E94B3C', screen: null },
     { id: '4', title: 'المساعدة والدعم', icon: 'help-circle', color: '#9B59B6', screen: 'HelpSupport' as const },
   ];
