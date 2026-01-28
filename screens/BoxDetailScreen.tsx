@@ -3,15 +3,15 @@ import { Image as ExpoImage } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, useColorScheme, View, Platform } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, useColorScheme, View, Platform } from 'react-native';
 import Animated, { 
   FadeInDown, 
   FadeInUp,
   FadeInRight,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
 
+const { width } = Dimensions.get('window');
 const BANNER_HEIGHT = 320;
 
 // Mock data for the box
@@ -69,7 +69,6 @@ const boxData = {
 
 export default function BoxDetailScreen() {
   const colorScheme = useColorScheme();
-  const navigation = useNavigation();
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -83,11 +82,6 @@ export default function BoxDetailScreen() {
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
-
-  const handleBackPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.goBack();
   };
 
   return (
@@ -113,7 +107,7 @@ export default function BoxDetailScreen() {
             {/* Back Button */}
             <TouchableOpacity 
               style={styles.backButton}
-              onPress={handleBackPress}
+              onPress={handlePress}
             >
               <BlurView intensity={40} tint="dark" style={styles.backButtonBlur}>
                 <Ionicons name="arrow-forward" size={24} color="#FFF" />
