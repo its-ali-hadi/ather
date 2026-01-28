@@ -14,61 +14,66 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 const BANNER_HEIGHT = 320;
 
-// Mock data for the box
-const boxData = {
-  id: '1',
-  title: 'صندوق التقنية والبرمجة',
-  shortDescription: 'أحدث الأفكار والمشاريع في عالم التقنية',
-  image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&q=80',
-  category: 'تقنية',
-  postsCount: 1247,
-  membersCount: 8542,
-  fullDescription: 'صندوق التقنية والبرمجة هو مساحة مخصصة لمشاركة أحدث الأفكار والمشاريع في عالم التقنية والبرمجة والذكاء الاصطناعي. انضم إلى مجتمع من المطورين والمبرمجين المحترفين وشارك خبراتك وتعلم من الآخرين.',
-  rules: {
-    required: [
-      { type: 'image', label: 'صورة توضيحية', icon: 'image' },
-      { type: 'text', label: 'وصف تفصيلي', icon: 'document-text' },
-      { type: 'code', label: 'كود برمجي (اختياري)', icon: 'code-slash' },
-      { type: 'link', label: 'رابط المشروع', icon: 'link' },
-    ],
-    guidelines: [
-      'يجب أن يكون المحتوى متعلقاً بالتقنية والبرمجة',
-      'احترم حقوق الملكية الفكرية',
-      'استخدم لغة واضحة ومهنية',
-      'شارك مصادر موثوقة فقط',
-      'تجنب المحتوى الترويجي المباشر',
-    ],
-  },
-  suggestions: [
-    {
-      id: '1',
-      title: 'مشاريع الذكاء الاصطناعي',
-      description: 'شارك مشاريعك في مجال الذكاء الاصطناعي والتعلم الآلي',
-      icon: 'bulb',
-    },
-    {
-      id: '2',
-      title: 'تطوير تطبيقات الموبايل',
-      description: 'أفكار وتجارب في تطوير تطبيقات iOS و Android',
-      icon: 'phone-portrait',
-    },
-    {
-      id: '3',
-      title: 'تطوير الويب',
-      description: 'أحدث التقنيات والأدوات في تطوير المواقع',
-      icon: 'globe',
-    },
-    {
-      id: '4',
-      title: 'أمن المعلومات',
-      description: 'نصائح وأفضل الممارسات في أمن المعلومات',
-      icon: 'shield-checkmark',
-    },
-  ],
+type BoxDetailScreenProps = {
+  box: any;
+  onBack: () => void;
 };
 
-export default function BoxDetailScreen() {
+export default function BoxDetailScreen({ box, onBack }: BoxDetailScreenProps) {
   const colorScheme = useColorScheme();
+
+  // Use the passed box data or fallback to mock data
+  const boxData = box || {
+    id: '1',
+    title: 'صندوق التقنية والبرمجة',
+    shortDescription: 'أحدث الأفكار والمشاريع في عالم التقنية',
+    image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&q=80',
+    category: 'تقنية',
+    postsCount: 1247,
+    membersCount: 8542,
+    fullDescription: 'صندوق التقنية والبرمجة هو مساحة مخصصة لمشاركة أحدث الأفكار والمشاريع في عالم التقنية والبرمجة والذكاء الاصطناعي. انضم إلى مجتمع من المطورين والمبرمجين المحترفين وشارك خبراتك وتعلم من الآخرين.',
+    rules: {
+      required: [
+        { type: 'image', label: 'صورة توضيحية', icon: 'image' },
+        { type: 'text', label: 'وصف تفصيلي', icon: 'document-text' },
+        { type: 'code', label: 'كود برمجي (اختياري)', icon: 'code-slash' },
+        { type: 'link', label: 'رابط المشروع', icon: 'link' },
+      ],
+      guidelines: [
+        'يجب أن يكون المحتوى متعلقاً بالتقنية والبرمجة',
+        'احترم حقوق الملكية الفكرية',
+        'استخدم لغة واضحة ومهنية',
+        'شارك مصادر موثوقة فقط',
+        'تجنب المحتوى الترويجي المباشر',
+      ],
+    },
+    suggestions: [
+      {
+        id: '1',
+        title: 'مشاريع الذكاء الاصطناعي',
+        description: 'شارك مشاريعك في مجال الذكاء الاصطناعي والتعلم الآلي',
+        icon: 'bulb',
+      },
+      {
+        id: '2',
+        title: 'تطوير تطبيقات الموبايل',
+        description: 'أفكار وتجارب في تطوير تطبيقات iOS و Android',
+        icon: 'phone-portrait',
+      },
+      {
+        id: '3',
+        title: 'تطوير الويب',
+        description: 'أحدث التقنيات والأدوات في تطوير المواقع',
+        icon: 'globe',
+      },
+      {
+        id: '4',
+        title: 'أمن المعلومات',
+        description: 'نصائح وأفضل الممارسات في أمن المعلومات',
+        icon: 'shield-checkmark',
+      },
+    ],
+  };
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -82,6 +87,11 @@ export default function BoxDetailScreen() {
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleBackPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onBack();
   };
 
   return (
@@ -107,7 +117,7 @@ export default function BoxDetailScreen() {
             {/* Back Button */}
             <TouchableOpacity 
               style={styles.backButton}
-              onPress={handlePress}
+              onPress={handleBackPress}
             >
               <BlurView intensity={40} tint="dark" style={styles.backButtonBlur}>
                 <Ionicons name="arrow-forward" size={24} color="#FFF" />
@@ -129,18 +139,18 @@ export default function BoxDetailScreen() {
               </View>
 
               <Text style={styles.bannerTitle}>{boxData.title}</Text>
-              <Text style={styles.bannerDescription}>{boxData.shortDescription}</Text>
+              <Text style={styles.bannerDescription}>{boxData.shortDescription || boxData.description}</Text>
 
               {/* Stats */}
               <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
                   <Ionicons name="document-text" size={20} color="#E8B86D" />
-                  <Text style={styles.statText}>{boxData.postsCount.toLocaleString()} منشور</Text>
+                  <Text style={styles.statText}>{(boxData.postsCount || 1247).toLocaleString()} منشور</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
                   <Ionicons name="people" size={20} color="#E8B86D" />
-                  <Text style={styles.statText}>{boxData.membersCount.toLocaleString()} عضو</Text>
+                  <Text style={styles.statText}>{(boxData.membersCount || 8542).toLocaleString()} عضو</Text>
                 </View>
               </View>
             </View>

@@ -21,11 +21,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import SeedData from '../constants/seed-data.json';
 
+type HomeScreenProps = {
+  onBoxPress: (box: any) => void;
+};
+
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.88;
 const BANNER_HEIGHT = 280;
 
-export default function HomeScreen() {
+export default function HomeScreen({ onBoxPress }: HomeScreenProps) {
   const { banners, about, cards } = SeedData;
   const colorScheme = useColorScheme();
 
@@ -82,6 +86,11 @@ export default function HomeScreen() {
       transform: [{ scale: pulseAnim.value }],
     };
   });
+
+  const handleBoxPress = (card: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onBoxPress(card);
+  };
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -300,7 +309,7 @@ export default function HomeScreen() {
               >
                 <TouchableOpacity
                   activeOpacity={0.92}
-                  onPress={handlePress}
+                  onPress={() => handleBoxPress(card)}
                 >
                   <Animated.View style={[floatingStyle, styles.premiumCard, { backgroundColor: COLORS.cardBg }]}>
                     {/* Card Image */}
