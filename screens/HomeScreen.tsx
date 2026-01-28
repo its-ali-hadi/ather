@@ -35,9 +35,10 @@ export default function HomeScreen({ navigation }: Props) {
 
   // Animated values
   const floatAnim = useSharedValue(0);
-  const pulseAnim = useSharedValue(0);
+  const bulbScale = useSharedValue(1.5); // يبدأ كبير
 
   useEffect(() => {
+    // Animation للكروت - تستمر
     floatAnim.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 3000 }),
@@ -47,15 +48,13 @@ export default function HomeScreen({ navigation }: Props) {
       true
     );
 
-    pulseAnim.value = withRepeat(
-      withSequence(
-        withSpring(1.1, { damping: 2, stiffness: 100 }),
-        withSpring(1, { damping: 2, stiffness: 100 })
-      ),
-      -1,
-      true
-    );
-  }, [floatAnim, pulseAnim]);
+    // Animation للمصباح - مرة واحدة فقط
+    bulbScale.value = withSpring(1, {
+      damping: 8,
+      stiffness: 100,
+      mass: 1,
+    });
+  }, [floatAnim, bulbScale]);
 
   // Theme Colors - Updated to lighter brown and off-white
   const COLORS = {
@@ -81,9 +80,9 @@ export default function HomeScreen({ navigation }: Props) {
     };
   });
 
-  const pulseStyle = useAnimatedStyle(() => {
+  const bulbStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ scale: pulseAnim.value }],
+      transform: [{ scale: bulbScale.value }],
     };
   });
 
@@ -112,7 +111,7 @@ export default function HomeScreen({ navigation }: Props) {
         >
           <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.heroContent}>
             <View style={styles.heroIconContainer}>
-              <Animated.View style={pulseStyle}>
+              <Animated.View style={bulbStyle}>
                 <LinearGradient
                   colors={['#E8B86D', '#D4A574', '#C9956A']}
                   style={styles.heroIconGradient}
