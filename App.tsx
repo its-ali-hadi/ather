@@ -25,6 +25,9 @@ import CreateLinkPostScreen from './screens/CreateLinkPostScreen';
 import EditProfileScreen from './screens/EditProfileScreen';
 import HelpSupportScreen from './screens/HelpSupportScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import PostsListScreen from './screens/PostsListScreen';
+import FavoritesScreen from './screens/FavoritesScreen';
+import MyPostsScreen from './screens/MyPostsScreen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -39,6 +42,9 @@ export type RootStackParamList = {
   EditProfile: undefined;
   HelpSupport: undefined;
   Settings: undefined;
+  PostsList: { boxId: string };
+  Favorites: undefined;
+  MyPosts: undefined;
 };
 
 export type TabParamList = {
@@ -255,6 +261,9 @@ export default function App() {
           <Stack.Screen name="EditProfile" component={EditProfileScreen} />
           <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="PostsList" component={PostsListScreen} />
+          <Stack.Screen name="Favorites" component={FavoritesScreen} />
+          <Stack.Screen name="MyPosts" component={MyPostsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="auto" />

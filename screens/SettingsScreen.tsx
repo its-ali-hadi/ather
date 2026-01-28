@@ -50,7 +50,7 @@ export default function SettingsScreen() {
           color: '#4A90E2',
           action: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            Alert.alert('المنشورات', 'سيتم إضافة هذه الميزة قريباً');
+            navigation.navigate('MyPosts' as never);
           },
         },
         {
@@ -72,7 +72,7 @@ export default function SettingsScreen() {
           color: '#F39C12',
           action: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            Alert.alert('المفضلات', 'سيتم إضافة هذه الميزة قريباً');
+            navigation.navigate('Favorites' as never);
           },
         },
       ],

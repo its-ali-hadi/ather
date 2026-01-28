@@ -74,6 +74,11 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  const handleViewAllPosts = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate('PostsList', { boxId: box.id });
+  };
+
   const handleCreatePost = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // TODO: Navigate to create post screen
@@ -151,7 +156,7 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
         <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.section}>
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={handlePress}
+            onPress={handleViewAllPosts}
             style={styles.viewAllButton}
           >
             <LinearGradient
