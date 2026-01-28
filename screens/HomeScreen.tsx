@@ -18,6 +18,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
 
 import SeedData from '../constants/seed-data.json';
 
@@ -25,7 +28,10 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.88;
 const BANNER_HEIGHT = 280;
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+
 export default function HomeScreen() {
+  const navigation = useNavigation<NavigationProp>();
   const { banners, about, cards } = SeedData;
   const colorScheme = useColorScheme();
 
@@ -53,7 +59,7 @@ export default function HomeScreen() {
     );
   }, [floatAnim, pulseAnim]);
 
-  // Theme Colors - Updated to lighter brown and off-white
+  // Theme Colors
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
     secondary: colorScheme === 'dark' ? '#D4B896' : '#C9A876',
@@ -85,6 +91,11 @@ export default function HomeScreen() {
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleCardPress = (boxId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate('BoxDetail', { boxId });
   };
 
   return (
@@ -294,13 +305,13 @@ export default function HomeScreen() {
           <View style={styles.cardsGrid}>
             {cards.map((card, index) => (
               <Animated.View
-                key={index}
+                key={card.id}
                 entering={FadeInUp.delay(800 + index * 120).springify()}
                 style={styles.cardWrapper}
               >
                 <TouchableOpacity
                   activeOpacity={0.92}
-                  onPress={handlePress}
+                  onPress={() => handleCardPress(card.id)}
                 >
                   <Animated.View style={[floatingStyle, styles.premiumCard, { backgroundColor: COLORS.cardBg }]}>
                     {/* Card Image */}
