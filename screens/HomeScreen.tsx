@@ -18,8 +18,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { CompositeScreenProps } from '@react-navigation/native';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../App';
+import type { RootStackParamList, TabParamList } from '../App';
 
 import SeedData from '../constants/seed-data.json';
 
@@ -27,7 +29,10 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.88;
 const BANNER_HEIGHT = 280;
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, 'Home'>,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 export default function HomeScreen({ navigation }: Props) {
   const { banners, about, cards } = SeedData;
