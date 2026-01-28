@@ -1,65 +1,86 @@
 {
   "banners": [
     {
-      "image": "https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800&q=80",
-      "text": "قهوة عربية أصيلة",
-      "icon": "cafe"
+      "image": "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80",
+      "text": "شارك أفكارك مع العالم",
+      "icon": "bulb"
     },
     {
-      "image": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&q=80",
-      "text": "تجربة فريدة من نوعها",
-      "icon": "star"
+      "image": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80",
+      "text": "تواصل مع المبدعين",
+      "icon": "people"
     },
     {
-      "image": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80",
-      "text": "نكهات استثنائية",
-      "icon": "heart"
+      "image": "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&q=80",
+      "text": "اكتشف مواضيع جديدة",
+      "icon": "compass"
     }
   ],
   "about": {
-    "title": "عن صناديق القهوة",
-    "description": "اكتشف مجموعة مميزة من أفضل أنواع القهوة المختارة بعناية من أجود المحاصيل العالمية",
+    "title": "عن منصة الأفكار",
+    "description": "مساحة مخصصة لنشر الأفكار ومشاركتها مع الآخرين. اكتشف مواضيع متنوعة وشارك إبداعاتك مع مجتمع من المفكرين والمبدعين",
     "list": [
       {
-        "icon": "checkmark-circle",
-        "text": "قهوة طازجة 100%"
+        "icon": "create",
+        "text": "انشر أفكارك بحرية"
       },
       {
-        "icon": "leaf",
-        "text": "محاصيل عضوية"
+        "icon": "people-circle",
+        "text": "تواصل مع المبدعين"
       },
       {
-        "icon": "flash",
-        "text": "تحميص يومي"
+        "icon": "trending-up",
+        "text": "تابع المواضيع الرائجة"
       },
       {
-        "icon": "gift",
-        "text": "تغليف فاخر"
+        "icon": "bookmark",
+        "text": "احفظ ما يهمك"
       }
     ],
-    "button": "اكتشف المزيد"
+    "button": "ابدأ الآن"
   },
   "cards": [
     {
       "id": "1",
-      "image": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&q=80",
-      "title": "صندوق القهوة الكلاسيكية",
-      "description": "مجموعة متنوعة من أفضل أنواع القهوة الكلاسيكية المحمصة بعناية",
-      "category": "كلاسيك"
+      "image": "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&q=80",
+      "title": "صندوق التقنية والبرمجة",
+      "description": "أحدث الأفكار والمشاريع في عالم التقنية والبرمجة والذكاء الاصطناعي",
+      "category": "تقنية"
     },
     {
       "id": "2",
-      "image": "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800&q=80",
-      "title": "صندوق القهوة المختصة",
-      "description": "تشكيلة فاخرة من القهوة المختصة ذات النكهات المميزة",
-      "category": "مختصة"
+      "image": "https://images.unsplash.com/photo-1513128034602-7814ccaddd4e?w=800&q=80",
+      "title": "صندوق الفن والإبداع",
+      "description": "مساحة للفنانين والمبدعين لمشاركة أعمالهم وإلهام الآخرين",
+      "category": "فن"
     },
     {
       "id": "3",
-      "image": "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=800&q=80",
-      "title": "صندوق القهوة العربية",
-      "description": "قهوة عربية أصيلة بنكهات تقليدية فريدة",
-      "category": "عربية"
+      "image": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&q=80",
+      "title": "صندوق الكتابة والأدب",
+      "description": "قصص وأفكار أدبية من كتّاب موهوبين حول العالم",
+      "category": "أدب"
+    },
+    {
+      "id": "4",
+      "image": "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&q=80",
+      "title": "صندوق الرياضة واللياقة",
+      "description": "نصائح وتجارب رياضية لحياة صحية ونشطة",
+      "category": "رياضة"
+    },
+    {
+      "id": "5",
+      "image": "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80",
+      "title": "صندوق السفر والمغامرات",
+      "description": "تجارب سفر مذهلة ووجهات سياحية من حول العالم",
+      "category": "سفر"
+    },
+    {
+      "id": "6",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
+      "title": "صندوق ريادة الأعمال",
+      "description": "أفكار ونصائح لرواد الأعمال والمشاريع الناشئة",
+      "category": "أعمال"
     }
   ]
 }

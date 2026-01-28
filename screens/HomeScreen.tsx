@@ -14,20 +14,16 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-  interpolate,
-  Extrapolate
+  interpolate
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import SeedData from '../constants/seed-data.json';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.88;
 const BANNER_HEIGHT = 280;
-
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export default function HomeScreen() {
   const { banners, about, cards } = SeedData;
@@ -36,7 +32,6 @@ export default function HomeScreen() {
   // Animated values
   const floatAnim = useSharedValue(0);
   const pulseAnim = useSharedValue(0);
-  const scrollY = useSharedValue(0);
 
   useEffect(() => {
     floatAnim.value = withRepeat(
@@ -56,25 +51,28 @@ export default function HomeScreen() {
       -1,
       true
     );
-  }, []);
+  }, [floatAnim, pulseAnim]);
 
-  // Theme Colors - Premium
+  // Theme Colors - Updated to lighter brown and off-white
   const COLORS = {
-    primary: colorScheme === 'dark' ? '#D4A574' : '#6F4E37',
-    secondary: colorScheme === 'dark' ? '#C19A6B' : '#8B6F47',
-    accent: '#FFD700',
-    background: colorScheme === 'dark' ? '#1A0F0A' : '#FFF9F5',
-    cardBg: colorScheme === 'dark' ? '#2D1810' : '#FFFFFF',
-    text: colorScheme === 'dark' ? '#F5E6D3' : '#3E2723',
-    textSecondary: colorScheme === 'dark' ? '#C4A57B' : '#6F5E53',
-    overlay: colorScheme === 'dark' ? 'rgba(26, 15, 10, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+    primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
+    secondary: colorScheme === 'dark' ? '#D4B896' : '#C9A876',
+    accent: '#E8B86D',
+    background: colorScheme === 'dark' ? '#1A1612' : '#FAF8F5',
+    cardBg: colorScheme === 'dark' ? '#2A2420' : '#FFFFFF',
+    text: colorScheme === 'dark' ? '#F5E6D3' : '#4A3F35',
+    textSecondary: colorScheme === 'dark' ? '#D4C4B0' : '#7A6F65',
+    overlay: colorScheme === 'dark' ? 'rgba(26, 22, 18, 0.95)' : 'rgba(255, 255, 255, 0.95)',
   };
 
   const floatingStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(floatAnim.value, [0, 1], [0, -15]);
+    const scale = interpolate(floatAnim.value, [0, 1], [1, 1.02]);
+    
     return {
       transform: [
-        { translateY: interpolate(floatAnim.value, [0, 1], [0, -15]) },
-        { scale: interpolate(floatAnim.value, [0, 1], [1, 1.02]) }
+        { translateY },
+        { scale }
       ],
     };
   });
@@ -99,29 +97,29 @@ export default function HomeScreen() {
         {/* Hero Header with Gradient */}
         <LinearGradient
           colors={colorScheme === 'dark' 
-            ? ['#3E2723', '#2D1810', COLORS.background] 
-            : ['#D4A574', '#C19A6B', COLORS.background]}
+            ? ['#3A3228', '#2A2420', COLORS.background] 
+            : ['#D4C4B0', '#C9B89E', COLORS.background]}
           style={styles.heroSection}
         >
           <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.heroContent}>
             <View style={styles.heroIconContainer}>
               <Animated.View style={pulseStyle}>
                 <LinearGradient
-                  colors={['#FFD700', '#FFA500', '#FF8C00']}
+                  colors={['#E8B86D', '#D4A574', '#C9956A']}
                   style={styles.heroIconGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
-                  <Ionicons name="cafe" size={48} color="#FFF" />
+                  <Ionicons name="bulb" size={48} color="#FFF" />
                 </LinearGradient>
               </Animated.View>
             </View>
             
             <Text style={[styles.heroTitle, { color: colorScheme === 'dark' ? '#F5E6D3' : '#FFF' }]}>
-              عالم القهوة الفاخرة
+              منصة الأفكار والإبداع
             </Text>
-            <Text style={[styles.heroSubtitle, { color: colorScheme === 'dark' ? '#C4A57B' : 'rgba(255,255,255,0.9)' }]}>
-              اكتشف أجود أنواع القهوة المختارة بعناية
+            <Text style={[styles.heroSubtitle, { color: colorScheme === 'dark' ? '#D4C4B0' : 'rgba(255,255,255,0.95)' }]}>
+              شارك أفكارك واكتشف مواضيع ملهمة
             </Text>
           </Animated.View>
         </LinearGradient>
@@ -132,7 +130,7 @@ export default function HomeScreen() {
             <View style={styles.sectionTitleContainer}>
               <View style={[styles.sectionDot, { backgroundColor: COLORS.accent }]} />
               <Text style={[styles.sectionTitle, { color: COLORS.text }]}>
-                عروض مميزة
+                مميز اليوم
               </Text>
             </View>
             <TouchableOpacity onPress={handlePress}>
@@ -172,7 +170,7 @@ export default function HomeScreen() {
 
                   <View style={styles.bannerBadge}>
                     <LinearGradient
-                      colors={['#FFD700', '#FFA500']}
+                      colors={['#E8B86D', '#D4A574']}
                       style={styles.badgeGradient}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
@@ -185,15 +183,15 @@ export default function HomeScreen() {
                   <BlurView intensity={30} tint="dark" style={styles.bannerContent}>
                     <View style={styles.bannerIconWrapper}>
                       <LinearGradient
-                        colors={['rgba(255, 215, 0, 0.3)', 'rgba(255, 165, 0, 0.2)']}
+                        colors={['rgba(232, 184, 109, 0.3)', 'rgba(212, 165, 116, 0.2)']}
                         style={styles.bannerIconBg}
                       >
-                        <Ionicons name={item.icon as any || 'cafe'} size={28} color="#FFD700" />
+                        <Ionicons name={item.icon as any || 'bulb'} size={28} color="#E8B86D" />
                       </LinearGradient>
                     </View>
                     <Text style={styles.bannerTitle}>{item.text}</Text>
                     <View style={styles.bannerArrow}>
-                      <Ionicons name="arrow-back" size={20} color="#FFD700" />
+                      <Ionicons name="arrow-back" size={20} color="#E8B86D" />
                     </View>
                   </BlurView>
                 </TouchableOpacity>
@@ -207,8 +205,8 @@ export default function HomeScreen() {
           <View style={[styles.aboutCard, { backgroundColor: COLORS.cardBg }]}>
             <LinearGradient
               colors={colorScheme === 'dark'
-                ? ['rgba(212, 165, 116, 0.1)', 'rgba(139, 111, 71, 0.05)']
-                : ['rgba(212, 165, 116, 0.08)', 'rgba(255, 255, 255, 0.95)']}
+                ? ['rgba(196, 165, 123, 0.1)', 'rgba(184, 149, 106, 0.05)']
+                : ['rgba(212, 196, 176, 0.15)', 'rgba(255, 255, 255, 0.95)']}
               style={styles.aboutGradient}
             >
               {/* Decorative Elements */}
@@ -220,7 +218,7 @@ export default function HomeScreen() {
 
               <View style={styles.aboutHeader}>
                 <View style={[styles.aboutIconContainer, { backgroundColor: COLORS.primary }]}>
-                  <Ionicons name="cafe" size={32} color="#FFF" />
+                  <Ionicons name="bulb" size={32} color="#FFF" />
                 </View>
                 <Text style={[styles.aboutTitle, { color: COLORS.text }]}>
                   {about.title}
@@ -242,8 +240,8 @@ export default function HomeScreen() {
                       onPress={handlePress}
                       style={[styles.featureItem, { 
                         backgroundColor: colorScheme === 'dark' 
-                          ? 'rgba(212, 165, 116, 0.12)' 
-                          : 'rgba(111, 78, 55, 0.06)' 
+                          ? 'rgba(196, 165, 123, 0.12)' 
+                          : 'rgba(184, 149, 106, 0.08)' 
                       }]}
                     >
                       <View style={[styles.featureIconBg, { backgroundColor: COLORS.primary }]}>
@@ -264,14 +262,14 @@ export default function HomeScreen() {
                 style={styles.ctaButton}
               >
                 <LinearGradient
-                  colors={['#8B6F47', '#6F4E37', '#5C3D2E']}
+                  colors={['#C9A876', '#B8956A', '#A8855A']}
                   style={styles.ctaGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
                   <Text style={styles.ctaText}>{about.button}</Text>
                   <View style={styles.ctaIconBg}>
-                    <Ionicons name="arrow-back" size={18} color="#6F4E37" />
+                    <Ionicons name="arrow-back" size={18} color="#B8956A" />
                   </View>
                 </LinearGradient>
               </TouchableOpacity>
@@ -285,7 +283,7 @@ export default function HomeScreen() {
             <View style={styles.sectionTitleContainer}>
               <View style={[styles.sectionDot, { backgroundColor: COLORS.accent }]} />
               <Text style={[styles.sectionTitle, { color: COLORS.text }]}>
-                صناديقك المميزة
+                صناديق الأفكار
               </Text>
             </View>
             <View style={[styles.countBadge, { backgroundColor: COLORS.primary }]}>
@@ -320,13 +318,13 @@ export default function HomeScreen() {
                       {/* Premium Badge */}
                       <View style={styles.premiumBadge}>
                         <LinearGradient
-                          colors={['#FFD700', '#FFA500']}
+                          colors={['#E8B86D', '#D4A574']}
                           style={styles.premiumBadgeGradient}
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                         >
                           <Ionicons name="star" size={12} color="#FFF" />
-                          <Text style={styles.premiumBadgeText}>Premium</Text>
+                          <Text style={styles.premiumBadgeText}>مميز</Text>
                         </LinearGradient>
                       </View>
 
@@ -344,8 +342,8 @@ export default function HomeScreen() {
                     {/* Card Content */}
                     <LinearGradient
                       colors={colorScheme === 'dark'
-                        ? ['rgba(45, 24, 16, 0.98)', 'rgba(26, 15, 10, 0.95)']
-                        : ['rgba(255, 255, 255, 0.98)', 'rgba(245, 245, 220, 0.95)']}
+                        ? ['rgba(42, 36, 32, 0.98)', 'rgba(26, 22, 18, 0.95)']
+                        : ['rgba(255, 255, 255, 0.98)', 'rgba(250, 248, 245, 0.95)']}
                       style={styles.cardContentWrapper}
                     >
                       <View style={styles.cardHeader}>
@@ -353,7 +351,7 @@ export default function HomeScreen() {
                           {card.title}
                         </Text>
                         <View style={[styles.ratingBadge, { backgroundColor: COLORS.primary }]}>
-                          <Ionicons name="star" size={12} color="#FFD700" />
+                          <Ionicons name="star" size={12} color="#E8B86D" />
                           <Text style={styles.ratingText}>4.9</Text>
                         </View>
                       </View>
@@ -363,7 +361,7 @@ export default function HomeScreen() {
                       </Text>
 
                       <View style={styles.cardFooter}>
-                        <View style={[styles.categoryTag, { backgroundColor: colorScheme === 'dark' ? 'rgba(212, 165, 116, 0.15)' : 'rgba(111, 78, 55, 0.08)' }]}>
+                        <View style={[styles.categoryTag, { backgroundColor: colorScheme === 'dark' ? 'rgba(196, 165, 123, 0.15)' : 'rgba(184, 149, 106, 0.12)' }]}>
                           <Ionicons name="pricetag" size={12} color={COLORS.primary} />
                           <Text style={[styles.categoryText, { color: COLORS.primary }]}>
                             {card.category}
@@ -414,7 +412,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: '#FFD700',
+        shadowColor: '#E8B86D',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.4,
         shadowRadius: 16,
@@ -552,7 +550,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
+    borderColor: 'rgba(232, 184, 109, 0.3)',
   },
   bannerTitle: {
     flex: 1,
@@ -566,7 +564,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    backgroundColor: 'rgba(232, 184, 109, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -578,7 +576,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...Platform.select({
       ios: {
-        shadowColor: '#6F4E37',
+        shadowColor: '#B8956A',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.15,
         shadowRadius: 16,
@@ -660,7 +658,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...Platform.select({
       ios: {
-        shadowColor: '#6F4E37',
+        shadowColor: '#B8956A',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
