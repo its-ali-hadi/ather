@@ -1,0 +1,65 @@
+{
+  "banners": [
+    {
+      "image": "https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800&q=80",
+      "text": "قهوة عربية أصيلة",
+      "icon": "cafe"
+    },
+    {
+      "image": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&q=80",
+      "text": "تجربة فريدة من نوعها",
+      "icon": "star"
+    },
+    {
+      "image": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80",
+      "text": "نكهات استثنائية",
+      "icon": "heart"
+    }
+  ],
+  "about": {
+    "title": "عن صناديق القهوة",
+    "description": "اكتشف مجموعة مميزة من أفضل أنواع القهوة المختارة بعناية من أجود المحاصيل العالمية",
+    "list": [
+      {
+        "icon": "checkmark-circle",
+        "text": "قهوة طازجة 100%"
+      },
+      {
+        "icon": "leaf",
+        "text": "محاصيل عضوية"
+      },
+      {
+        "icon": "flash",
+        "text": "تحميص يومي"
+      },
+      {
+        "icon": "gift",
+        "text": "تغليف فاخر"
+      }
+    ],
+    "button": "اكتشف المزيد"
+  },
+  "cards": [
+    {
+      "id": "1",
+      "image": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&q=80",
+      "title": "صندوق القهوة الكلاسيكية",
+      "description": "مجموعة متنوعة من أفضل أنواع القهوة الكلاسيكية المحمصة بعناية",
+      "category": "كلاسيك"
+    },
+    {
+      "id": "2",
+      "image": "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800&q=80",
+      "title": "صندوق القهوة المختصة",
+      "description": "تشكيلة فاخرة من القهوة المختصة ذات النكهات المميزة",
+      "category": "مختصة"
+    },
+    {
+      "id": "3",
+      "image": "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=800&q=80",
+      "title": "صندوق القهوة العربية",
+      "description": "قهوة عربية أصيلة بنكهات تقليدية فريدة",
+      "category": "عربية"
+    }
+  ]
+}
