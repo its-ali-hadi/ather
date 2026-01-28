@@ -18,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 import SeedData from '../constants/seed-data.json';
 
@@ -28,6 +29,7 @@ const BANNER_HEIGHT = 280;
 export default function HomeScreen() {
   const { banners, about, cards } = SeedData;
   const colorScheme = useColorScheme();
+  const navigation = useNavigation();
 
   // Animated values
   const floatAnim = useSharedValue(0);
@@ -85,6 +87,11 @@ export default function HomeScreen() {
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleCardPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('BoxDetail' as never);
   };
 
   return (
@@ -300,7 +307,7 @@ export default function HomeScreen() {
               >
                 <TouchableOpacity
                   activeOpacity={0.92}
-                  onPress={handlePress}
+                  onPress={handleCardPress}
                 >
                   <Animated.View style={[floatingStyle, styles.premiumCard, { backgroundColor: COLORS.cardBg }]}>
                     {/* Card Image */}
