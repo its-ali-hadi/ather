@@ -9,11 +9,17 @@ import {
   useColorScheme,
   View,
   Platform,
+  Dimensions,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import * as Haptics from 'expo-haptics';
+
+const { width } = Dimensions.get('window');
+const CARD_PADDING = 24;
+const CARD_GAP = 12;
+const CARD_WIDTH = (width - (CARD_PADDING * 2) - (CARD_GAP * 2)) / 3;
 
 export default function ExploreScreen() {
   const colorScheme = useColorScheme();
@@ -42,7 +48,7 @@ export default function ExploreScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top', 'bottom']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
@@ -74,6 +80,7 @@ export default function ExploreScreen() {
               <Animated.View
                 key={category.id}
                 entering={FadeInUp.delay(300 + index * 80).springify()}
+                style={{ width: CARD_WIDTH }}
               >
                 <TouchableOpacity
                   activeOpacity={0.8}
@@ -88,7 +95,7 @@ export default function ExploreScreen() {
                   >
                     <Ionicons name={category.icon as any} size={28} color="#FFF" />
                   </LinearGradient>
-                  <Text style={[styles.categoryName, { color: COLORS.text }]}>
+                  <Text style={[styles.categoryName, { color: COLORS.text }]} numberOfLines={1}>
                     {category.name}
                   </Text>
                 </TouchableOpacity>
@@ -111,7 +118,7 @@ export default function ExploreScreen() {
           </View>
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -184,14 +191,16 @@ const styles = StyleSheet.create({
   categoriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: CARD_GAP,
   },
   categoryCard: {
-    width: 110,
-    padding: 16,
+    width: '100%',
+    aspectRatio: 1,
+    padding: 12,
     borderRadius: 20,
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
+    gap: 8,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -212,9 +221,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
+    textAlign: 'center',
   },
   placeholderCard: {
     padding: 48,

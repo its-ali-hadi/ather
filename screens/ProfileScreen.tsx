@@ -44,7 +44,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top', 'bottom']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.profileHeader}>
@@ -113,7 +113,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
   );
