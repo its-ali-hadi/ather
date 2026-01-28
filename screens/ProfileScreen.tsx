@@ -12,9 +12,15 @@ import {
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
+  const navigation = useNavigation<NavigationProp>();
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -32,15 +38,17 @@ export default function ProfileScreen() {
   ];
 
   const menuItems = [
-    { id: '1', title: 'تعديل الملف الشخصي', icon: 'create', color: '#4A90E2' },
-    { id: '2', title: 'الإعدادات', icon: 'settings', color: '#50C878' },
-    { id: '3', title: 'المفضلة', icon: 'heart', color: '#E94B3C' },
-    { id: '4', title: 'المحفوظات', icon: 'bookmark', color: '#F39C12' },
-    { id: '5', title: 'المساعدة والدعم', icon: 'help-circle', color: '#9B59B6' },
+    { id: '1', title: 'تعديل الملف الشخصي', icon: 'create', color: '#4A90E2', screen: 'EditProfile' as const },
+    { id: '2', title: 'الإعدادات', icon: 'settings', color: '#50C878', screen: null },
+    { id: '3', title: 'المفضلة', icon: 'heart', color: '#E94B3C', screen: null },
+    { id: '4', title: 'المساعدة والدعم', icon: 'help-circle', color: '#9B59B6', screen: null },
   ];
 
-  const handlePress = () => {
+  const handlePress = (screen: keyof RootStackParamList | null) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (screen) {
+      navigation.navigate(screen);
+    }
   };
 
   return (
@@ -89,7 +97,7 @@ export default function ProfileScreen() {
             >
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={handlePress}
+                onPress={() => handlePress(item.screen)}
                 style={[styles.menuItem, { backgroundColor: COLORS.cardBg }]}
               >
                 <View style={styles.menuContent}>

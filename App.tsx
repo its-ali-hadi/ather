@@ -22,6 +22,7 @@ import CreateTextPostScreen from './screens/CreateTextPostScreen';
 import CreateImagePostScreen from './screens/CreateImagePostScreen';
 import CreateVideoPostScreen from './screens/CreateVideoPostScreen';
 import CreateLinkPostScreen from './screens/CreateLinkPostScreen';
+import EditProfileScreen from './screens/EditProfileScreen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -33,6 +34,7 @@ export type RootStackParamList = {
   CreateImagePost: undefined;
   CreateVideoPost: undefined;
   CreateLinkPost: undefined;
+  EditProfile: undefined;
 };
 
 export type TabParamList = {
@@ -246,6 +248,7 @@ export default function App() {
           <Stack.Screen name="CreateImagePost" component={CreateImagePostScreen} />
           <Stack.Screen name="CreateVideoPost" component={CreateVideoPostScreen} />
           <Stack.Screen name="CreateLinkPost" component={CreateLinkPostScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="auto" />
