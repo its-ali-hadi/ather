@@ -120,7 +120,7 @@ export default function OnboardingOverlay({
     onSkip();
   };
 
-  // Calculate spotlight position for rectangular or circular highlight
+  // Calculate spotlight position - simplified with direct x, y control
   const getSpotlightRect = () => {
     if (!currentStep.targetPosition) {
       // Default position for navigation bar (bottom)
@@ -131,6 +131,9 @@ export default function OnboardingOverlay({
         width: width - padding * 2,
         height: 80,
         rx: 20,
+        cx: width / 2,
+        cy: height - 60,
+        r: 40,
         shape: 'rect' as const,
       };
     }
@@ -140,30 +143,34 @@ export default function OnboardingOverlay({
     const shape = currentStep.shape || 'rect';
     
     if (shape === 'circle') {
-      // For circle, calculate center and radius
-      const centerX = x + w / 2;
-      const centerY = y + h / 2;
-      const radius = Math.max(w, h) / 2 + padding;
+      // For circle: use center point (cx, cy) and radius (r)
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      const r = Math.max(w, h) / 2 + padding;
       
       return {
-        x: centerX - radius,
-        y: centerY - radius,
-        width: radius * 2,
-        height: radius * 2,
-        rx: radius,
-        cx: centerX,
-        cy: centerY,
-        r: radius,
+        x: cx - r,
+        y: cy - r,
+        width: r * 2,
+        height: r * 2,
+        rx: r,
+        cx: cx,
+        cy: cy,
+        r: r,
         shape: 'circle' as const,
       };
     }
     
+    // For rect: use top-left corner (x, y) and dimensions (width, height)
     return {
       x: x - padding,
       y: y - padding,
       width: w + padding * 2,
       height: h + padding * 2,
-      rx: 15, // Border radius
+      rx: 15,
+      cx: x + w / 2,
+      cy: y + h / 2,
+      r: Math.max(w, h) / 2,
       shape: 'rect' as const,
     };
   };
