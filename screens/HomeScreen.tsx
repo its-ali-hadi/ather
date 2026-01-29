@@ -613,27 +613,23 @@ export default function HomeScreen({ navigation }: Props) {
       </ScrollView>
 
       {/* Sticky Notifications Button */}
-      <View
+      <TouchableOpacity
         ref={notificationButtonRef}
-        collapsable={false}
+        activeOpacity={0.85}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          navigation.navigate('Notifications');
+        }}
+        style={[styles.stickyNotificationButton, { 
+          backgroundColor: COLORS.accent,
+        }]}
       >
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            navigation.navigate('Notifications');
-          }}
-          style={[styles.stickyNotificationButton, { 
-            backgroundColor: COLORS.accent,
-          }]}
-        >
-          <Ionicons name="notifications" size={28} color="#FFF" />
-          {/* Notification Badge */}
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationBadgeText}>3</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+        <Ionicons name="notifications" size={28} color="#FFF" />
+        {/* Notification Badge */}
+        <View style={styles.notificationBadge}>
+          <Text style={styles.notificationBadgeText}>3</Text>
+        </View>
+      </TouchableOpacity>
 
       {/* Onboarding Overlay */}
       <OnboardingOverlay
