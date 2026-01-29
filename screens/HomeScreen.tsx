@@ -191,27 +191,27 @@ export default function HomeScreen({ navigation }: Props) {
       title: 'الإشعارات',
       description: 'من هنا تقدر تشوف الإشعارات والتحديثات الجديدة',
       targetPosition: elementPositions.notifications,
-      highlightRadius: 35,
+      padding: 8,
     },
     {
       id: 'about',
       title: 'وصف المنصة',
       description: 'هنا تقدر تقرأ وصف منصة أثر وتتعرف على ميزاتها',
       targetPosition: elementPositions.about,
-      highlightRadius: 80,
+      padding: 12,
     },
     {
       id: 'cta',
       title: 'ابدأ رحلتك',
       description: 'اضغط هنا لبدء رحلتك في منصة أثر وإنشاء حسابك',
       targetPosition: elementPositions.cta,
-      highlightRadius: 100,
+      padding: 10,
     },
     {
       id: 'navigation',
       title: 'شريط التنقل',
       description: 'هذا شريط التنقل الرئيسي. من هنا تقدر تتنقل بين الصفحات المختلفة: الرئيسية، استكشف، إنشاء، خاص، والملف الشخصي',
-      highlightRadius: 60,
+      padding: 10,
     },
   ];
 
