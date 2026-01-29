@@ -126,6 +126,28 @@ export default function ProfileScreen() {
         navigation.navigate('HelpSupport');
       },
     },
+    {
+      id: '9',
+      icon: 'document-text',
+      title: 'شروط الخدمة',
+      subtitle: 'اقرأ شروط الاستخدام',
+      color: '#4A90E2',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('TermsOfService');
+      },
+    },
+    {
+      id: '10',
+      icon: 'shield-checkmark',
+      title: 'سياسة الخصوصية',
+      subtitle: 'كيف نحمي بياناتك',
+      color: '#50C878',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('PrivacyPolicy');
+      },
+    },
   ];
 
   const handlePress = (screen: keyof RootStackParamList | null) => {

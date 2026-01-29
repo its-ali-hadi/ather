@@ -16,9 +16,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
 
-export default function AuthScreen({ navigation }: any) {
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+export default function AuthScreen() {
   const colorScheme = useColorScheme();
+  const navigation = useNavigation<NavigationProp>();
   const [isLogin, setIsLogin] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -290,11 +296,23 @@ export default function AuthScreen({ navigation }: any) {
           <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.privacyNotice}>
             <Text style={[styles.privacyText, { color: COLORS.textSecondary }]}>
               بالمتابعة، أنت توافق على{' '}
-              <Text style={{ color: COLORS.accent, fontFamily: 'Cairo_700Bold' }}>
+              <Text 
+                style={{ color: COLORS.accent, fontFamily: 'Cairo_700Bold' }}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation.navigate('TermsOfService');
+                }}
+              >
                 شروط الخدمة
               </Text>
               {' '}و{' '}
-              <Text style={{ color: COLORS.accent, fontFamily: 'Cairo_700Bold' }}>
+              <Text 
+                style={{ color: COLORS.accent, fontFamily: 'Cairo_700Bold' }}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation.navigate('PrivacyPolicy');
+                }}
+              >
                 سياسة الخصوصية
               </Text>
             </Text>

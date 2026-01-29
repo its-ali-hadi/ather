@@ -34,6 +34,8 @@ import NotificationsScreen from './screens/NotificationsScreen';
 import AdvancedSearchScreen from './screens/AdvancedSearchScreen';
 import UserProfileScreen from './screens/UserProfileScreen';
 import ArchiveScreen from './screens/ArchiveScreen';
+import TermsOfServiceScreen from './screens/TermsOfServiceScreen';
+import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -57,6 +59,8 @@ export type RootStackParamList = {
   AdvancedSearch: undefined;
   UserProfile: { userId: string };
   Archive: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
 };
 
 export type TabParamList = {
@@ -283,6 +287,8 @@ export default function App() {
           <Stack.Screen name="AdvancedSearch" component={AdvancedSearchScreen} />
           <Stack.Screen name="UserProfile" component={UserProfileScreen} />
           <Stack.Screen name="Archive" component={ArchiveScreen} />
+          <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="auto" />

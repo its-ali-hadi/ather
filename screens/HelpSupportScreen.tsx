@@ -17,10 +17,14 @@ import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HelpSupportScreen() {
   const colorScheme = useColorScheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -246,22 +250,44 @@ export default function HelpSupportScreen() {
           </View>
         </Animated.View>
 
-        {/* Terms of Use */}
+        {/* Terms and Privacy */}
         <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.section}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              Alert.alert('شروط الاستخدام', 'سيتم إضافة صفحة شروط الاستخدام قريباً');
-            }}
-            style={[styles.termsCard, { backgroundColor: COLORS.cardBg }]}
-          >
-            <View style={styles.termsContent}>
-              <Ionicons name="document-text-outline" size={24} color={COLORS.primary} />
-              <Text style={[styles.termsText, { color: COLORS.text }]}>شروط الاستخدام</Text>
-            </View>
-            <Ionicons name="chevron-back" size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="document-outline" size={24} color={COLORS.accent} />
+            <Text style={[styles.sectionTitle, { color: COLORS.text }]}>الشروط والسياسات</Text>
+          </View>
+
+          <View style={styles.termsContainer}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('TermsOfService');
+              }}
+              style={[styles.termsCard, { backgroundColor: COLORS.cardBg }]}
+            >
+              <View style={styles.termsContent}>
+                <Ionicons name="document-text-outline" size={24} color="#4A90E2" />
+                <Text style={[styles.termsText, { color: COLORS.text }]}>شروط الخدمة</Text>
+              </View>
+              <Ionicons name="chevron-back" size={20} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('PrivacyPolicy');
+              }}
+              style={[styles.termsCard, { backgroundColor: COLORS.cardBg }]}
+            >
+              <View style={styles.termsContent}>
+                <Ionicons name="shield-checkmark-outline" size={24} color="#50C878" />
+                <Text style={[styles.termsText, { color: COLORS.text }]}>سياسة الخصوصية</Text>
+              </View>
+              <Ionicons name="chevron-back" size={20} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </Animated.View>
 
         {/* Contact Cards */}
@@ -460,6 +486,9 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+  termsContainer: {
+    gap: 12,
   },
   termsCard: {
     flexDirection: 'row-reverse',
