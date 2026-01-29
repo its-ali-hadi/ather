@@ -87,114 +87,129 @@ function MainTabs() {
   };
 
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: COLORS.accent,
-        tabBarInactiveTintColor: COLORS.inactive,
-        tabBarStyle: {
-          position: 'absolute',
-          backgroundColor: COLORS.tabBar,
-          borderTopWidth: 0,
-          elevation: 0,
-          height: Platform.OS === 'ios' ? 95 + insets.bottom : 80,
-          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 10 : 15,
-          paddingTop: 15,
-          ...Platform.select({
-            ios: {
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: -4 },
-              shadowOpacity: 0.1,
-              shadowRadius: 12,
-            },
-            android: {
-              elevation: 8,
-            },
-            web: {
-              boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
-            },
-          }),
-        },
-        tabBarLabelStyle: {
-          fontFamily: 'Cairo_600SemiBold',
-          fontSize: 12,
-        },
-        tabBarIconStyle: {
-          marginTop: 4,
-        },
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarLabel: 'الرئيسية',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'home' : 'home-outline'}
-              size={size}
-              color={color}
-            />
-          ),
+    <>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: COLORS.accent,
+          tabBarInactiveTintColor: COLORS.inactive,
+          tabBarStyle: {
+            position: 'absolute',
+            backgroundColor: COLORS.tabBar,
+            borderTopWidth: 0,
+            elevation: 0,
+            height: Platform.OS === 'ios' ? 85 : 70,
+            paddingBottom: Platform.OS === 'ios' ? 10 : 10,
+            paddingTop: 15,
+            ...Platform.select({
+              ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: -4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 12,
+              },
+              android: {
+                elevation: 8,
+              },
+              web: {
+                boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
+              },
+            }),
+          },
+          tabBarLabelStyle: {
+            fontFamily: 'Cairo_600SemiBold',
+            fontSize: 12,
+          },
+          tabBarIconStyle: {
+            marginTop: 4,
+          },
         }}
-      />
-      <Tab.Screen
-        name="Explore"
-        component={ExploreScreen}
-        options={{
-          tabBarLabel: 'استكشف',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'compass' : 'compass-outline'}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Create"
-        component={CreateScreen}
-        options={{
-          tabBarLabel: 'إنشاء',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'add-circle' : 'add-circle-outline'}
-              size={size + 8}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Private"
-        component={PrivateScreen}
-        options={{
-          tabBarLabel: 'خاص',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'lock-closed' : 'lock-closed-outline'}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: 'الملف',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'person' : 'person-outline'}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+      >
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            tabBarLabel: 'الرئيسية',
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? 'home' : 'home-outline'}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Explore"
+          component={ExploreScreen}
+          options={{
+            tabBarLabel: 'استكشف',
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? 'compass' : 'compass-outline'}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Create"
+          component={CreateScreen}
+          options={{
+            tabBarLabel: 'إنشاء',
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? 'add-circle' : 'add-circle-outline'}
+                size={size + 8}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Private"
+          component={PrivateScreen}
+          options={{
+            tabBarLabel: 'خاص',
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? 'lock-closed' : 'lock-closed-outline'}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            tabBarLabel: 'الملف',
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? 'person' : 'person-outline'}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+      </Tab.Navigator>
+      {/* Safe Area for Bottom Tab Bar */}
+      {insets.bottom > 0 && (
+        <View 
+          style={{ 
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: insets.bottom,
+            backgroundColor: COLORS.tabBar,
+          }} 
+        />
+      )}
+    </>
   );
 }
 
