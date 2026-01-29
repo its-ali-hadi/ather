@@ -17,7 +17,7 @@ import Animated, {
   interpolate
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -37,6 +37,7 @@ type Props = CompositeScreenProps<
 export default function HomeScreen({ navigation }: Props) {
   const { banners, about, cards } = SeedData;
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
 
   // Animated values
   const floatAnim = useSharedValue(0);
@@ -106,7 +107,7 @@ export default function HomeScreen({ navigation }: Props) {
         showsVerticalScrollIndicator={false}
         bounces={true}
         scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
+        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 120 + insets.bottom : 100 }}
       >
         {/* Hero Header with Gradient */}
         <LinearGradient
@@ -405,7 +406,10 @@ export default function HomeScreen({ navigation }: Props) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           navigation.navigate('Auth');
         }}
-        style={[styles.stickyAuthButton, { backgroundColor: COLORS.accent }]}
+        style={[styles.stickyAuthButton, { 
+          backgroundColor: COLORS.accent,
+          bottom: Platform.OS === 'ios' ? 140 + insets.bottom : 120,
+        }]}
       >
         <Ionicons name="person-circle" size={28} color="#FFF" />
       </TouchableOpacity>
@@ -858,7 +862,6 @@ const styles = StyleSheet.create({
   stickyAuthButton: {
     position: 'absolute',
     right: 24,
-    bottom: Platform.OS === 'ios' ? 120 : 100,
     width: 60,
     height: 60,
     borderRadius: 30,

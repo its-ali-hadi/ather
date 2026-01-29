@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold } from '@expo-google-fonts/cairo';
 import { Tajawal_300Light, Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold } from '@expo-google-fonts/tajawal';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -62,6 +62,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 
 function MainTabs() {
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -82,9 +83,9 @@ function MainTabs() {
           backgroundColor: COLORS.tabBar,
           borderTopWidth: 0,
           elevation: 0,
-          height: Platform.OS === 'ios' ? 88 : 70,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-          paddingTop: 10,
+          height: Platform.OS === 'ios' ? 88 + insets.bottom : 75,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 8 : 12,
+          paddingTop: 12,
           ...Platform.select({
             ios: {
               shadowColor: '#000',
