@@ -121,6 +121,9 @@ function MainTabs() {
                 android: {
                   elevation: 8,
                 },
+                web: {
+                  boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
+                },
               }),
             },
             tabBarLabelStyle: {
@@ -276,7 +279,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <CopilotProvider
-        overlay="svg"
+        overlay={Platform.OS === 'web' ? 'view' : 'svg'}
         tooltipComponent={CustomTooltip}
         stepNumberComponent={CustomStepNumber}
         backdropColor="rgba(0, 0, 0, 0.7)"
