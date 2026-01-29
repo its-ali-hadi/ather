@@ -68,6 +68,11 @@ export default function ExploreScreen() {
     navigation.navigate('PostDetail', { postId });
   };
 
+  const handleUserPress = (userId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('UserProfile', { userId });
+  };
+
   // Filter posts based on selected category
   const filteredPosts = selectedCategory
     ? seedData.posts.filter(post => post.category === selectedCategory)
@@ -199,7 +204,11 @@ export default function ExploreScreen() {
                   >
                     {/* Post Header */}
                     <View style={styles.postHeader}>
-                      <View style={styles.postUserInfo}>
+                      <TouchableOpacity 
+                        style={styles.postUserInfo}
+                        onPress={() => handleUserPress(post.userId)}
+                        activeOpacity={0.7}
+                      >
                         <View style={styles.postUserDetails}>
                           <Text style={[styles.postUserName, { color: COLORS.text }]}>
                             {post.userName}
@@ -215,7 +224,7 @@ export default function ExploreScreen() {
                             <Ionicons name="person" size={20} color="#FFF" />
                           </View>
                         )}
-                      </View>
+                      </TouchableOpacity>
                       <View style={[styles.categoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
                         <Text style={[styles.categoryBadgeText, { color: COLORS.accent }]}>
                           {post.category}

@@ -14,16 +14,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useState } from 'react';
 
 import SeedData from '../constants/seed-data.json';
 
 type SearchTab = 'posts' | 'users' | 'boxes';
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AdvancedSearchScreen() {
   const colorScheme = useColorScheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState<SearchTab>('posts');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -41,25 +44,6 @@ export default function AdvancedSearchScreen() {
 
   const categories = ['تقنية', 'فن', 'أدب', 'رياضة', 'سفر', 'أعمال'];
 
-  const mockUsers = [
-    {
-      id: 'user-1',
-      name: 'أحمد محمد',
-      username: '@ahmed_dev',
-      avatar: 'https://i.pravatar.cc/150?img=11',
-      bio: 'مطور تطبيقات | مهتم بالتقنية',
-      followers: 1234,
-    },
-    {
-      id: 'user-2',
-      name: 'سارة الفنانة',
-      username: '@sara_art',
-      avatar: 'https://i.pravatar.cc/150?img=5',
-      bio: 'فنانة تشكيلية | أحب الألوان المائية',
-      followers: 5678,
-    },
-  ];
-
   const filteredPosts = SeedData.posts.filter((post) => {
     const matchesQuery = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                         post.content.toLowerCase().includes(searchQuery.toLowerCase());
@@ -72,9 +56,10 @@ export default function AdvancedSearchScreen() {
     box.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredUsers = mockUsers.filter((user) =>
+  const filteredUsers = SeedData.users.filter((user) =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.username.toLowerCase().includes(searchQuery.toLowerCase())
+    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (user.bio && user.bio.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleTabPress = (tab: SearchTab) => {
@@ -85,6 +70,21 @@ export default function AdvancedSearchScreen() {
   const handleCategoryPress = (category: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedCategory(selectedCategory === category ? null : category);
+  };
+
+  const handleUserPress = (userId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('UserProfile', { userId });
+  };
+
+  const handlePostPress = (postId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('PostDetail', { postId });
+  };
+
+  const handleBoxPress = (boxId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('BoxDetail', { boxId });
   };
 
   return (
@@ -236,9 +236,14 @@ export default function AdvancedSearchScreen() {
                   >
                     <TouchableOpacity
                       activeOpacity={0.7}
+                      onPress={() => handlePostPress(post.id)}
                       style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}
                     >
-                      <View style={styles.postHeader}>
+                      <TouchableOpacity 
+                        style={styles.postHeader}
+                        onPress={() => handleUserPress(post.userId)}
+                        activeOpacity={0.7}
+                      >
                         {post.userAvatar ? (
                           <ExpoImage
                             source={{ uri: post.userAvatar }}
@@ -260,7 +265,7 @@ export default function AdvancedSearchScreen() {
                             </Text>
                           </View>
                         </View>
-                      </View>
+                      </TouchableOpacity>
                       <Text style={[styles.postTitle, { color: COLORS.text }]} numberOfLines={2}>
                         {post.title}
                       </Text>
@@ -307,6 +312,7 @@ export default function AdvancedSearchScreen() {
                   >
                     <TouchableOpacity
                       activeOpacity={0.7}
+                      onPress={() => handleUserPress(user.id)}
                       style={[styles.userCard, { backgroundColor: COLORS.cardBg }]}
                     >
                       <View style={styles.userInfo}>
@@ -339,7 +345,10 @@ export default function AdvancedSearchScreen() {
                       </View>
                       <TouchableOpacity
                         style={[styles.followButton, { backgroundColor: COLORS.accent }]}
-                        onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }}
                       >
                         <Text style={styles.followButtonText}>متابعة</Text>
                       </TouchableOpacity>
@@ -369,6 +378,7 @@ export default function AdvancedSearchScreen() {
                   >
                     <TouchableOpacity
                       activeOpacity={0.7}
+                      onPress={() => handleBoxPress(box.id)}
                       style={[styles.boxCard, { backgroundColor: COLORS.cardBg }]}
                     >
                       <ExpoImage

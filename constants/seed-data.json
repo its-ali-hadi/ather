@@ -311,5 +311,106 @@
       "createdAt": "2024-01-08T13:20:00Z",
       "category": "فن"
     }
+  ],
+  "users": [
+    {
+      "id": "user-1",
+      "name": "أحمد محمد",
+      "username": "@ahmed_dev",
+      "avatar": "https://i.pravatar.cc/150?img=11",
+      "bio": "مطور تطبيقات | مهتم بالتقنية والبرمجة",
+      "followers": 1234,
+      "following": 567,
+      "posts": 15,
+      "joinDate": "2023-06-15"
+    },
+    {
+      "id": "user-2",
+      "name": "سارة الفنانة",
+      "username": "@sara_art",
+      "avatar": "https://i.pravatar.cc/150?img=5",
+      "bio": "فنانة تشكيلية | أحب الألوان المائية",
+      "followers": 5678,
+      "following": 234,
+      "posts": 42,
+      "joinDate": "2023-03-20"
+    },
+    {
+      "id": "user-3",
+      "name": "أحمد الكاتب",
+      "username": "@ahmed_writer",
+      "avatar": "https://i.pravatar.cc/150?img=12",
+      "bio": "كاتب وروائي | أحب القصص القصيرة",
+      "followers": 3456,
+      "following": 890,
+      "posts": 28,
+      "joinDate": "2023-05-10"
+    },
+    {
+      "id": "user-4",
+      "name": "محمد الرياضي",
+      "username": "@mohamed_fitness",
+      "avatar": "https://i.pravatar.cc/150?img=8",
+      "bio": "مدرب لياقة بدنية | نمط حياة صحي",
+      "followers": 8901,
+      "following": 345,
+      "posts": 67,
+      "joinDate": "2023-01-05"
+    },
+    {
+      "id": "user-5",
+      "name": "ليلى المسافرة",
+      "username": "@layla_travel",
+      "avatar": "https://i.pravatar.cc/150?img=9",
+      "bio": "عاشقة السفر والمغامرات | 45 دولة",
+      "followers": 12345,
+      "following": 678,
+      "posts": 89,
+      "joinDate": "2022-11-20"
+    },
+    {
+      "id": "user-6",
+      "name": "خالد رائد الأعمال",
+      "username": "@khaled_entrepreneur",
+      "avatar": "https://i.pravatar.cc/150?img=13",
+      "bio": "رائد أعمال | مؤسس 3 شركات ناشئة",
+      "followers": 6789,
+      "following": 456,
+      "posts": 34,
+      "joinDate": "2023-02-14"
+    },
+    {
+      "id": "user-7",
+      "name": "فاطمة المطورة",
+      "username": "@fatima_dev",
+      "avatar": "https://i.pravatar.cc/150?img=10",
+      "bio": "مطورة Full Stack | React & Node.js",
+      "followers": 4567,
+      "following": 789,
+      "posts": 56,
+      "joinDate": "2023-04-08"
+    },
+    {
+      "id": "user-8",
+      "name": "عمر المصمم",
+      "username": "@omar_designer",
+      "avatar": "https://i.pravatar.cc/150?img=14",
+      "bio": "مصمم جرافيك | UI/UX Designer",
+      "followers": 7890,
+      "following": 234,
+      "posts": 78,
+      "joinDate": "2023-07-22"
+    },
+    {
+      "id": "current-user",
+      "name": "مستخدم جديد",
+      "username": "@new_user",
+      "avatar": null,
+      "bio": "مستخدم جديد في المنصة",
+      "followers": 0,
+      "following": 0,
+      "posts": 1,
+      "joinDate": "2024-01-15"
+    }
   ]
 }
