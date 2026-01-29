@@ -1100,6 +1100,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1000,
     ...Platform.select({
       ios: {
         shadowColor: '#E8B86D',
