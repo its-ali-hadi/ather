@@ -138,7 +138,26 @@ export default function OnboardingOverlay({
       };
     }
 
+    // Check if position values are valid
     const { x, y, width: w, height: h } = currentStep.targetPosition;
+    
+    // If any value is undefined or invalid, use default
+    if (x === undefined || y === undefined || w === undefined || h === undefined) {
+      console.warn('Invalid targetPosition:', currentStep.targetPosition);
+      const padding = currentStep.padding || 10;
+      return {
+        x: padding,
+        y: height / 2 - 50,
+        width: width - padding * 2,
+        height: 100,
+        rx: 20,
+        cx: width / 2,
+        cy: height / 2,
+        r: 50,
+        shape: 'rect' as const,
+      };
+    }
+
     const padding = currentStep.padding || 10;
     const shape = currentStep.shape || 'rect';
     

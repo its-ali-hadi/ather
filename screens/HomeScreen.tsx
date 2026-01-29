@@ -147,10 +147,11 @@ export default function HomeScreen({ navigation }: Props) {
   // Measure element positions when onboarding starts
   useEffect(() => {
     if (showOnboarding) {
-      // Small delay to ensure elements are rendered
+      // Longer delay to ensure elements are fully rendered
       setTimeout(() => {
         // Measure notification button
         notificationButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
+          console.log('Notifications measured:', { x: pageX, y: pageY, width, height });
           setElementPositions(prev => ({
             ...prev,
             notifications: { x: pageX, y: pageY, width, height },
@@ -159,6 +160,7 @@ export default function HomeScreen({ navigation }: Props) {
 
         // Measure about description
         aboutDescriptionRef.current?.measure((x, y, width, height, pageX, pageY) => {
+          console.log('About measured:', { x: pageX, y: pageY, width, height });
           setElementPositions(prev => ({
             ...prev,
             about: { x: pageX, y: pageY, width, height },
@@ -167,12 +169,13 @@ export default function HomeScreen({ navigation }: Props) {
 
         // Measure CTA button
         ctaButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
+          console.log('CTA measured:', { x: pageX, y: pageY, width, height });
           setElementPositions(prev => ({
             ...prev,
             cta: { x: pageX, y: pageY, width, height },
           }));
         });
-      }, 500);
+      }, 1000); // Increased from 500ms to 1000ms
     }
   }, [showOnboarding]);
 
