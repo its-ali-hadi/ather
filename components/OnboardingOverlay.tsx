@@ -10,7 +10,6 @@ import {
   useColorScheme,
   Animated as RNAnimated,
 } from 'react-native';
-import Svg, { Defs, Rect, Mask, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -22,8 +21,8 @@ export interface OnboardingStep {
   title: string;
   description: string;
   targetPosition?: { x: number; y: number; width: number; height: number };
-  padding?: number; // Padding around the highlighted element
-  shape?: 'circle' | 'rect'; // Shape of the highlight
+  padding?: number;
+  shape?: 'circle' | 'rect';
 }
 
 interface OnboardingOverlayProps {
@@ -48,7 +47,6 @@ export default function OnboardingOverlay({
   const colorScheme = useColorScheme();
   const fadeAnim = useRef(new RNAnimated.Value(0)).current;
   const scaleAnim = useRef(new RNAnimated.Value(0.9)).current;
-  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -72,28 +70,11 @@ export default function OnboardingOverlay({
           useNativeDriver: true,
         }),
       ]).start();
-
-      // Pulse animation for highlight - using useNativeDriver: true
-      RNAnimated.loop(
-        RNAnimated.sequence([
-          RNAnimated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 1000,
-            useNativeDriver: true, // Changed from false to true
-          }),
-          RNAnimated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true, // Changed from false to true
-          }),
-        ])
-      ).start();
     } else {
       fadeAnim.setValue(0);
       scaleAnim.setValue(0.9);
-      pulseAnim.setValue(1);
     }
-  }, [visible, currentStepIndex, fadeAnim, scaleAnim, pulseAnim]);
+  }, [visible, currentStepIndex, fadeAnim, scaleAnim]);
 
   if (!visible || !steps[currentStepIndex]) return null;
 
@@ -120,82 +101,6 @@ export default function OnboardingOverlay({
     onSkip();
   };
 
-  // Calculate spotlight position - simplified with direct x, y control
-  const getSpotlightRect = () => {
-    if (!currentStep.targetPosition) {
-      // Default position for navigation bar (bottom)
-      const padding = currentStep.padding || 10;
-      return {
-        x: padding,
-        y: height - 100 - padding,
-        width: width - padding * 2,
-        height: 80,
-        rx: 20,
-        cx: width / 2,
-        cy: height - 60,
-        r: 40,
-        shape: 'rect' as const,
-      };
-    }
-
-    // Check if position values are valid
-    const { x, y, width: w, height: h } = currentStep.targetPosition;
-    
-    // If any value is undefined or invalid, use default
-    if (x === undefined || y === undefined || w === undefined || h === undefined) {
-      console.warn('Invalid targetPosition:', currentStep.targetPosition);
-      const padding = currentStep.padding || 10;
-      return {
-        x: padding,
-        y: height / 2 - 50,
-        width: width - padding * 2,
-        height: 100,
-        rx: 20,
-        cx: width / 2,
-        cy: height / 2,
-        r: 50,
-        shape: 'rect' as const,
-      };
-    }
-
-    const padding = currentStep.padding || 10;
-    const shape = currentStep.shape || 'rect';
-    
-    if (shape === 'circle') {
-      // For circle: use center point (cx, cy) and radius (r)
-      const cx = x + w / 2;
-      const cy = y + h / 2;
-      const r = Math.max(w, h) / 2 + padding;
-      
-      return {
-        x: cx - r,
-        y: cy - r,
-        width: r * 2,
-        height: r * 2,
-        rx: r,
-        cx: cx,
-        cy: cy,
-        r: r,
-        shape: 'circle' as const,
-      };
-    }
-    
-    // For rect: use top-left corner (x, y) and dimensions (width, height)
-    return {
-      x: x - padding,
-      y: y - padding,
-      width: w + padding * 2,
-      height: h + padding * 2,
-      rx: 15,
-      cx: x + w / 2,
-      cy: y + h / 2,
-      r: Math.max(w, h) / 2,
-      shape: 'rect' as const,
-    };
-  };
-
-  const spotlight = getSpotlightRect();
-
   return (
     <Modal
       visible={visible}
@@ -204,69 +109,7 @@ export default function OnboardingOverlay({
       statusBarTranslucent
     >
       <View style={styles.container}>
-        {/* SVG Overlay with Rectangular or Circular Spotlight */}
-        <RNAnimated.View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              opacity: fadeAnim,
-            },
-          ]}
-        >
-          <Svg width={width} height={height}>
-            <Defs>
-              <Mask id="mask">
-                <Rect x="0" y="0" width={width} height={height} fill="white" />
-                {spotlight.shape === 'circle' ? (
-                  <Circle
-                    cx={spotlight.cx}
-                    cy={spotlight.cy}
-                    r={spotlight.r}
-                    fill="black"
-                  />
-                ) : (
-                  <Rect
-                    x={spotlight.x}
-                    y={spotlight.y}
-                    width={spotlight.width}
-                    height={spotlight.height}
-                    rx={spotlight.rx}
-                    ry={spotlight.rx}
-                    fill="black"
-                  />
-                )}
-              </Mask>
-            </Defs>
-            <Rect
-              x="0"
-              y="0"
-              width={width}
-              height={height}
-              fill="rgba(0, 0, 0, 0.85)"
-              mask="url(#mask)"
-            />
-          </Svg>
-        </RNAnimated.View>
-
-        {/* Highlight Border */}
-        {currentStep.targetPosition && (
-          <RNAnimated.View
-            style={[
-              styles.highlightBorder,
-              {
-                left: spotlight.x,
-                top: spotlight.y,
-                width: spotlight.width,
-                height: spotlight.height,
-                borderRadius: spotlight.rx,
-                opacity: fadeAnim,
-                transform: [{ scale: pulseAnim }],
-              },
-            ]}
-          />
-        )}
-
-        {/* Tooltip */}
+        {/* Floating Tooltip */}
         <RNAnimated.View
           style={[
             styles.tooltipContainer,
@@ -362,12 +205,6 @@ export default function OnboardingOverlay({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  highlightBorder: {
-    position: 'absolute',
-    borderWidth: 3,
-    borderColor: '#E8B86D',
-    backgroundColor: 'transparent',
   },
   tooltipContainer: {
     position: 'absolute',

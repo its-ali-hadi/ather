@@ -193,35 +193,24 @@ export default function HomeScreen({ navigation }: Props) {
   // Onboarding steps with positions
   const onboardingSteps: OnboardingStep[] = [
     {
-      id: 'notifications',
-      title: 'الإشعارات',
-      description: 'من هنا تقدر تشوف الإشعارات والتحديثات الجديدة',
-      targetPosition: elementPositions.notifications,
-      padding: 5,
-      shape: 'circle',
+      id: 'welcome',
+      title: 'مرحباً بك في أثر! 👋',
+      description: 'منصة لمشاركة الأفكار والإبداع. دعنا نأخذك في جولة سريعة',
     },
     {
-      id: 'about',
-      title: 'وصف المنصة',
-      description: 'هنا تقدر تقرأ وصف منصة أثر وتتعرف على ميزاتها',
-      targetPosition: elementPositions.about,
-      padding: 12,
-      shape: 'rect',
+      id: 'explore',
+      title: 'استكشف الأفكار 🔍',
+      description: 'تصفح الأفكار المميزة واكتشف محتوى جديد من المبدعين',
     },
     {
-      id: 'cta',
-      title: 'ابدأ رحلتك',
-      description: 'اضغط هنا لبدء رحلتك في منصة أثر وإنشاء حسابك',
-      targetPosition: elementPositions.cta,
-      padding: 10,
-      shape: 'rect',
+      id: 'create',
+      title: 'شارك إبداعك ✨',
+      description: 'انشر أفكارك وشارك إبداعك مع المجتمع',
     },
     {
       id: 'navigation',
-      title: 'شريط التنقل',
-      description: 'هذا شريط التنقل الرئيسي. من هنا تقدر تتنقل بين الصفحات المختلفة: الرئيسية، استكشف، إنشاء، خاص، والملف الشخصي',
-      padding: 10,
-      shape: 'rect',
+      title: 'التنقل السهل 🎯',
+      description: 'استخدم شريط التنقل للوصول السريع لجميع الأقسام',
     },
   ];
 
