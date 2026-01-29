@@ -10,9 +10,9 @@ import {
   useColorScheme,
   Animated as RNAnimated,
 } from 'react-native';
+import Svg, { Defs, Rect, Mask, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 
 const { width, height } = Dimensions.get('window');
@@ -47,6 +47,7 @@ export default function OnboardingOverlay({
   const colorScheme = useColorScheme();
   const fadeAnim = useRef(new RNAnimated.Value(0)).current;
   const scaleAnim = useRef(new RNAnimated.Value(0.9)).current;
+  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -70,11 +71,28 @@ export default function OnboardingOverlay({
           useNativeDriver: true,
         }),
       ]).start();
+
+      // Pulse animation for highlight
+      RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          RNAnimated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
     } else {
       fadeAnim.setValue(0);
       scaleAnim.setValue(0.9);
+      pulseAnim.setValue(1);
     }
-  }, [visible, currentStepIndex]);
+  }, [visible, currentStepIndex, fadeAnim, scaleAnim, pulseAnim]);
 
   if (!visible || !steps[currentStepIndex]) return null;
 
@@ -101,6 +119,27 @@ export default function OnboardingOverlay({
     onSkip();
   };
 
+  // Calculate spotlight position
+  const getSpotlightPosition = () => {
+    if (!currentStep.targetPosition) {
+      // Default position for navigation bar (bottom center)
+      return {
+        cx: width / 2,
+        cy: height - 50,
+        r: currentStep.highlightRadius || 100,
+      };
+    }
+
+    const { x, y, width: w, height: h } = currentStep.targetPosition;
+    return {
+      cx: x + w / 2,
+      cy: y + h / 2,
+      r: currentStep.highlightRadius || 60,
+    };
+  };
+
+  const spotlight = getSpotlightPosition();
+
   return (
     <Modal
       visible={visible}
@@ -109,31 +148,51 @@ export default function OnboardingOverlay({
       statusBarTranslucent
     >
       <View style={styles.container}>
-        {/* Backdrop */}
+        {/* SVG Overlay with Spotlight */}
         <RNAnimated.View
           style={[
-            styles.backdrop,
+            StyleSheet.absoluteFill,
             {
               opacity: fadeAnim,
             },
           ]}
         >
-          <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+          <Svg width={width} height={height}>
+            <Defs>
+              <Mask id="mask">
+                <Rect x="0" y="0" width={width} height={height} fill="white" />
+                <Circle
+                  cx={spotlight.cx}
+                  cy={spotlight.cy}
+                  r={spotlight.r}
+                  fill="black"
+                />
+              </Mask>
+            </Defs>
+            <Rect
+              x="0"
+              y="0"
+              width={width}
+              height={height}
+              fill="rgba(0, 0, 0, 0.85)"
+              mask="url(#mask)"
+            />
+          </Svg>
         </RNAnimated.View>
 
-        {/* Highlight Circle */}
+        {/* Highlight Ring */}
         {currentStep.targetPosition && (
           <RNAnimated.View
             style={[
-              styles.highlight,
+              styles.highlightRing,
               {
-                left: currentStep.targetPosition.x + currentStep.targetPosition.width / 2 - (currentStep.highlightRadius || 50),
-                top: currentStep.targetPosition.y + currentStep.targetPosition.height / 2 - (currentStep.highlightRadius || 50),
-                width: (currentStep.highlightRadius || 50) * 2,
-                height: (currentStep.highlightRadius || 50) * 2,
-                borderRadius: currentStep.highlightRadius || 50,
+                left: spotlight.cx - spotlight.r,
+                top: spotlight.cy - spotlight.r,
+                width: spotlight.r * 2,
+                height: spotlight.r * 2,
+                borderRadius: spotlight.r,
                 opacity: fadeAnim,
-                transform: [{ scale: scaleAnim }],
+                transform: [{ scale: pulseAnim }],
               },
             ]}
           />
@@ -236,15 +295,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  highlight: {
+  highlightRing: {
     position: 'absolute',
-    backgroundColor: 'rgba(232, 184, 109, 0.2)',
     borderWidth: 3,
     borderColor: '#E8B86D',
+    backgroundColor: 'transparent',
   },
   tooltipContainer: {
     position: 'absolute',

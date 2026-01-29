@@ -44,13 +44,15 @@ export default function HomeScreen({ navigation }: Props) {
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [elementPositions, setElementPositions] = useState<{
+    [key: string]: { x: number; y: number; width: number; height: number };
+  }>({});
 
   // Refs for measuring positions
   const scrollViewRef = useRef<ScrollView>(null);
   const notificationButtonRef = useRef<View>(null);
   const aboutDescriptionRef = useRef<View>(null);
   const ctaButtonRef = useRef<View>(null);
-  const tabBarRef = useRef<View>(null);
 
   // Animated values
   const floatAnim = useSharedValue(0);
@@ -139,6 +141,38 @@ export default function HomeScreen({ navigation }: Props) {
     setTimeout(scrollToElement, 300);
   }, [currentStepIndex, showOnboarding]);
 
+  // Measure element positions when onboarding starts
+  useEffect(() => {
+    if (showOnboarding) {
+      // Small delay to ensure elements are rendered
+      setTimeout(() => {
+        // Measure notification button
+        notificationButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
+          setElementPositions(prev => ({
+            ...prev,
+            notifications: { x: pageX, y: pageY, width, height },
+          }));
+        });
+
+        // Measure about description
+        aboutDescriptionRef.current?.measure((x, y, width, height, pageX, pageY) => {
+          setElementPositions(prev => ({
+            ...prev,
+            about: { x: pageX, y: pageY, width, height },
+          }));
+        });
+
+        // Measure CTA button
+        ctaButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
+          setElementPositions(prev => ({
+            ...prev,
+            cta: { x: pageX, y: pageY, width, height },
+          }));
+        });
+      }, 500);
+    }
+  }, [showOnboarding]);
+
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
     secondary: colorScheme === 'dark' ? '#D4B896' : '#C9A876',
@@ -150,28 +184,34 @@ export default function HomeScreen({ navigation }: Props) {
     overlay: colorScheme === 'dark' ? 'rgba(26, 22, 18, 0.95)' : 'rgba(255, 255, 255, 0.95)',
   };
 
-  // Onboarding steps
+  // Onboarding steps with positions
   const onboardingSteps: OnboardingStep[] = [
     {
       id: 'notifications',
       title: 'الإشعارات',
       description: 'من هنا تقدر تشوف الإشعارات والتحديثات الجديدة',
+      targetPosition: elementPositions.notifications,
       highlightRadius: 40,
     },
     {
       id: 'about',
       title: 'تعرف على المنصة',
       description: 'هنا تقدر تتعرف على منصة أثر وميزاتها المختلفة',
+      targetPosition: elementPositions.about,
+      highlightRadius: 150,
     },
     {
       id: 'cta',
       title: 'ابدأ رحلتك',
       description: 'اضغط هنا لبدء رحلتك في منصة أثر وإنشاء حسابك',
+      targetPosition: elementPositions.cta,
+      highlightRadius: 120,
     },
     {
       id: 'navigation',
       title: 'شريط التنقل',
       description: 'هذا شريط التنقل الرئيسي. من هنا تقدر تتنقل بين الصفحات المختلفة: الرئيسية، استكشف، إنشاء، خاص، والملف الشخصي',
+      highlightRadius: 200,
     },
   ];
 
