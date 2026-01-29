@@ -31,6 +31,7 @@ const CARD_WIDTH = (width - (CARD_PADDING * 2) - (CARD_GAP * 2)) / 3;
 export default function ExploreScreen() {
   const colorScheme = useColorScheme();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const navigation = useNavigation<NavigationProp>();
 
   const COLORS = {
@@ -56,14 +57,21 @@ export default function ExploreScreen() {
     navigation.navigate('AdvancedSearch');
   };
 
-  const handlePress = () => {
+  const handleCategoryPress = (categoryName: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Toggle category selection
+    setSelectedCategory(selectedCategory === categoryName ? null : categoryName);
   };
 
   const handlePostPress = (postId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate('PostDetail', { postId });
   };
+
+  // Filter posts based on selected category
+  const filteredPosts = selectedCategory
+    ? seedData.posts.filter(post => post.category === selectedCategory)
+    : seedData.posts;
 
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -114,128 +122,165 @@ export default function ExploreScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: COLORS.text }]}>التصنيفات</Text>
           <View style={styles.categoriesGrid}>
-            {categories.map((category, index) => (
-              <Animated.View
-                key={category.id}
-                entering={FadeInUp.delay(300 + index * 80).springify()}
-                style={{ width: CARD_WIDTH }}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={handlePress}
-                  style={[styles.categoryCard, { backgroundColor: COLORS.cardBg }]}
+            {categories.map((category, index) => {
+              const isSelected = selectedCategory === category.name;
+              return (
+                <Animated.View
+                  key={category.id}
+                  entering={FadeInUp.delay(300 + index * 80).springify()}
+                  style={{ width: CARD_WIDTH }}
                 >
-                  <LinearGradient
-                    colors={[category.color, category.color + 'CC']}
-                    style={styles.categoryIcon}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => handleCategoryPress(category.name)}
+                    style={[
+                      styles.categoryCard, 
+                      { backgroundColor: COLORS.cardBg },
+                      isSelected && { 
+                        borderWidth: 3, 
+                        borderColor: category.color,
+                      }
+                    ]}
                   >
-                    <Ionicons name={category.icon as any} size={28} color="#FFF" />
-                  </LinearGradient>
-                  <Text style={[styles.categoryName, { color: COLORS.text }]} numberOfLines={1}>
-                    {category.name}
-                  </Text>
-                </TouchableOpacity>
-              </Animated.View>
-            ))}
+                    <LinearGradient
+                      colors={[category.color, category.color + 'CC']}
+                      style={[
+                        styles.categoryIcon,
+                        isSelected && { transform: [{ scale: 1.1 }] }
+                      ]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Ionicons name={category.icon as any} size={28} color="#FFF" />
+                    </LinearGradient>
+                    <Text style={[styles.categoryName, { color: COLORS.text }]} numberOfLines={1}>
+                      {category.name}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
           </View>
         </View>
 
         {/* All Posts Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: COLORS.text }]}>جميع المنشورات</Text>
+            <View style={styles.sectionTitleContainer}>
+              <Text style={[styles.sectionTitle, { color: COLORS.text }]}>
+                {selectedCategory ? `منشورات ${selectedCategory}` : 'جميع المنشورات'}
+              </Text>
+              {selectedCategory && (
+                <TouchableOpacity 
+                  onPress={() => setSelectedCategory(null)}
+                  style={[styles.clearFilterButton, { backgroundColor: COLORS.accent + '20' }]}
+                >
+                  <Text style={[styles.clearFilterText, { color: COLORS.accent }]}>
+                    إلغاء الفلتر
+                  </Text>
+                  <Ionicons name="close-circle" size={16} color={COLORS.accent} />
+                </TouchableOpacity>
+              )}
+            </View>
             <Ionicons name="grid" size={24} color={COLORS.accent} />
           </View>
           
           <View style={styles.postsContainer}>
-            {seedData.posts.map((post, index) => (
-              <Animated.View
-                key={post.id}
-                entering={FadeInUp.delay(400 + index * 50).springify()}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() => handlePostPress(post.id)}
-                  style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}
+            {filteredPosts.length > 0 ? (
+              filteredPosts.map((post, index) => (
+                <Animated.View
+                  key={post.id}
+                  entering={FadeInUp.delay(400 + index * 50).springify()}
                 >
-                  {/* Post Header */}
-                  <View style={styles.postHeader}>
-                    <View style={styles.postUserInfo}>
-                      <View style={styles.postUserDetails}>
-                        <Text style={[styles.postUserName, { color: COLORS.text }]}>
-                          {post.userName}
-                        </Text>
-                        <Text style={[styles.postTime, { color: COLORS.textSecondary }]}>
-                          {getTimeAgo(post.createdAt)}
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => handlePostPress(post.id)}
+                    style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}
+                  >
+                    {/* Post Header */}
+                    <View style={styles.postHeader}>
+                      <View style={styles.postUserInfo}>
+                        <View style={styles.postUserDetails}>
+                          <Text style={[styles.postUserName, { color: COLORS.text }]}>
+                            {post.userName}
+                          </Text>
+                          <Text style={[styles.postTime, { color: COLORS.textSecondary }]}>
+                            {getTimeAgo(post.createdAt)}
+                          </Text>
+                        </View>
+                        {post.userAvatar ? (
+                          <Image source={{ uri: post.userAvatar }} style={styles.postAvatar} />
+                        ) : (
+                          <View style={[styles.postAvatarPlaceholder, { backgroundColor: COLORS.accent }]}>
+                            <Ionicons name="person" size={20} color="#FFF" />
+                          </View>
+                        )}
+                      </View>
+                      <View style={[styles.categoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
+                        <Text style={[styles.categoryBadgeText, { color: COLORS.accent }]}>
+                          {post.category}
                         </Text>
                       </View>
-                      {post.userAvatar ? (
-                        <Image source={{ uri: post.userAvatar }} style={styles.postAvatar} />
-                      ) : (
-                        <View style={[styles.postAvatarPlaceholder, { backgroundColor: COLORS.accent }]}>
-                          <Ionicons name="person" size={20} color="#FFF" />
-                        </View>
-                      )}
                     </View>
-                    <View style={[styles.categoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
-                      <Text style={[styles.categoryBadgeText, { color: COLORS.accent }]}>
-                        {post.category}
+
+                    {/* Post Content */}
+                    <View style={styles.postContent}>
+                      <Text style={[styles.postTitle, { color: COLORS.text }]} numberOfLines={2}>
+                        {post.title}
+                      </Text>
+                      <Text style={[styles.postText, { color: COLORS.textSecondary }]} numberOfLines={3}>
+                        {post.content}
                       </Text>
                     </View>
-                  </View>
 
-                  {/* Post Content */}
-                  <View style={styles.postContent}>
-                    <Text style={[styles.postTitle, { color: COLORS.text }]} numberOfLines={2}>
-                      {post.title}
-                    </Text>
-                    <Text style={[styles.postText, { color: COLORS.textSecondary }]} numberOfLines={3}>
-                      {post.content}
-                    </Text>
-                  </View>
+                    {/* Post Image */}
+                    {post.image && (
+                      <Image source={{ uri: post.image }} style={styles.postImage} />
+                    )}
 
-                  {/* Post Image */}
-                  {post.image && (
-                    <Image source={{ uri: post.image }} style={styles.postImage} />
-                  )}
-
-                  {/* Post Footer */}
-                  <View style={styles.postFooter}>
-                    <View style={styles.postStats}>
-                      <View style={styles.postStat}>
-                        <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
-                          {post.likes}
-                        </Text>
-                        <Ionicons 
-                          name={post.isLiked ? 'heart' : 'heart-outline'} 
-                          size={18} 
-                          color={post.isLiked ? '#E94B3C' : COLORS.textSecondary} 
-                        />
+                    {/* Post Footer */}
+                    <View style={styles.postFooter}>
+                      <View style={styles.postStats}>
+                        <View style={styles.postStat}>
+                          <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
+                            {post.likes}
+                          </Text>
+                          <Ionicons 
+                            name={post.isLiked ? 'heart' : 'heart-outline'} 
+                            size={18} 
+                            color={post.isLiked ? '#E94B3C' : COLORS.textSecondary} 
+                          />
+                        </View>
+                        <View style={styles.postStat}>
+                          <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
+                            {post.comments}
+                          </Text>
+                          <Ionicons name="chatbubble-outline" size={18} color={COLORS.textSecondary} />
+                        </View>
+                        <View style={styles.postStat}>
+                          <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
+                            {post.shares}
+                          </Text>
+                          <Ionicons name="share-outline" size={18} color={COLORS.textSecondary} />
+                        </View>
                       </View>
-                      <View style={styles.postStat}>
-                        <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
-                          {post.comments}
-                        </Text>
-                        <Ionicons name="chatbubble-outline" size={18} color={COLORS.textSecondary} />
-                      </View>
-                      <View style={styles.postStat}>
-                        <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
-                          {post.shares}
-                        </Text>
-                        <Ionicons name="share-outline" size={18} color={COLORS.textSecondary} />
-                      </View>
+                      <Ionicons 
+                        name={post.isFavorite ? 'bookmark' : 'bookmark-outline'} 
+                        size={20} 
+                        color={post.isFavorite ? COLORS.accent : COLORS.textSecondary} 
+                      />
                     </View>
-                    <Ionicons 
-                      name={post.isFavorite ? 'bookmark' : 'bookmark-outline'} 
-                      size={20} 
-                      color={post.isFavorite ? COLORS.accent : COLORS.textSecondary} 
-                    />
-                  </View>
-                </TouchableOpacity>
-              </Animated.View>
-            ))}
+                  </TouchableOpacity>
+                </Animated.View>
+              ))
+            ) : (
+              <View style={[styles.emptyState, { backgroundColor: COLORS.cardBg }]}>
+                <Ionicons name="folder-open-outline" size={64} color={COLORS.textSecondary} />
+                <Text style={[styles.emptyStateText, { color: COLORS.textSecondary }]}>
+                  لا توجد منشورات في هذا التصنيف
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -300,14 +345,32 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 8,
     marginBottom: 16,
+  },
+  sectionTitleContainer: {
+    flex: 1,
+    gap: 8,
   },
   sectionTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
-    marginBottom: 16,
+    marginBottom: 0,
+  },
+  clearFilterButton: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: 'flex-end',
+  },
+  clearFilterText: {
+    fontSize: 12,
+    fontFamily: 'Cairo_600SemiBold',
   },
   categoriesGrid: {
     flexDirection: 'row',
@@ -454,5 +517,27 @@ const styles = StyleSheet.create({
   postStatText: {
     fontSize: 14,
     fontFamily: 'Tajawal_500Medium',
+  },
+  emptyState: {
+    padding: 48,
+    borderRadius: 20,
+    alignItems: 'center',
+    gap: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontFamily: 'Tajawal_400Regular',
+    textAlign: 'center',
   },
 });
