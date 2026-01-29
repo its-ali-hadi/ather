@@ -612,21 +612,6 @@ export default function HomeScreen({ navigation }: Props) {
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* Sticky Auth Button */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          navigation.navigate('Auth');
-        }}
-        style={[styles.stickyAuthButton, { 
-          backgroundColor: COLORS.accent,
-          bottom: Platform.OS === 'ios' ? 140 + insets.bottom : 120,
-        }]}
-      >
-        <Ionicons name="person-circle" size={28} color="#FFF" />
-      </TouchableOpacity>
-
       {/* Sticky Notifications Button */}
       <View
         ref={notificationButtonRef}
@@ -1105,26 +1090,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  stickyAuthButton: {
-    position: 'absolute',
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#E8B86D',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
   },
   stickyNotificationButton: {
     position: 'absolute',
