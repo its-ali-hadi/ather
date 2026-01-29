@@ -22,13 +22,10 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList, TabParamList } from '../App';
-import { CopilotStep, useCopilot, walkthroughable } from 'react-native-copilot';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import SeedData from '../constants/seed-data.json';
-
-const CopilotView = walkthroughable(View);
-const CopilotTouchableOpacity = walkthroughable(TouchableOpacity);
+import OnboardingOverlay, { OnboardingStep } from '../components/OnboardingOverlay';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.88;
@@ -43,13 +40,17 @@ export default function HomeScreen({ navigation }: Props) {
   const { banners, about, cards, isLogged } = SeedData;
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  const { start, currentStep } = useCopilot();
-  const [hasSeenTutorial, setHasSeenTutorial] = useState(true);
 
-  // Refs for scrolling
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
+  // Refs for measuring positions
   const scrollViewRef = useRef<ScrollView>(null);
+  const notificationButtonRef = useRef<View>(null);
   const aboutDescriptionRef = useRef<View>(null);
   const ctaButtonRef = useRef<View>(null);
+  const tabBarRef = useRef<View>(null);
 
   // Animated values
   const floatAnim = useSharedValue(0);
@@ -78,10 +79,9 @@ export default function HomeScreen({ navigation }: Props) {
       try {
         const seen = await AsyncStorage.getItem('hasSeenTutorial');
         if (!seen) {
-          setHasSeenTutorial(false);
           // Start tutorial after a short delay
           setTimeout(() => {
-            start();
+            setShowOnboarding(true);
           }, 1000);
           // Mark as seen
           await AsyncStorage.setItem('hasSeenTutorial', 'true');
@@ -92,14 +92,14 @@ export default function HomeScreen({ navigation }: Props) {
     };
 
     checkTutorial();
-  }, [start]);
+  }, []);
 
   // Auto scroll based on current step
   useEffect(() => {
-    if (!currentStep) return;
+    if (!showOnboarding) return;
 
     const scrollToElement = () => {
-      if (currentStep.order === 2 && aboutDescriptionRef.current) {
+      if (currentStepIndex === 1 && aboutDescriptionRef.current) {
         // Scroll to about description
         aboutDescriptionRef.current.measureLayout(
           scrollViewRef.current as any,
@@ -111,7 +111,7 @@ export default function HomeScreen({ navigation }: Props) {
           },
           () => {}
         );
-      } else if (currentStep.order === 3 && ctaButtonRef.current) {
+      } else if (currentStepIndex === 2 && ctaButtonRef.current) {
         // Scroll to CTA button
         ctaButtonRef.current.measureLayout(
           scrollViewRef.current as any,
@@ -123,10 +123,10 @@ export default function HomeScreen({ navigation }: Props) {
           },
           () => {}
         );
-      } else if (currentStep.order === 4) {
+      } else if (currentStepIndex === 3) {
         // Scroll to bottom for navigation bar
         scrollViewRef.current?.scrollToEnd({ animated: true });
-      } else if (currentStep.order === 1) {
+      } else if (currentStepIndex === 0) {
         // Scroll to top for notifications button
         scrollViewRef.current?.scrollTo({
           y: 0,
@@ -137,7 +137,7 @@ export default function HomeScreen({ navigation }: Props) {
 
     // Delay to ensure layout is ready
     setTimeout(scrollToElement, 300);
-  }, [currentStep]);
+  }, [currentStepIndex, showOnboarding]);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -149,6 +149,31 @@ export default function HomeScreen({ navigation }: Props) {
     textSecondary: colorScheme === 'dark' ? '#D4C4B0' : '#7A6F65',
     overlay: colorScheme === 'dark' ? 'rgba(26, 22, 18, 0.95)' : 'rgba(255, 255, 255, 0.95)',
   };
+
+  // Onboarding steps
+  const onboardingSteps: OnboardingStep[] = [
+    {
+      id: 'notifications',
+      title: 'الإشعارات',
+      description: 'من هنا تقدر تشوف الإشعارات والتحديثات الجديدة',
+      highlightRadius: 40,
+    },
+    {
+      id: 'about',
+      title: 'تعرف على المنصة',
+      description: 'هنا تقدر تتعرف على منصة أثر وميزاتها المختلفة',
+    },
+    {
+      id: 'cta',
+      title: 'ابدأ رحلتك',
+      description: 'اضغط هنا لبدء رحلتك في منصة أثر وإنشاء حسابك',
+    },
+    {
+      id: 'navigation',
+      title: 'شريط التنقل',
+      description: 'هذا شريط التنقل الرئيسي. من هنا تقدر تتنقل بين الصفحات المختلفة: الرئيسية، استكشف، إنشاء، خاص، والملف الشخصي',
+    },
+  ];
 
   const floatingStyle = useAnimatedStyle(() => {
     return {
@@ -209,14 +234,33 @@ export default function HomeScreen({ navigation }: Props) {
     try {
       await AsyncStorage.removeItem('hasSeenTutorial');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setHasSeenTutorial(false);
-      // Restart tutorial after a short delay
-      setTimeout(() => {
-        start();
-      }, 500);
+      setCurrentStepIndex(0);
+      setShowOnboarding(true);
     } catch (error) {
       console.error('Error resetting tutorial:', error);
     }
+  };
+
+  const handleOnboardingNext = () => {
+    if (currentStepIndex < onboardingSteps.length - 1) {
+      setCurrentStepIndex(currentStepIndex + 1);
+    }
+  };
+
+  const handleOnboardingPrevious = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(currentStepIndex - 1);
+    }
+  };
+
+  const handleOnboardingSkip = () => {
+    setShowOnboarding(false);
+    setCurrentStepIndex(0);
+  };
+
+  const handleOnboardingFinish = () => {
+    setShowOnboarding(false);
+    setCurrentStepIndex(0);
   };
 
   return (
@@ -342,14 +386,12 @@ export default function HomeScreen({ navigation }: Props) {
         <Animated.View 
           entering={FadeInUp.delay(500).springify()} 
           style={styles.section}
-          collapsable={false}
         >
           <View style={[styles.aboutCard, { backgroundColor: COLORS.cardBg }]}>
             <LinearGradient
               colors={colorScheme === 'dark'
                 ? ['rgba(196, 165, 123, 0.1)', 'rgba(184, 149, 106, 0.05)']
-                : ['rgba(212, 196, 176, 0.15)', 'rgba(255, 255, 255, 0.95)']
-              }
+                : ['rgba(212, 196, 176, 0.15)', 'rgba(255, 255, 255, 0.95)']}
               style={styles.aboutGradient}
             >
               {/* Decorative Elements */}
@@ -368,19 +410,11 @@ export default function HomeScreen({ navigation }: Props) {
                 </Text>
               </View>
 
-              <CopilotStep
-                text="هنا تقدر تتعرف على منصة أثر وميزاتها المختلفة"
-                order={2}
-                name="aboutDescription"
-              >
-                <CopilotView>
-                  <View ref={aboutDescriptionRef} collapsable={false}>
-                    <Text style={[styles.aboutDescription, { color: COLORS.textSecondary }]}>
-                      {about.description}
-                    </Text>
-                  </View>
-                </CopilotView>
-              </CopilotStep>
+              <View ref={aboutDescriptionRef} collapsable={false}>
+                <Text style={[styles.aboutDescription, { color: COLORS.textSecondary }]}>
+                  {about.description}
+                </Text>
+              </View>
 
               <View style={styles.featuresList}>
                 {about.list.map((item, index) => (
@@ -409,31 +443,25 @@ export default function HomeScreen({ navigation }: Props) {
                 ))}
               </View>
 
-              <CopilotStep
-                text="اضغط هنا لبدء رحلتك في منصة أثر وإنشاء حسابك"
-                order={3}
-                name="startJourney"
+              <TouchableOpacity 
+                activeOpacity={0.85}
+                onPress={handleStartJourney}
+                style={styles.ctaButton}
               >
-                <CopilotTouchableOpacity 
-                  activeOpacity={0.85}
-                  onPress={handleStartJourney}
-                  style={styles.ctaButton}
-                >
-                  <View ref={ctaButtonRef} collapsable={false}>
-                    <LinearGradient
-                      colors={['#C9A876', '#B8956A', '#A8855A']}
-                      style={styles.ctaGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
-                      <Text style={styles.ctaText}>{about.button}</Text>
-                      <View style={styles.ctaIconBg}>
-                        <Ionicons name="arrow-back" size={18} color="#B8956A" />
-                      </View>
-                    </LinearGradient>
-                  </View>
-                </CopilotTouchableOpacity>
-              </CopilotStep>
+                <View ref={ctaButtonRef} collapsable={false}>
+                  <LinearGradient
+                    colors={['#C9A876', '#B8956A', '#A8855A']}
+                    style={styles.ctaGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Text style={styles.ctaText}>{about.button}</Text>
+                    <View style={styles.ctaIconBg}>
+                      <Ionicons name="arrow-back" size={18} color="#B8956A" />
+                    </View>
+                  </LinearGradient>
+                </View>
+              </TouchableOpacity>
             </LinearGradient>
           </View>
         </Animated.View>
@@ -561,12 +589,11 @@ export default function HomeScreen({ navigation }: Props) {
       </TouchableOpacity>
 
       {/* Sticky Notifications Button */}
-      <CopilotStep
-        text="من هنا تقدر تشوف الإشعارات والتحديثات الجديدة"
-        order={1}
-        name="notifications"
+      <View
+        ref={notificationButtonRef}
+        collapsable={false}
       >
-        <CopilotTouchableOpacity
+        <TouchableOpacity
           activeOpacity={0.85}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -581,8 +608,19 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={styles.notificationBadge}>
             <Text style={styles.notificationBadgeText}>3</Text>
           </View>
-        </CopilotTouchableOpacity>
-      </CopilotStep>
+        </TouchableOpacity>
+      </View>
+
+      {/* Onboarding Overlay */}
+      <OnboardingOverlay
+        visible={showOnboarding}
+        steps={onboardingSteps}
+        currentStepIndex={currentStepIndex}
+        onNext={handleOnboardingNext}
+        onPrevious={handleOnboardingPrevious}
+        onSkip={handleOnboardingSkip}
+        onFinish={handleOnboardingFinish}
+      />
     </SafeAreaView>
   );
 }

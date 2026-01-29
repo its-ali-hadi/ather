@@ -11,10 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { CopilotProvider, CopilotStep, walkthroughable } from 'react-native-copilot';
 
-import CustomTooltip from './components/CustomTooltip';
-import CustomStepNumber from './components/CustomStepNumber';
 import HomeScreen from './screens/HomeScreen';
 import ExploreScreen from './screens/ExploreScreen';
 import CreateScreen from './screens/CreateScreen';
@@ -89,125 +86,115 @@ function MainTabs() {
     inactive: colorScheme === 'dark' ? '#7A6F65' : '#A8A8A8',
   };
 
-  const CopilotTabBar = walkthroughable(View);
-
   return (
-    <CopilotStep
-      text="هذا شريط التنقل الرئيسي. من هنا تقدر تتنقل بين الصفحات المختلفة: الرئيسية، استكشف، إنشاء، خاص، والملف الشخصي"
-      order={4}
-      name="navigation"
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: COLORS.accent,
+        tabBarInactiveTintColor: COLORS.inactive,
+        tabBarStyle: {
+          position: 'absolute',
+          backgroundColor: COLORS.tabBar,
+          borderTopWidth: 0,
+          elevation: 0,
+          height: Platform.OS === 'ios' ? 95 + insets.bottom : 80,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 10 : 15,
+          paddingTop: 15,
+          ...Platform.select({
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+            },
+            android: {
+              elevation: 8,
+            },
+            web: {
+              boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
+            },
+          }),
+        },
+        tabBarLabelStyle: {
+          fontFamily: 'Cairo_600SemiBold',
+          fontSize: 12,
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
+        },
+      }}
     >
-      <CopilotTabBar style={{ flex: 1 }}>
-        <Tab.Navigator
-          screenOptions={{
-            headerShown: false,
-            tabBarActiveTintColor: COLORS.accent,
-            tabBarInactiveTintColor: COLORS.inactive,
-            tabBarStyle: {
-              position: 'absolute',
-              backgroundColor: COLORS.tabBar,
-              borderTopWidth: 0,
-              elevation: 0,
-              height: Platform.OS === 'ios' ? 95 + insets.bottom : 80,
-              paddingBottom: Platform.OS === 'ios' ? insets.bottom + 10 : 15,
-              paddingTop: 15,
-              ...Platform.select({
-                ios: {
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: -4 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 12,
-                },
-                android: {
-                  elevation: 8,
-                },
-                web: {
-                  boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
-                },
-              }),
-            },
-            tabBarLabelStyle: {
-              fontFamily: 'Cairo_600SemiBold',
-              fontSize: 12,
-            },
-            tabBarIconStyle: {
-              marginTop: 4,
-            },
-          }}
-        >
-          <Tab.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{
-              tabBarLabel: 'الرئيسية',
-              tabBarIcon: ({ color, size, focused }) => (
-                <Ionicons
-                  name={focused ? 'home' : 'home-outline'}
-                  size={size}
-                  color={color}
-                />
-              ),
-            }}
-          />
-          <Tab.Screen
-            name="Explore"
-            component={ExploreScreen}
-            options={{
-              tabBarLabel: 'استكشف',
-              tabBarIcon: ({ color, size, focused }) => (
-                <Ionicons
-                  name={focused ? 'compass' : 'compass-outline'}
-                  size={size}
-                  color={color}
-                />
-              ),
-            }}
-          />
-          <Tab.Screen
-            name="Create"
-            component={CreateScreen}
-            options={{
-              tabBarLabel: 'إنشاء',
-              tabBarIcon: ({ color, size, focused }) => (
-                <Ionicons
-                  name={focused ? 'add-circle' : 'add-circle-outline'}
-                  size={size + 8}
-                  color={color}
-                />
-              ),
-            }}
-          />
-          <Tab.Screen
-            name="Private"
-            component={PrivateScreen}
-            options={{
-              tabBarLabel: 'خاص',
-              tabBarIcon: ({ color, size, focused }) => (
-                <Ionicons
-                  name={focused ? 'lock-closed' : 'lock-closed-outline'}
-                  size={size}
-                  color={color}
-                />
-              ),
-            }}
-          />
-          <Tab.Screen
-            name="Profile"
-            component={ProfileScreen}
-            options={{
-              tabBarLabel: 'الملف',
-              tabBarIcon: ({ color, size, focused }) => (
-                <Ionicons
-                  name={focused ? 'person' : 'person-outline'}
-                  size={size}
-                  color={color}
-                />
-              ),
-            }}
-          />
-        </Tab.Navigator>
-      </CopilotTabBar>
-    </CopilotStep>
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          tabBarLabel: 'الرئيسية',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Explore"
+        component={ExploreScreen}
+        options={{
+          tabBarLabel: 'استكشف',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'compass' : 'compass-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Create"
+        component={CreateScreen}
+        options={{
+          tabBarLabel: 'إنشاء',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'add-circle' : 'add-circle-outline'}
+              size={size + 8}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Private"
+        component={PrivateScreen}
+        options={{
+          tabBarLabel: 'خاص',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'lock-closed' : 'lock-closed-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: 'الملف',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'person' : 'person-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+    </Tab.Navigator>
   );
 }
 
@@ -278,53 +265,36 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <CopilotProvider
-        overlay={Platform.OS === 'web' ? 'view' : 'svg'}
-        tooltipComponent={CustomTooltip}
-        stepNumberComponent={CustomStepNumber}
-        backdropColor="rgba(0, 0, 0, 0.7)"
-        labels={{
-          previous: 'السابق',
-          next: 'التالي',
-          skip: 'تخطي',
-          finish: 'إنهاء',
-        }}
-        verticalOffset={24}
-        arrowColor="transparent"
-        stopOnOutsideClick={false}
-        androidStatusBarVisible={true}
-      >
-        <NavigationContainer>
-          <Stack.Navigator
-            screenOptions={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          >
-            <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen name="BoxDetail" component={BoxDetailScreen} />
-            <Stack.Screen name="CreateTextPost" component={CreateTextPostScreen} />
-            <Stack.Screen name="CreateImagePost" component={CreateImagePostScreen} />
-            <Stack.Screen name="CreateVideoPost" component={CreateVideoPostScreen} />
-            <Stack.Screen name="CreateLinkPost" component={CreateLinkPostScreen} />
-            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-            <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
-            <Stack.Screen name="PostsList" component={PostsListScreen} />
-            <Stack.Screen name="Favorites" component={FavoritesScreen} />
-            <Stack.Screen name="MyPosts" component={MyPostsScreen} />
-            <Stack.Screen name="Auth" component={AuthScreen} />
-            <Stack.Screen name="PostDetail" component={PostDetailScreen} />
-            <Stack.Screen name="Notifications" component={NotificationsScreen} />
-            <Stack.Screen name="AdvancedSearch" component={AdvancedSearchScreen} />
-            <Stack.Screen name="UserProfile" component={UserProfileScreen} />
-            <Stack.Screen name="Archive" component={ArchiveScreen} />
-            <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
-            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
-        <StatusBar style="auto" />
-      </CopilotProvider>
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        >
+          <Stack.Screen name="MainTabs" component={MainTabs} />
+          <Stack.Screen name="BoxDetail" component={BoxDetailScreen} />
+          <Stack.Screen name="CreateTextPost" component={CreateTextPostScreen} />
+          <Stack.Screen name="CreateImagePost" component={CreateImagePostScreen} />
+          <Stack.Screen name="CreateVideoPost" component={CreateVideoPostScreen} />
+          <Stack.Screen name="CreateLinkPost" component={CreateLinkPostScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+          <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="PostsList" component={PostsListScreen} />
+          <Stack.Screen name="Favorites" component={FavoritesScreen} />
+          <Stack.Screen name="MyPosts" component={MyPostsScreen} />
+          <Stack.Screen name="Auth" component={AuthScreen} />
+          <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
+          <Stack.Screen name="AdvancedSearch" component={AdvancedSearchScreen} />
+          <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+          <Stack.Screen name="Archive" component={ArchiveScreen} />
+          <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <StatusBar style="auto" />
     </SafeAreaProvider>
   );
 }
