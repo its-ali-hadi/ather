@@ -285,7 +285,10 @@ export default function HomeScreen({ navigation }: Props) {
 
               <TouchableOpacity 
                 activeOpacity={0.85}
-                onPress={handlePress}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  navigation.navigate('Create' as any);
+                }}
                 style={styles.ctaButton}
               >
                 <LinearGradient

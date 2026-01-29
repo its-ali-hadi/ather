@@ -14,12 +14,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   
   // Settings states
   const [postsNotifications, setPostsNotifications] = useState(true);
@@ -50,11 +54,22 @@ export default function SettingsScreen() {
           color: '#4A90E2',
           action: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate('MyPosts' as never);
+            navigation.navigate('MyPosts');
           },
         },
         {
           id: '1-2',
+          title: 'الأرشيف',
+          description: 'المنشورات المؤرشفة والمخفية',
+          icon: 'archive',
+          color: '#95A5A6',
+          action: () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.navigate('Archive');
+          },
+        },
+        {
+          id: '1-3',
           title: 'التفاعلات',
           description: 'الإعجابات والتعليقات والمشاركات',
           icon: 'thumbs-up',
@@ -65,14 +80,14 @@ export default function SettingsScreen() {
           },
         },
         {
-          id: '1-3',
+          id: '1-4',
           title: 'المفضلات',
           description: 'المنشورات والمحتوى المحفوظ',
           icon: 'heart',
           color: '#E94B3C',
           action: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate('Favorites' as never);
+            navigation.navigate('Favorites');
           },
         },
       ],

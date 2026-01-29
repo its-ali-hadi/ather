@@ -62,17 +62,6 @@ export default function ProfileScreen() {
     },
     {
       id: '3',
-      icon: 'archive',
-      title: 'الأرشيف',
-      subtitle: 'المنشورات المؤرشفة',
-      color: '#95A5A6',
-      onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        navigation.navigate('Archive');
-      },
-    },
-    {
-      id: '4',
       icon: 'heart',
       title: 'المفضلات',
       subtitle: 'المنشورات المحفوظة',
@@ -83,7 +72,7 @@ export default function ProfileScreen() {
       },
     },
     {
-      id: '5',
+      id: '4',
       icon: 'document-text',
       title: 'منشوراتي',
       subtitle: 'جميع منشوراتك',
@@ -94,7 +83,7 @@ export default function ProfileScreen() {
       },
     },
     {
-      id: '6',
+      id: '5',
       icon: 'create',
       title: 'تعديل الملف الشخصي',
       subtitle: 'تحديث معلوماتك',
@@ -105,7 +94,7 @@ export default function ProfileScreen() {
       },
     },
     {
-      id: '7',
+      id: '6',
       icon: 'settings',
       title: 'الإعدادات',
       subtitle: 'إعدادات التطبيق',
@@ -116,7 +105,7 @@ export default function ProfileScreen() {
       },
     },
     {
-      id: '8',
+      id: '7',
       icon: 'help-circle',
       title: 'المساعدة والدعم',
       subtitle: 'تواصل معنا',
@@ -127,7 +116,7 @@ export default function ProfileScreen() {
       },
     },
     {
-      id: '9',
+      id: '8',
       icon: 'document-text',
       title: 'شروط الخدمة',
       subtitle: 'اقرأ شروط الاستخدام',
@@ -138,7 +127,7 @@ export default function ProfileScreen() {
       },
     },
     {
-      id: '10',
+      id: '9',
       icon: 'shield-checkmark',
       title: 'سياسة الخصوصية',
       subtitle: 'كيف نحمي بياناتك',
@@ -232,6 +221,24 @@ export default function ProfileScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
+
+      {/* Sticky Notifications Button */}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          navigation.navigate('Notifications');
+        }}
+        style={[styles.stickyNotificationButton, { 
+          backgroundColor: COLORS.accent,
+        }]}
+      >
+        <Ionicons name="notifications" size={28} color="#FFF" />
+        {/* Notification Badge */}
+        <View style={styles.notificationBadge}>
+          <Text style={styles.notificationBadgeText}>3</Text>
+        </View>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -365,6 +372,46 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+  },
+  stickyNotificationButton: {
+    position: 'absolute',
+    left: 24,
+    top: 60,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#E8B86D',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#E94B3C',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  notificationBadgeText: {
+    color: '#FFF',
+    fontSize: 11,
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
   },
