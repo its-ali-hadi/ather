@@ -68,8 +68,8 @@ export default function SettingsScreen() {
           id: '1-3',
           title: 'المفضلات',
           description: 'المنشورات والمحتوى المحفوظ',
-          icon: 'bookmark',
-          color: '#F39C12',
+          icon: 'heart',
+          color: '#E94B3C',
           action: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.navigate('Favorites' as never);
