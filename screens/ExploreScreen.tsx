@@ -10,6 +10,7 @@ import {
   View,
   Platform,
   Dimensions,
+  Image,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
+import seedData from '../constants/seed-data.json';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -56,6 +58,27 @@ export default function ExploreScreen() {
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handlePostPress = (postId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('PostDetail', { postId });
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInDays > 0) {
+      return `منذ ${diffInDays} ${diffInDays === 1 ? 'يوم' : 'أيام'}`;
+    } else if (diffInHours > 0) {
+      return `منذ ${diffInHours} ${diffInHours === 1 ? 'ساعة' : 'ساعات'}`;
+    } else {
+      return 'منذ قليل';
+    }
   };
 
   return (
@@ -119,17 +142,100 @@ export default function ExploreScreen() {
           </View>
         </View>
 
-        {/* Trending Section */}
+        {/* All Posts Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: COLORS.text }]}>الأكثر رواجاً</Text>
-            <Ionicons name="flame" size={24} color={COLORS.accent} />
+            <Text style={[styles.sectionTitle, { color: COLORS.text }]}>جميع المنشورات</Text>
+            <Ionicons name="grid" size={24} color={COLORS.accent} />
           </View>
-          <View style={[styles.placeholderCard, { backgroundColor: COLORS.cardBg }]}>
-            <Ionicons name="trending-up" size={48} color={COLORS.textSecondary} />
-            <Text style={[styles.placeholderText, { color: COLORS.textSecondary }]}>
-              قريباً...
-            </Text>
+          
+          <View style={styles.postsContainer}>
+            {seedData.posts.map((post, index) => (
+              <Animated.View
+                key={post.id}
+                entering={FadeInUp.delay(400 + index * 50).springify()}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() => handlePostPress(post.id)}
+                  style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}
+                >
+                  {/* Post Header */}
+                  <View style={styles.postHeader}>
+                    <View style={styles.postUserInfo}>
+                      <View style={styles.postUserDetails}>
+                        <Text style={[styles.postUserName, { color: COLORS.text }]}>
+                          {post.userName}
+                        </Text>
+                        <Text style={[styles.postTime, { color: COLORS.textSecondary }]}>
+                          {getTimeAgo(post.createdAt)}
+                        </Text>
+                      </View>
+                      {post.userAvatar ? (
+                        <Image source={{ uri: post.userAvatar }} style={styles.postAvatar} />
+                      ) : (
+                        <View style={[styles.postAvatarPlaceholder, { backgroundColor: COLORS.accent }]}>
+                          <Ionicons name="person" size={20} color="#FFF" />
+                        </View>
+                      )}
+                    </View>
+                    <View style={[styles.categoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
+                      <Text style={[styles.categoryBadgeText, { color: COLORS.accent }]}>
+                        {post.category}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Post Content */}
+                  <View style={styles.postContent}>
+                    <Text style={[styles.postTitle, { color: COLORS.text }]} numberOfLines={2}>
+                      {post.title}
+                    </Text>
+                    <Text style={[styles.postText, { color: COLORS.textSecondary }]} numberOfLines={3}>
+                      {post.content}
+                    </Text>
+                  </View>
+
+                  {/* Post Image */}
+                  {post.image && (
+                    <Image source={{ uri: post.image }} style={styles.postImage} />
+                  )}
+
+                  {/* Post Footer */}
+                  <View style={styles.postFooter}>
+                    <View style={styles.postStats}>
+                      <View style={styles.postStat}>
+                        <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
+                          {post.likes}
+                        </Text>
+                        <Ionicons 
+                          name={post.isLiked ? 'heart' : 'heart-outline'} 
+                          size={18} 
+                          color={post.isLiked ? '#E94B3C' : COLORS.textSecondary} 
+                        />
+                      </View>
+                      <View style={styles.postStat}>
+                        <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
+                          {post.comments}
+                        </Text>
+                        <Ionicons name="chatbubble-outline" size={18} color={COLORS.textSecondary} />
+                      </View>
+                      <View style={styles.postStat}>
+                        <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
+                          {post.shares}
+                        </Text>
+                        <Ionicons name="share-outline" size={18} color={COLORS.textSecondary} />
+                      </View>
+                    </View>
+                    <Ionicons 
+                      name={post.isFavorite ? 'bookmark' : 'bookmark-outline'} 
+                      size={20} 
+                      color={post.isFavorite ? COLORS.accent : COLORS.textSecondary} 
+                    />
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
+            ))}
           </View>
         </View>
 
@@ -241,11 +347,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Cairo_700Bold',
     textAlign: 'center',
   },
-  placeholderCard: {
-    padding: 48,
-    borderRadius: 20,
-    alignItems: 'center',
+  postsContainer: {
     gap: 16,
+  },
+  postCard: {
+    borderRadius: 20,
+    padding: 16,
+    gap: 12,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -258,8 +366,93 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  placeholderText: {
+  postHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  postUserInfo: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  postAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  postAvatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  postUserDetails: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  postUserName: {
     fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+  },
+  postTime: {
+    fontSize: 12,
     fontFamily: 'Tajawal_400Regular',
+    marginTop: 2,
+  },
+  categoryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  categoryBadgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_600SemiBold',
+  },
+  postContent: {
+    gap: 8,
+  },
+  postTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+    textAlign: 'right',
+  },
+  postText: {
+    fontSize: 14,
+    fontFamily: 'Tajawal_400Regular',
+    lineHeight: 22,
+    textAlign: 'right',
+  },
+  postImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  postFooter: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+  postStats: {
+    flexDirection: 'row-reverse',
+    gap: 20,
+  },
+  postStat: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
+  postStatText: {
+    fontSize: 14,
+    fontFamily: 'Tajawal_500Medium',
   },
 });
