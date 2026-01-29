@@ -20,7 +20,7 @@ import { useEffect } from 'react';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, TabParamList } from '../App';
 
 import SeedData from '../constants/seed-data.json';
@@ -33,6 +33,8 @@ type Props = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Home'>,
   NativeStackScreenProps<RootStackParamList>
 >;
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen({ navigation }: Props) {
   const { banners, about, cards } = SeedData;
@@ -99,6 +101,16 @@ export default function HomeScreen({ navigation }: Props) {
   const handleCardPress = (boxId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate('BoxDetail', { boxId });
+  };
+
+  const handlePostPress = (postId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('PostDetail', { postId });
+  };
+
+  const handleUserPress = (userId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('UserProfile', { userId });
   };
 
   return (

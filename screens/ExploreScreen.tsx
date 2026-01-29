@@ -15,6 +15,11 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import * as Haptics from 'expo-haptics';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width } = Dimensions.get('window');
 const CARD_PADDING = 24;
@@ -24,6 +29,7 @@ const CARD_WIDTH = (width - (CARD_PADDING * 2) - (CARD_GAP * 2)) / 3;
 export default function ExploreScreen() {
   const colorScheme = useColorScheme();
   const [searchQuery, setSearchQuery] = useState('');
+  const navigation = useNavigation<NavigationProp>();
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -42,6 +48,11 @@ export default function ExploreScreen() {
     { id: '5', name: 'سفر', icon: 'airplane', color: '#9B59B6' },
     { id: '6', name: 'أعمال', icon: 'briefcase', color: '#34495E' },
   ];
+
+  const handleSearchFocus = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('AdvancedSearch');
+  };
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -71,6 +82,7 @@ export default function ExploreScreen() {
               placeholderTextColor={COLORS.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
+              onFocus={handleSearchFocus}
             />
           </View>
         </Animated.View>

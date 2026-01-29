@@ -13,8 +13,8 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../App';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -38,10 +38,94 @@ export default function ProfileScreen() {
   ];
 
   const menuItems = [
-    { id: '1', title: 'تعديل الملف الشخصي', icon: 'create', color: '#4A90E2', screen: 'EditProfile' as const },
-    { id: '2', title: 'الإعدادات', icon: 'settings', color: '#50C878', screen: 'Settings' as const },
-    { id: '3', title: 'المفضلة', icon: 'heart', color: '#E94B3C', screen: 'Favorites' as const },
-    { id: '4', title: 'المساعدة والدعم', icon: 'help-circle', color: '#9B59B6', screen: 'HelpSupport' as const },
+    {
+      id: '1',
+      icon: 'notifications',
+      title: 'الإشعارات',
+      subtitle: 'إدارة إشعاراتك',
+      color: '#E8B86D',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('Notifications');
+      },
+    },
+    {
+      id: '2',
+      icon: 'search',
+      title: 'البحث المتقدم',
+      subtitle: 'ابحث عن منشورات ومستخدمين',
+      color: '#4A90E2',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('AdvancedSearch');
+      },
+    },
+    {
+      id: '3',
+      icon: 'archive',
+      title: 'الأرشيف',
+      subtitle: 'المنشورات المؤرشفة',
+      color: '#95A5A6',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('Archive');
+      },
+    },
+    {
+      id: '4',
+      icon: 'heart',
+      title: 'المفضلات',
+      subtitle: 'المنشورات المحفوظة',
+      color: '#E94B3C',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('Favorites');
+      },
+    },
+    {
+      id: '5',
+      icon: 'document-text',
+      title: 'منشوراتي',
+      subtitle: 'جميع منشوراتك',
+      color: '#50C878',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('MyPosts');
+      },
+    },
+    {
+      id: '6',
+      icon: 'create',
+      title: 'تعديل الملف الشخصي',
+      subtitle: 'تحديث معلوماتك',
+      color: '#9B59B6',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('EditProfile');
+      },
+    },
+    {
+      id: '7',
+      icon: 'settings',
+      title: 'الإعدادات',
+      subtitle: 'إعدادات التطبيق',
+      color: '#34495E',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('Settings');
+      },
+    },
+    {
+      id: '8',
+      icon: 'help-circle',
+      title: 'المساعدة والدعم',
+      subtitle: 'تواصل معنا',
+      color: '#F39C12',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('HelpSupport');
+      },
+    },
   ];
 
   const handlePress = (screen: keyof RootStackParamList | null) => {
@@ -97,7 +181,7 @@ export default function ProfileScreen() {
             >
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => handlePress(item.screen)}
+                onPress={item.onPress}
                 style={[styles.menuItem, { backgroundColor: COLORS.cardBg }]}
               >
                 <View style={styles.menuContent}>

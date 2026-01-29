@@ -29,6 +29,11 @@ import PostsListScreen from './screens/PostsListScreen';
 import FavoritesScreen from './screens/FavoritesScreen';
 import MyPostsScreen from './screens/MyPostsScreen';
 import AuthScreen from './screens/AuthScreen';
+import PostDetailScreen from './screens/PostDetailScreen';
+import NotificationsScreen from './screens/NotificationsScreen';
+import AdvancedSearchScreen from './screens/AdvancedSearchScreen';
+import UserProfileScreen from './screens/UserProfileScreen';
+import ArchiveScreen from './screens/ArchiveScreen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -47,6 +52,11 @@ export type RootStackParamList = {
   Favorites: undefined;
   MyPosts: undefined;
   Auth: undefined;
+  PostDetail: { postId: string };
+  Notifications: undefined;
+  AdvancedSearch: undefined;
+  UserProfile: { userId: string };
+  Archive: undefined;
 };
 
 export type TabParamList = {
@@ -268,6 +278,11 @@ export default function App() {
           <Stack.Screen name="Favorites" component={FavoritesScreen} />
           <Stack.Screen name="MyPosts" component={MyPostsScreen} />
           <Stack.Screen name="Auth" component={AuthScreen} />
+          <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
+          <Stack.Screen name="AdvancedSearch" component={AdvancedSearchScreen} />
+          <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+          <Stack.Screen name="Archive" component={ArchiveScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="auto" />
