@@ -123,6 +123,9 @@ export default function HomeScreen({ navigation }: Props) {
           },
           () => {}
         );
+      } else if (currentStep.order === 4) {
+        // Scroll to bottom for navigation bar
+        scrollViewRef.current?.scrollToEnd({ animated: true });
       } else if (currentStep.order === 1) {
         // Scroll to top for notifications button
         scrollViewRef.current?.scrollTo({
