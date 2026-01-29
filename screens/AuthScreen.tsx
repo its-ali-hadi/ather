@@ -44,10 +44,11 @@ export default function AuthScreen({ navigation }: any) {
       return;
     }
 
-    // Validate phone number format (Saudi Arabia format)
-    const phoneRegex = /^(05|5)[0-9]{8}$/;
+    // Validate phone number format (Iraq format)
+    // Iraqi phone numbers: 07xxxxxxxxx (11 digits) or 7xxxxxxxxx (10 digits)
+    const phoneRegex = /^(07|7)[0-9]{9}$/;
     if (!phoneRegex.test(phoneNumber)) {
-      Alert.alert('خطأ', 'الرجاء إدخال رقم هاتف صحيح (مثال: 0512345678)');
+      Alert.alert('خطأ', 'الرجاء إدخال رقم هاتف صحيح (مثال: 07701234567)');
       return;
     }
 
@@ -179,12 +180,12 @@ export default function AuthScreen({ navigation }: any) {
                     <Ionicons name="call-outline" size={20} color={COLORS.textSecondary} />
                     <TextInput
                       style={[styles.input, { color: COLORS.text }]}
-                      placeholder="رقم الهاتف (مثال: 0512345678)"
+                      placeholder="رقم الهاتف (مثال: 07701234567)"
                       placeholderTextColor={COLORS.textSecondary}
                       value={phoneNumber}
                       onChangeText={setPhoneNumber}
                       keyboardType="phone-pad"
-                      maxLength={10}
+                      maxLength={11}
                     />
                   </View>
 
