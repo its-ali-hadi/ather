@@ -20,7 +20,7 @@ import { useEffect } from 'react';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList, TabParamList } from '../App';
 
 import SeedData from '../constants/seed-data.json';
@@ -34,19 +34,16 @@ type Props = CompositeScreenProps<
   NativeStackScreenProps<RootStackParamList>
 >;
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
 export default function HomeScreen({ navigation }: Props) {
-  const { banners, about, cards } = SeedData;
+  const { banners, about, cards, isLogged } = SeedData;
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
 
   // Animated values
   const floatAnim = useSharedValue(0);
-  const bulbScale = useSharedValue(1.5); // يبدأ كبير
+  const bulbScale = useSharedValue(1.5);
 
   useEffect(() => {
-    // Animation للكروت - تستمر
     floatAnim.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 3000 }),
@@ -56,7 +53,6 @@ export default function HomeScreen({ navigation }: Props) {
       true
     );
 
-    // Animation للمصباح - مرة واحدة فقط
     bulbScale.value = withSpring(1, {
       damping: 8,
       stiffness: 100,
@@ -64,7 +60,6 @@ export default function HomeScreen({ navigation }: Props) {
     });
   }, [floatAnim, bulbScale]);
 
-  // Theme Colors - Updated to lighter brown and off-white
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
     secondary: colorScheme === 'dark' ? '#D4B896' : '#C9A876',
@@ -103,14 +98,34 @@ export default function HomeScreen({ navigation }: Props) {
     navigation.navigate('BoxDetail', { boxId });
   };
 
-  const handlePostPress = (postId: string) => {
+  const handleFeaturePress = (featureText: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('PostDetail', { postId });
+    
+    switch (featureText) {
+      case 'انشر أفكارك بحرية':
+        navigation.navigate('Create' as any);
+        break;
+      case 'تواصل مع المبدعين':
+        // يبقى مثل ما هو - لا يفعل شيء
+        break;
+      case 'تابع المواضيع الرائجة':
+        navigation.navigate('Explore' as any);
+        break;
+      case 'احفظ ما يهمك':
+        navigation.navigate('Favorites');
+        break;
+      default:
+        break;
+    }
   };
 
-  const handleUserPress = (userId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('UserProfile', { userId });
+  const handleStartJourney = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (isLogged) {
+      navigation.navigate('Profile' as any);
+    } else {
+      navigation.navigate('Auth');
+    }
   };
 
   return (
@@ -264,7 +279,7 @@ export default function HomeScreen({ navigation }: Props) {
                   >
                     <TouchableOpacity 
                       activeOpacity={0.8}
-                      onPress={handlePress}
+                      onPress={() => handleFeaturePress(item.text)}
                       style={[styles.featureItem, { 
                         backgroundColor: colorScheme === 'dark' 
                           ? 'rgba(196, 165, 123, 0.12)' 
@@ -285,10 +300,7 @@ export default function HomeScreen({ navigation }: Props) {
 
               <TouchableOpacity 
                 activeOpacity={0.85}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  navigation.navigate('Create' as any);
-                }}
+                onPress={handleStartJourney}
                 style={styles.ctaButton}
               >
                 <LinearGradient
