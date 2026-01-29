@@ -125,7 +125,7 @@ export default function OnboardingOverlay({
       // Default position for navigation bar (bottom center)
       return {
         cx: width / 2,
-        cy: height - 50,
+        cy: height - 80,
         r: currentStep.highlightRadius || 100,
       };
     }
