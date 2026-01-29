@@ -157,6 +157,21 @@ export default function HomeScreen({ navigation }: Props) {
     }
   };
 
+  // Reset tutorial - for testing
+  const handleResetTutorial = async () => {
+    try {
+      await AsyncStorage.removeItem('hasSeenTutorial');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setHasSeenTutorial(false);
+      // Restart tutorial after a short delay
+      setTimeout(() => {
+        start();
+      }, 500);
+    } catch (error) {
+      console.error('Error resetting tutorial:', error);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <ScrollView 
@@ -173,7 +188,11 @@ export default function HomeScreen({ navigation }: Props) {
           style={styles.heroSection}
         >
           <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.heroContent}>
-            <View style={styles.heroIconContainer}>
+            <TouchableOpacity 
+              onLongPress={handleResetTutorial}
+              activeOpacity={0.8}
+              style={styles.heroIconContainer}
+            >
               <Animated.View style={bulbStyle}>
                 <LinearGradient
                   colors={['#E8B86D', '#D4A574', '#C9956A']}
@@ -184,7 +203,7 @@ export default function HomeScreen({ navigation }: Props) {
                   <Ionicons name="bulb" size={48} color="#FFF" />
                 </LinearGradient>
               </Animated.View>
-            </View>
+            </TouchableOpacity>
             
             <Text style={[styles.heroTitle, { color: colorScheme === 'dark' ? '#F5E6D3' : '#FFF' }]}>
               أثر
