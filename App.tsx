@@ -288,6 +288,8 @@ export default function App() {
         }}
         verticalOffset={24}
         arrowColor="transparent"
+        stopOnOutsideClick={false}
+        androidStatusBarVisible={true}
       >
         <NavigationContainer>
           <Stack.Navigator

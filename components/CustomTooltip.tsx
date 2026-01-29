@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { useCopilot } from 'react-native-copilot';
@@ -20,16 +19,12 @@ export default function CustomTooltip() {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
     accent: '#E8B86D',
     text: colorScheme === 'dark' ? '#F5E6D3' : '#FFFFFF',
-    border: colorScheme === 'dark' ? 'rgba(196, 165, 123, 0.3)' : 'rgba(184, 149, 106, 0.3)',
+    border: colorScheme === 'dark' ? 'rgba(196, 165, 123, 0.4)' : 'rgba(184, 149, 106, 0.5)',
   };
 
   return (
     <View style={styles.tooltipWrapper}>
-      <BlurView 
-        intensity={80} 
-        tint={colorScheme === 'dark' ? 'dark' : 'light'}
-        style={[styles.tooltipContainer, { borderColor: COLORS.border }]}
-      >
+      <View style={[styles.tooltipContainer, { borderColor: COLORS.border }]}>
         {/* Content */}
         <Text style={[styles.tooltipText, { color: COLORS.text }]}>
           {currentStep?.text}
@@ -79,7 +74,7 @@ export default function CustomTooltip() {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-      </BlurView>
+      </View>
     </View>
   );
 }
@@ -90,9 +85,9 @@ const styles = StyleSheet.create({
   },
   tooltipContainer: {
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: 1.5,
     padding: 16,
-    overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
   tooltipText: {
     fontSize: 15,

@@ -100,12 +100,12 @@ export default function HomeScreen({ navigation }: Props) {
 
     const scrollToElement = () => {
       if (currentStep.order === 2 && aboutSectionRef.current) {
-        // Scroll to about section
+        // Scroll to about section - at the beginning
         aboutSectionRef.current.measureLayout(
           scrollViewRef.current as any,
           (x, y) => {
             scrollViewRef.current?.scrollTo({
-              y: y - 100, // Offset to show some space above
+              y: y - 20, // Small offset to show it's at the beginning
               animated: true,
             });
           },
@@ -117,7 +117,7 @@ export default function HomeScreen({ navigation }: Props) {
           scrollViewRef.current as any,
           (x, y) => {
             scrollViewRef.current?.scrollTo({
-              y: y - 150, // Offset to center the button
+              y: y - 200, // Better offset to show the button clearly
               animated: true,
             });
           },
