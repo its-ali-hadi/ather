@@ -48,7 +48,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   // Refs for scrolling
   const scrollViewRef = useRef<ScrollView>(null);
-  const aboutSectionRef = useRef<View>(null);
+  const aboutDescriptionRef = useRef<View>(null);
   const ctaButtonRef = useRef<View>(null);
 
   // Animated values
@@ -99,13 +99,13 @@ export default function HomeScreen({ navigation }: Props) {
     if (!currentStep) return;
 
     const scrollToElement = () => {
-      if (currentStep.order === 2 && aboutSectionRef.current) {
-        // Scroll to about section - at the beginning
-        aboutSectionRef.current.measureLayout(
+      if (currentStep.order === 2 && aboutDescriptionRef.current) {
+        // Scroll to about description
+        aboutDescriptionRef.current.measureLayout(
           scrollViewRef.current as any,
           (x, y) => {
             scrollViewRef.current?.scrollTo({
-              y: y - 20, // Small offset to show it's at the beginning
+              y: y - 100,
               animated: true,
             });
           },
@@ -117,7 +117,7 @@ export default function HomeScreen({ navigation }: Props) {
           scrollViewRef.current as any,
           (x, y) => {
             scrollViewRef.current?.scrollTo({
-              y: y - 200, // Better offset to show the button clearly
+              y: y - 150,
               animated: true,
             });
           },
@@ -148,13 +148,10 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   const floatingStyle = useAnimatedStyle(() => {
-    const translateY = interpolate(floatAnim.value, [0, 1], [0, -15]);
-    const scale = interpolate(floatAnim.value, [0, 1], [1, 1.02]);
-    
     return {
       transform: [
-        { translateY },
-        { scale }
+        { translateY: interpolate(floatAnim.value, [0, 1], [0, -15]) },
+        { scale: interpolate(floatAnim.value, [0, 1], [1, 1.02]) }
       ],
     };
   });
@@ -342,96 +339,100 @@ export default function HomeScreen({ navigation }: Props) {
         <Animated.View 
           entering={FadeInUp.delay(500).springify()} 
           style={styles.section}
-          ref={aboutSectionRef}
           collapsable={false}
         >
-          <CopilotStep
-            text="هنا تقدر تتعرف على منصة أثر وميزاتها المختلفة"
-            order={2}
-            name="about"
-          >
-            <CopilotView style={[styles.aboutCard, { backgroundColor: COLORS.cardBg }]}>
-              <LinearGradient
-                colors={colorScheme === 'dark'
-                  ? ['rgba(196, 165, 123, 0.1)', 'rgba(184, 149, 106, 0.05)']
-                  : ['rgba(212, 196, 176, 0.15)', 'rgba(255, 255, 255, 0.95)']}
-                style={styles.aboutGradient}
-              >
-                {/* Decorative Elements */}
-                <View style={styles.decorativeTop}>
-                  <View style={[styles.decorativeLine, { backgroundColor: COLORS.accent }]} />
-                  <Ionicons name="diamond" size={16} color={COLORS.accent} />
-                  <View style={[styles.decorativeLine, { backgroundColor: COLORS.accent }]} />
-                </View>
+          <View style={[styles.aboutCard, { backgroundColor: COLORS.cardBg }]}>
+            <LinearGradient
+              colors={colorScheme === 'dark'
+                ? ['rgba(196, 165, 123, 0.1)', 'rgba(184, 149, 106, 0.05)']
+                : ['rgba(212, 196, 176, 0.15)', 'rgba(255, 255, 255, 0.95)']
+              }
+              style={styles.aboutGradient}
+            >
+              {/* Decorative Elements */}
+              <View style={styles.decorativeTop}>
+                <View style={[styles.decorativeLine, { backgroundColor: COLORS.accent }]} />
+                <Ionicons name="diamond" size={16} color={COLORS.accent} />
+                <View style={[styles.decorativeLine, { backgroundColor: COLORS.accent }]} />
+              </View>
 
-                <View style={styles.aboutHeader}>
-                  <View style={[styles.aboutIconContainer, { backgroundColor: COLORS.primary }]}>
-                    <Ionicons name="bulb" size={32} color="#FFF" />
-                  </View>
-                  <Text style={[styles.aboutTitle, { color: COLORS.text }]}>
-                    {about.title}
-                  </Text>
+              <View style={styles.aboutHeader}>
+                <View style={[styles.aboutIconContainer, { backgroundColor: COLORS.primary }]}>
+                  <Ionicons name="bulb" size={32} color="#FFF" />
                 </View>
-
-                <Text style={[styles.aboutDescription, { color: COLORS.textSecondary }]}>
-                  {about.description}
+                <Text style={[styles.aboutTitle, { color: COLORS.text }]}>
+                  {about.title}
                 </Text>
+              </View>
 
-                <View style={styles.featuresList}>
-                  {about.list.map((item, index) => (
-                    <Animated.View
-                      key={index}
-                      entering={FadeInRight.delay(600 + index * 80).springify()}
-                    >
-                      <TouchableOpacity 
-                        activeOpacity={0.8}
-                        onPress={() => handleFeaturePress(item.text)}
-                        style={[styles.featureItem, { 
-                          backgroundColor: colorScheme === 'dark' 
-                            ? 'rgba(196, 165, 123, 0.12)' 
-                            : 'rgba(184, 149, 106, 0.08)' 
-                        }]}
-                      >
-                        <View style={[styles.featureIconBg, { backgroundColor: COLORS.primary }]}>
-                          <Ionicons name={item.icon as any} size={20} color="#FFF" />
-                        </View>
-                        <Text style={[styles.featureText, { color: COLORS.text }]}>
-                          {item.text}
-                        </Text>
-                        <Ionicons name="chevron-back" size={18} color={COLORS.textSecondary} />
-                      </TouchableOpacity>
-                    </Animated.View>
-                  ))}
-                </View>
+              <CopilotStep
+                text="هنا تقدر تتعرف على منصة أثر وميزاتها المختلفة"
+                order={2}
+                name="aboutDescription"
+              >
+                <CopilotView>
+                  <View ref={aboutDescriptionRef} collapsable={false}>
+                    <Text style={[styles.aboutDescription, { color: COLORS.textSecondary }]}>
+                      {about.description}
+                    </Text>
+                  </View>
+                </CopilotView>
+              </CopilotStep>
 
-                <CopilotStep
-                  text="اضغط هنا لبدء رحلتك في منصة أثر وإنشاء حسابك"
-                  order={3}
-                  name="startJourney"
-                >
-                  <CopilotTouchableOpacity 
-                    activeOpacity={0.85}
-                    onPress={handleStartJourney}
-                    style={styles.ctaButton}
+              <View style={styles.featuresList}>
+                {about.list.map((item, index) => (
+                  <Animated.View
+                    key={index}
+                    entering={FadeInRight.delay(600 + index * 80).springify()}
                   >
-                    <View ref={ctaButtonRef} collapsable={false}>
-                      <LinearGradient
-                        colors={['#C9A876', '#B8956A', '#A8855A']}
-                        style={styles.ctaGradient}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                      >
-                        <Text style={styles.ctaText}>{about.button}</Text>
-                        <View style={styles.ctaIconBg}>
-                          <Ionicons name="arrow-back" size={18} color="#B8956A" />
-                        </View>
-                      </LinearGradient>
-                    </View>
-                  </CopilotTouchableOpacity>
-                </CopilotStep>
-              </LinearGradient>
-            </CopilotView>
-          </CopilotStep>
+                    <TouchableOpacity 
+                      activeOpacity={0.8}
+                      onPress={() => handleFeaturePress(item.text)}
+                      style={[styles.featureItem, { 
+                        backgroundColor: colorScheme === 'dark' 
+                          ? 'rgba(196, 165, 123, 0.12)' 
+                          : 'rgba(184, 149, 106, 0.08)' 
+                      }]}
+                    >
+                      <View style={[styles.featureIconBg, { backgroundColor: COLORS.primary }]}>
+                        <Ionicons name={item.icon as any} size={20} color="#FFF" />
+                      </View>
+                      <Text style={[styles.featureText, { color: COLORS.text }]}>
+                        {item.text}
+                      </Text>
+                      <Ionicons name="chevron-back" size={18} color={COLORS.textSecondary} />
+                    </TouchableOpacity>
+                  </Animated.View>
+                ))}
+              </View>
+
+              <CopilotStep
+                text="اضغط هنا لبدء رحلتك في منصة أثر وإنشاء حسابك"
+                order={3}
+                name="startJourney"
+              >
+                <CopilotTouchableOpacity 
+                  activeOpacity={0.85}
+                  onPress={handleStartJourney}
+                  style={styles.ctaButton}
+                >
+                  <View ref={ctaButtonRef} collapsable={false}>
+                    <LinearGradient
+                      colors={['#C9A876', '#B8956A', '#A8855A']}
+                      style={styles.ctaGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Text style={styles.ctaText}>{about.button}</Text>
+                      <View style={styles.ctaIconBg}>
+                        <Ionicons name="arrow-back" size={18} color="#B8956A" />
+                      </View>
+                    </LinearGradient>
+                  </View>
+                </CopilotTouchableOpacity>
+              </CopilotStep>
+            </LinearGradient>
+          </View>
         </Animated.View>
 
         {/* Premium Cards Grid */}
