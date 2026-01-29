@@ -73,18 +73,18 @@ export default function OnboardingOverlay({
         }),
       ]).start();
 
-      // Pulse animation for highlight
+      // Pulse animation for highlight - using useNativeDriver: true
       RNAnimated.loop(
         RNAnimated.sequence([
           RNAnimated.timing(pulseAnim, {
             toValue: 1.05,
             duration: 1000,
-            useNativeDriver: false,
+            useNativeDriver: true, // Changed from false to true
           }),
           RNAnimated.timing(pulseAnim, {
             toValue: 1,
             duration: 1000,
-            useNativeDriver: false,
+            useNativeDriver: true, // Changed from false to true
           }),
         ])
       ).start();
