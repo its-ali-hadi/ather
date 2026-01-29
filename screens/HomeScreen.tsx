@@ -101,7 +101,13 @@ export default function HomeScreen({ navigation }: Props) {
     if (!showOnboarding) return;
 
     const scrollToElement = () => {
-      if (currentStepIndex === 1 && aboutDescriptionRef.current) {
+      if (currentStepIndex === 0) {
+        // Scroll to top for notifications button
+        scrollViewRef.current?.scrollTo({
+          y: 0,
+          animated: true,
+        });
+      } else if (currentStepIndex === 1 && aboutDescriptionRef.current) {
         // Scroll to about description
         aboutDescriptionRef.current.measureLayout(
           scrollViewRef.current as any,
@@ -126,10 +132,7 @@ export default function HomeScreen({ navigation }: Props) {
           () => {}
         );
       } else if (currentStepIndex === 3) {
-        // Scroll to bottom for navigation bar
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      } else if (currentStepIndex === 0) {
-        // Scroll to top for notifications button
+        // Scroll to top for navigation bar (last step)
         scrollViewRef.current?.scrollTo({
           y: 0,
           animated: true,
@@ -191,7 +194,7 @@ export default function HomeScreen({ navigation }: Props) {
       title: 'الإشعارات',
       description: 'من هنا تقدر تشوف الإشعارات والتحديثات الجديدة',
       targetPosition: elementPositions.notifications,
-      padding: 8,
+      padding: 5,
       shape: 'circle',
     },
     {
