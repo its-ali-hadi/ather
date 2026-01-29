@@ -10,7 +10,7 @@ import {
   useColorScheme,
   Animated as RNAnimated,
 } from 'react-native';
-import Svg, { Defs, Rect, Mask } from 'react-native-svg';
+import Svg, { Defs, Rect, Mask, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -23,6 +23,7 @@ export interface OnboardingStep {
   description: string;
   targetPosition?: { x: number; y: number; width: number; height: number };
   padding?: number; // Padding around the highlighted element
+  shape?: 'circle' | 'rect'; // Shape of the highlight
 }
 
 interface OnboardingOverlayProps {
@@ -119,7 +120,7 @@ export default function OnboardingOverlay({
     onSkip();
   };
 
-  // Calculate spotlight position for rectangular highlight
+  // Calculate spotlight position for rectangular or circular highlight
   const getSpotlightRect = () => {
     if (!currentStep.targetPosition) {
       // Default position for navigation bar (bottom)
@@ -130,11 +131,32 @@ export default function OnboardingOverlay({
         width: width - padding * 2,
         height: 80,
         rx: 20,
+        shape: 'rect' as const,
       };
     }
 
     const { x, y, width: w, height: h } = currentStep.targetPosition;
     const padding = currentStep.padding || 10;
+    const shape = currentStep.shape || 'rect';
+    
+    if (shape === 'circle') {
+      // For circle, calculate center and radius
+      const centerX = x + w / 2;
+      const centerY = y + h / 2;
+      const radius = Math.max(w, h) / 2 + padding;
+      
+      return {
+        x: centerX - radius,
+        y: centerY - radius,
+        width: radius * 2,
+        height: radius * 2,
+        rx: radius,
+        cx: centerX,
+        cy: centerY,
+        r: radius,
+        shape: 'circle' as const,
+      };
+    }
     
     return {
       x: x - padding,
@@ -142,6 +164,7 @@ export default function OnboardingOverlay({
       width: w + padding * 2,
       height: h + padding * 2,
       rx: 15, // Border radius
+      shape: 'rect' as const,
     };
   };
 
@@ -155,7 +178,7 @@ export default function OnboardingOverlay({
       statusBarTranslucent
     >
       <View style={styles.container}>
-        {/* SVG Overlay with Rectangular Spotlight */}
+        {/* SVG Overlay with Rectangular or Circular Spotlight */}
         <RNAnimated.View
           style={[
             StyleSheet.absoluteFill,
@@ -168,15 +191,24 @@ export default function OnboardingOverlay({
             <Defs>
               <Mask id="mask">
                 <Rect x="0" y="0" width={width} height={height} fill="white" />
-                <Rect
-                  x={spotlight.x}
-                  y={spotlight.y}
-                  width={spotlight.width}
-                  height={spotlight.height}
-                  rx={spotlight.rx}
-                  ry={spotlight.rx}
-                  fill="black"
-                />
+                {spotlight.shape === 'circle' ? (
+                  <Circle
+                    cx={spotlight.cx}
+                    cy={spotlight.cy}
+                    r={spotlight.r}
+                    fill="black"
+                  />
+                ) : (
+                  <Rect
+                    x={spotlight.x}
+                    y={spotlight.y}
+                    width={spotlight.width}
+                    height={spotlight.height}
+                    rx={spotlight.rx}
+                    ry={spotlight.rx}
+                    fill="black"
+                  />
+                )}
               </Mask>
             </Defs>
             <Rect
