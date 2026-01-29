@@ -15,18 +15,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
 import { useState } from 'react';
 
 import SeedData from '../constants/seed-data.json';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UserProfile'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function UserProfileScreen({ route }: Props) {
   const { userId } = route.params;
   const colorScheme = useColorScheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
 
@@ -40,24 +41,38 @@ export default function UserProfileScreen({ route }: Props) {
     border: colorScheme === 'dark' ? '#3A3430' : '#E8E8E8',
   };
 
-  // Mock user data
-  const user = {
-    id: userId,
-    name: 'أحمد محمد',
-    username: '@ahmed_dev',
-    avatar: 'https://i.pravatar.cc/150?img=11',
-    bio: 'مطور تطبيقات | مهتم بالتقنية والبرمجة | أحب مشاركة المعرفة',
-    followers: 1234,
-    following: 567,
-    posts: 89,
-    joinDate: '2023-06-15',
-  };
+  // Get user data from seed-data
+  const user = SeedData.users.find((u) => u.id === userId);
+
+  // If user not found, show error
+  if (!user) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-forward" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: COLORS.text }]}>الملف الشخصي</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="person-outline" size={64} color={COLORS.textSecondary} />
+          <Text style={[styles.emptyText, { color: COLORS.text }]}>المستخدم غير موجود</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const userPosts = SeedData.posts.filter((post) => post.userId === userId);
 
   const handleFollow = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsFollowing(!isFollowing);
+  };
+
+  const handlePostPress = (postId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('PostDetail', { postId });
   };
 
   const handleMessage = () => {
@@ -215,6 +230,7 @@ export default function UserProfileScreen({ route }: Props) {
               >
                 <TouchableOpacity
                   activeOpacity={0.7}
+                  onPress={() => handlePostPress(post.id)}
                   style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}
                 >
                   <View style={styles.postHeader}>
