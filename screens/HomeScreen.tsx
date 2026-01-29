@@ -16,14 +16,19 @@ import Animated, {
   withTiming,
   interpolate
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList, TabParamList } from '../App';
+import { CopilotStep, useCopilot, walkthroughable } from 'react-native-copilot';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import SeedData from '../constants/seed-data.json';
+
+const CopilotView = walkthroughable(View);
+const CopilotTouchableOpacity = walkthroughable(TouchableOpacity);
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.88;
@@ -38,6 +43,8 @@ export default function HomeScreen({ navigation }: Props) {
   const { banners, about, cards, isLogged } = SeedData;
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
+  const { start } = useCopilot();
+  const [hasSeenTutorial, setHasSeenTutorial] = useState(true);
 
   // Animated values
   const floatAnim = useSharedValue(0);
@@ -59,6 +66,28 @@ export default function HomeScreen({ navigation }: Props) {
       mass: 1,
     });
   }, [floatAnim, bulbScale]);
+
+  // Check if user has seen tutorial
+  useEffect(() => {
+    const checkTutorial = async () => {
+      try {
+        const seen = await AsyncStorage.getItem('hasSeenTutorial');
+        if (!seen) {
+          setHasSeenTutorial(false);
+          // Start tutorial after a short delay
+          setTimeout(() => {
+            start();
+          }, 1000);
+          // Mark as seen
+          await AsyncStorage.setItem('hasSeenTutorial', 'true');
+        }
+      } catch (error) {
+        console.error('Error checking tutorial status:', error);
+      }
+    };
+
+    checkTutorial();
+  }, [start]);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -244,79 +273,91 @@ export default function HomeScreen({ navigation }: Props) {
 
         {/* About Section - Premium Card */}
         <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.section}>
-          <View style={[styles.aboutCard, { backgroundColor: COLORS.cardBg }]}>
-            <LinearGradient
-              colors={colorScheme === 'dark'
-                ? ['rgba(196, 165, 123, 0.1)', 'rgba(184, 149, 106, 0.05)']
-                : ['rgba(212, 196, 176, 0.15)', 'rgba(255, 255, 255, 0.95)']}
-              style={styles.aboutGradient}
-            >
-              {/* Decorative Elements */}
-              <View style={styles.decorativeTop}>
-                <View style={[styles.decorativeLine, { backgroundColor: COLORS.accent }]} />
-                <Ionicons name="diamond" size={16} color={COLORS.accent} />
-                <View style={[styles.decorativeLine, { backgroundColor: COLORS.accent }]} />
-              </View>
-
-              <View style={styles.aboutHeader}>
-                <View style={[styles.aboutIconContainer, { backgroundColor: COLORS.primary }]}>
-                  <Ionicons name="bulb" size={32} color="#FFF" />
-                </View>
-                <Text style={[styles.aboutTitle, { color: COLORS.text }]}>
-                  {about.title}
-                </Text>
-              </View>
-
-              <Text style={[styles.aboutDescription, { color: COLORS.textSecondary }]}>
-                {about.description}
-              </Text>
-
-              <View style={styles.featuresList}>
-                {about.list.map((item, index) => (
-                  <Animated.View
-                    key={index}
-                    entering={FadeInRight.delay(600 + index * 80).springify()}
-                  >
-                    <TouchableOpacity 
-                      activeOpacity={0.8}
-                      onPress={() => handleFeaturePress(item.text)}
-                      style={[styles.featureItem, { 
-                        backgroundColor: colorScheme === 'dark' 
-                          ? 'rgba(196, 165, 123, 0.12)' 
-                          : 'rgba(184, 149, 106, 0.08)' 
-                      }]}
-                    >
-                      <View style={[styles.featureIconBg, { backgroundColor: COLORS.primary }]}>
-                        <Ionicons name={item.icon as any} size={20} color="#FFF" />
-                      </View>
-                      <Text style={[styles.featureText, { color: COLORS.text }]}>
-                        {item.text}
-                      </Text>
-                      <Ionicons name="chevron-back" size={18} color={COLORS.textSecondary} />
-                    </TouchableOpacity>
-                  </Animated.View>
-                ))}
-              </View>
-
-              <TouchableOpacity 
-                activeOpacity={0.85}
-                onPress={handleStartJourney}
-                style={styles.ctaButton}
+          <CopilotStep
+            text="هنا تقدر تتعرف على منصة أثر وميزاتها المختلفة"
+            order={2}
+            name="about"
+          >
+            <CopilotView style={[styles.aboutCard, { backgroundColor: COLORS.cardBg }]}>
+              <LinearGradient
+                colors={colorScheme === 'dark'
+                  ? ['rgba(196, 165, 123, 0.1)', 'rgba(184, 149, 106, 0.05)']
+                  : ['rgba(212, 196, 176, 0.15)', 'rgba(255, 255, 255, 0.95)']}
+                style={styles.aboutGradient}
               >
-                <LinearGradient
-                  colors={['#C9A876', '#B8956A', '#A8855A']}
-                  style={styles.ctaGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Text style={styles.ctaText}>{about.button}</Text>
-                  <View style={styles.ctaIconBg}>
-                    <Ionicons name="arrow-back" size={18} color="#B8956A" />
+                {/* Decorative Elements */}
+                <View style={styles.decorativeTop}>
+                  <View style={[styles.decorativeLine, { backgroundColor: COLORS.accent }]} />
+                  <Ionicons name="diamond" size={16} color={COLORS.accent} />
+                  <View style={[styles.decorativeLine, { backgroundColor: COLORS.accent }]} />
+                </View>
+
+                <View style={styles.aboutHeader}>
+                  <View style={[styles.aboutIconContainer, { backgroundColor: COLORS.primary }]}>
+                    <Ionicons name="bulb" size={32} color="#FFF" />
                   </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            </LinearGradient>
-          </View>
+                  <Text style={[styles.aboutTitle, { color: COLORS.text }]}>
+                    {about.title}
+                  </Text>
+                </View>
+
+                <Text style={[styles.aboutDescription, { color: COLORS.textSecondary }]}>
+                  {about.description}
+                </Text>
+
+                <View style={styles.featuresList}>
+                  {about.list.map((item, index) => (
+                    <Animated.View
+                      key={index}
+                      entering={FadeInRight.delay(600 + index * 80).springify()}
+                    >
+                      <TouchableOpacity 
+                        activeOpacity={0.8}
+                        onPress={() => handleFeaturePress(item.text)}
+                        style={[styles.featureItem, { 
+                          backgroundColor: colorScheme === 'dark' 
+                            ? 'rgba(196, 165, 123, 0.12)' 
+                            : 'rgba(184, 149, 106, 0.08)' 
+                        }]}
+                      >
+                        <View style={[styles.featureIconBg, { backgroundColor: COLORS.primary }]}>
+                          <Ionicons name={item.icon as any} size={20} color="#FFF" />
+                        </View>
+                        <Text style={[styles.featureText, { color: COLORS.text }]}>
+                          {item.text}
+                        </Text>
+                        <Ionicons name="chevron-back" size={18} color={COLORS.textSecondary} />
+                      </TouchableOpacity>
+                    </Animated.View>
+                  ))}
+                </View>
+
+                <CopilotStep
+                  text="اضغط هنا لبدء رحلتك في منصة أثر وإنشاء حسابك"
+                  order={3}
+                  name="startJourney"
+                >
+                  <CopilotTouchableOpacity 
+                    activeOpacity={0.85}
+                    onPress={handleStartJourney}
+                    style={styles.ctaButton}
+                  >
+                    <LinearGradient
+                      colors={['#C9A876', '#B8956A', '#A8855A']}
+                      style={styles.ctaGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Text style={styles.ctaText}>{about.button}</Text>
+                      <View style={styles.ctaIconBg}>
+                        <Ionicons name="arrow-back" size={18} color="#B8956A" />
+                      </View>
+                    </LinearGradient>
+                  </CopilotTouchableOpacity>
+                </CopilotStep>
+              </LinearGradient>
+            </CopilotView>
+          </CopilotStep>
         </Animated.View>
 
         {/* Premium Cards Grid */}
@@ -442,22 +483,28 @@ export default function HomeScreen({ navigation }: Props) {
       </TouchableOpacity>
 
       {/* Sticky Notifications Button */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          navigation.navigate('Notifications');
-        }}
-        style={[styles.stickyNotificationButton, { 
-          backgroundColor: COLORS.accent,
-        }]}
+      <CopilotStep
+        text="من هنا تقدر تشوف الإشعارات والتحديثات الجديدة"
+        order={1}
+        name="notifications"
       >
-        <Ionicons name="notifications" size={28} color="#FFF" />
-        {/* Notification Badge */}
-        <View style={styles.notificationBadge}>
-          <Text style={styles.notificationBadgeText}>3</Text>
-        </View>
-      </TouchableOpacity>
+        <CopilotTouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('Notifications');
+          }}
+          style={[styles.stickyNotificationButton, { 
+            backgroundColor: COLORS.accent,
+          }]}
+        >
+          <Ionicons name="notifications" size={28} color="#FFF" />
+          {/* Notification Badge */}
+          <View style={styles.notificationBadge}>
+            <Text style={styles.notificationBadgeText}>3</Text>
+          </View>
+        </CopilotTouchableOpacity>
+      </CopilotStep>
     </SafeAreaView>
   );
 }
