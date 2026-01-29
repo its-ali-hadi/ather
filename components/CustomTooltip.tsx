@@ -22,6 +22,14 @@ export default function CustomTooltip() {
     border: colorScheme === 'dark' ? 'rgba(196, 165, 123, 0.4)' : 'rgba(184, 149, 106, 0.5)',
   };
 
+  const handleNext = () => {
+    if (isLastStep) {
+      stop();
+    } else {
+      goToNext();
+    }
+  };
+
   return (
     <View style={styles.tooltipWrapper}>
       <View style={[styles.tooltipContainer, { borderColor: COLORS.border }]}>
@@ -54,7 +62,7 @@ export default function CustomTooltip() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={goToNext}
+            onPress={handleNext}
             style={[styles.button, styles.primaryButton]}
           >
             <LinearGradient
