@@ -86,9 +86,10 @@ function MainTabs() {
     inactive: colorScheme === 'dark' ? '#7A6F65' : '#A8A8A8',
   };
 
-  // Calculate tab bar height including safe area
-  const tabBarHeight = Platform.OS === 'ios' ? 70 : 70;
-  const totalHeight = tabBarHeight + (Platform.OS === 'ios' ? insets.bottom : 0);
+  // Calculate tab bar height including safe area with extra padding
+  const tabBarHeight = Platform.OS === 'ios' ? 85 : 80;
+  const safeAreaPadding = Platform.OS === 'ios' ? Math.max(insets.bottom, 20) : 15;
+  const totalHeight = tabBarHeight + safeAreaPadding;
 
   return (
     <>
@@ -103,7 +104,7 @@ function MainTabs() {
             borderTopWidth: 0,
             elevation: 0,
             height: totalHeight,
-            paddingBottom: Platform.OS === 'ios' ? insets.bottom : 10,
+            paddingBottom: safeAreaPadding,
             paddingTop: 15,
             ...Platform.select({
               ios: {
