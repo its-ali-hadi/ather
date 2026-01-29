@@ -56,9 +56,9 @@ export default function SettingsScreen() {
         {
           id: '1-2',
           title: 'التفاعلات',
-          description: 'عرض وإدارة تفاعلاتك مع المنشورات',
-          icon: 'heart',
-          color: '#E94B3C',
+          description: 'الإعجابات والتعليقات والمشاركات',
+          icon: 'thumbs-up',
+          color: '#F1C40F',
           action: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             Alert.alert('التفاعلات', 'سيتم إضافة هذه الميزة قريباً');
