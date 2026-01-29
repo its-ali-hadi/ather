@@ -97,9 +97,9 @@ function MainTabs() {
           backgroundColor: COLORS.tabBar,
           borderTopWidth: 0,
           elevation: 0,
-          height: Platform.OS === 'ios' ? 88 + insets.bottom : 75,
-          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 8 : 12,
-          paddingTop: 12,
+          height: Platform.OS === 'ios' ? 95 + insets.bottom : 80,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 10 : 15,
+          paddingTop: 15,
           ...Platform.select({
             ios: {
               shadowColor: '#000',
