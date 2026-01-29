@@ -20,10 +20,10 @@ import { useState } from 'react';
 export default function AuthScreen({ navigation }: any) {
   const colorScheme = useColorScheme();
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
   const [name, setName] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [isCodeSent, setIsCodeSent] = useState(false);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -36,15 +36,40 @@ export default function AuthScreen({ navigation }: any) {
     border: colorScheme === 'dark' ? '#3A3430' : '#E8E8E8',
   };
 
-  const handleAuth = () => {
+  const handleSendCode = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
-    if (!email || !password || (!isLogin && !name)) {
-      Alert.alert('خطأ', 'الرجاء ملء جميع الحقول');
+    if (!phoneNumber) {
+      Alert.alert('خطأ', 'الرجاء إدخال رقم الهاتف');
       return;
     }
 
-    // TODO: Implement authentication logic
+    // Validate phone number format (Saudi Arabia format)
+    const phoneRegex = /^(05|5)[0-9]{8}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      Alert.alert('خطأ', 'الرجاء إدخال رقم هاتف صحيح (مثال: 0512345678)');
+      return;
+    }
+
+    // TODO: Implement send verification code logic
+    setIsCodeSent(true);
+    Alert.alert('تم الإرسال', 'تم إرسال رمز التحقق إلى رقم هاتفك');
+  };
+
+  const handleVerifyCode = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    if (!verificationCode) {
+      Alert.alert('خطأ', 'الرجاء إدخال رمز التحقق');
+      return;
+    }
+
+    if (!isLogin && !name) {
+      Alert.alert('خطأ', 'الرجاء إدخال اسمك');
+      return;
+    }
+
+    // TODO: Implement verification logic
     Alert.alert(
       'نجح',
       isLogin ? 'تم تسجيل الدخول بنجاح' : 'تم إنشاء الحساب بنجاح'
@@ -54,9 +79,16 @@ export default function AuthScreen({ navigation }: any) {
   const toggleMode = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setIsLogin(!isLogin);
-    setEmail('');
-    setPassword('');
+    setPhoneNumber('');
+    setVerificationCode('');
     setName('');
+    setIsCodeSent(false);
+  };
+
+  const handleResendCode = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // TODO: Implement resend code logic
+    Alert.alert('تم الإرسال', 'تم إعادة إرسال رمز التحقق');
   };
 
   return (
@@ -113,134 +145,131 @@ export default function AuthScreen({ navigation }: any) {
                 {isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
               </Text>
 
-              {/* Name Input (Only for Sign Up) */}
-              {!isLogin && (
-                <Animated.View entering={FadeInDown.delay(100).springify()}>
+              {/* Info Text */}
+              <View style={[styles.infoBox, { backgroundColor: COLORS.accent + '15' }]}>
+                <Ionicons name="information-circle" size={20} color={COLORS.accent} />
+                <Text style={[styles.infoText, { color: COLORS.text }]}>
+                  {isCodeSent
+                    ? 'أدخل رمز التحقق المرسل إلى رقم هاتفك'
+                    : 'سنرسل لك رمز التحقق عبر رسالة نصية'}
+                </Text>
+              </View>
+
+              {!isCodeSent ? (
+                <>
+                  {/* Name Input (Only for Sign Up) */}
+                  {!isLogin && (
+                    <Animated.View entering={FadeInDown.delay(100).springify()}>
+                      <View style={[styles.inputContainer, { backgroundColor: COLORS.inputBg }]}>
+                        <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} />
+                        <TextInput
+                          style={[styles.input, { color: COLORS.text }]}
+                          placeholder="الاسم الكامل"
+                          placeholderTextColor={COLORS.textSecondary}
+                          value={name}
+                          onChangeText={setName}
+                          autoCapitalize="words"
+                        />
+                      </View>
+                    </Animated.View>
+                  )}
+
+                  {/* Phone Number Input */}
                   <View style={[styles.inputContainer, { backgroundColor: COLORS.inputBg }]}>
-                    <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} />
+                    <Ionicons name="call-outline" size={20} color={COLORS.textSecondary} />
                     <TextInput
                       style={[styles.input, { color: COLORS.text }]}
-                      placeholder="الاسم الكامل"
+                      placeholder="رقم الهاتف (مثال: 0512345678)"
                       placeholderTextColor={COLORS.textSecondary}
-                      value={name}
-                      onChangeText={setName}
-                      autoCapitalize="words"
+                      value={phoneNumber}
+                      onChangeText={setPhoneNumber}
+                      keyboardType="phone-pad"
+                      maxLength={10}
                     />
                   </View>
-                </Animated.View>
+
+                  {/* Send Code Button */}
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={handleSendCode}
+                    style={styles.authButton}
+                  >
+                    <LinearGradient
+                      colors={['#E8B86D', '#D4A574', '#C9956A']}
+                      style={styles.authButtonGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Text style={styles.authButtonText}>إرسال رمز التحقق</Text>
+                      <Ionicons name="send" size={20} color="#FFF" />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  {/* Verification Code Input */}
+                  <Animated.View entering={FadeInDown.delay(100).springify()}>
+                    <View style={[styles.inputContainer, { backgroundColor: COLORS.inputBg }]}>
+                      <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.textSecondary} />
+                      <TextInput
+                        style={[styles.input, { color: COLORS.text }]}
+                        placeholder="رمز التحقق (6 أرقام)"
+                        placeholderTextColor={COLORS.textSecondary}
+                        value={verificationCode}
+                        onChangeText={setVerificationCode}
+                        keyboardType="number-pad"
+                        maxLength={6}
+                      />
+                    </View>
+                  </Animated.View>
+
+                  {/* Verify Button */}
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={handleVerifyCode}
+                    style={styles.authButton}
+                  >
+                    <LinearGradient
+                      colors={['#E8B86D', '#D4A574', '#C9956A']}
+                      style={styles.authButtonGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Text style={styles.authButtonText}>
+                        {isLogin ? 'تسجيل الدخول' : 'إنشاء الحساب'}
+                      </Text>
+                      <Ionicons name="checkmark-circle" size={20} color="#FFF" />
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  {/* Resend Code */}
+                  <View style={styles.resendContainer}>
+                    <Text style={[styles.resendText, { color: COLORS.textSecondary }]}>
+                      لم تستلم الرمز؟
+                    </Text>
+                    <TouchableOpacity onPress={handleResendCode}>
+                      <Text style={[styles.resendButton, { color: COLORS.accent }]}>
+                        إعادة الإرسال
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Change Number */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setIsCodeSent(false);
+                      setVerificationCode('');
+                    }}
+                    style={styles.changeNumberButton}
+                  >
+                    <Ionicons name="create-outline" size={18} color={COLORS.primary} />
+                    <Text style={[styles.changeNumberText, { color: COLORS.primary }]}>
+                      تغيير رقم الهاتف
+                    </Text>
+                  </TouchableOpacity>
+                </>
               )}
-
-              {/* Email Input */}
-              <View style={[styles.inputContainer, { backgroundColor: COLORS.inputBg }]}>
-                <Ionicons name="mail-outline" size={20} color={COLORS.textSecondary} />
-                <TextInput
-                  style={[styles.input, { color: COLORS.text }]}
-                  placeholder="البريد الإلكتروني"
-                  placeholderTextColor={COLORS.textSecondary}
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-
-              {/* Password Input */}
-              <View style={[styles.inputContainer, { backgroundColor: COLORS.inputBg }]}>
-                <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
-                <TextInput
-                  style={[styles.input, { color: COLORS.text }]}
-                  placeholder="كلمة المرور"
-                  placeholderTextColor={COLORS.textSecondary}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setShowPassword(!showPassword);
-                  }}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={20}
-                    color={COLORS.textSecondary}
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {/* Forgot Password (Only for Login) */}
-              {isLogin && (
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    Alert.alert('استعادة كلمة المرور', 'سيتم إضافة هذه الميزة قريباً');
-                  }}
-                  style={styles.forgotPassword}
-                >
-                  <Text style={[styles.forgotPasswordText, { color: COLORS.primary }]}>
-                    نسيت كلمة المرور؟
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Auth Button */}
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleAuth}
-                style={styles.authButton}
-              >
-                <LinearGradient
-                  colors={['#E8B86D', '#D4A574', '#C9956A']}
-                  style={styles.authButtonGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Text style={styles.authButtonText}>
-                    {isLogin ? 'تسجيل الدخول' : 'إنشاء الحساب'}
-                  </Text>
-                  <Ionicons name="arrow-back" size={20} color="#FFF" />
-                </LinearGradient>
-              </TouchableOpacity>
-
-              {/* Divider */}
-              <View style={styles.divider}>
-                <View style={[styles.dividerLine, { backgroundColor: COLORS.border }]} />
-                <Text style={[styles.dividerText, { color: COLORS.textSecondary }]}>أو</Text>
-                <View style={[styles.dividerLine, { backgroundColor: COLORS.border }]} />
-              </View>
-
-              {/* Social Login */}
-              <View style={styles.socialButtons}>
-                <TouchableOpacity
-                  style={[styles.socialButton, { backgroundColor: COLORS.inputBg }]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    Alert.alert('تسجيل الدخول', 'سيتم إضافة هذه الميزة قريباً');
-                  }}
-                >
-                  <Ionicons name="logo-google" size={24} color="#DB4437" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.socialButton, { backgroundColor: COLORS.inputBg }]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    Alert.alert('تسجيل الدخول', 'سيتم إضافة هذه الميزة قريباً');
-                  }}
-                >
-                  <Ionicons name="logo-apple" size={24} color={COLORS.text} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.socialButton, { backgroundColor: COLORS.inputBg }]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    Alert.alert('تسجيل الدخول', 'سيتم إضافة هذه الميزة قريباً');
-                  }}
-                >
-                  <Ionicons name="logo-facebook" size={24} color="#4267B2" />
-                </TouchableOpacity>
-              </View>
 
               {/* Toggle Mode */}
               <View style={styles.toggleContainer}>
@@ -254,6 +283,20 @@ export default function AuthScreen({ navigation }: any) {
                 </TouchableOpacity>
               </View>
             </LinearGradient>
+          </Animated.View>
+
+          {/* Privacy Notice */}
+          <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.privacyNotice}>
+            <Text style={[styles.privacyText, { color: COLORS.textSecondary }]}>
+              بالمتابعة، أنت توافق على{' '}
+              <Text style={{ color: COLORS.accent, fontFamily: 'Cairo_700Bold' }}>
+                شروط الخدمة
+              </Text>
+              {' '}و{' '}
+              <Text style={{ color: COLORS.accent, fontFamily: 'Cairo_700Bold' }}>
+                سياسة الخصوصية
+              </Text>
+            </Text>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -337,7 +380,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
     textAlign: 'right',
-    marginBottom: 28,
+    marginBottom: 20,
+  },
+  infoBox: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Tajawal_400Regular',
+    textAlign: 'right',
+    lineHeight: 22,
   },
   inputContainer: {
     flexDirection: 'row-reverse',
@@ -354,17 +412,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal_400Regular',
     textAlign: 'right',
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-    fontFamily: 'Tajawal_500Medium',
-  },
   authButton: {
     borderRadius: 16,
     overflow: 'hidden',
+    marginTop: 8,
     marginBottom: 24,
     ...Platform.select({
       ios: {
@@ -391,32 +442,34 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
   },
-  divider: {
+  resendContainer: {
     flexDirection: 'row-reverse',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 24,
+    gap: 8,
+    marginBottom: 16,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    fontSize: 14,
+  resendText: {
+    fontSize: 15,
     fontFamily: 'Tajawal_400Regular',
   },
-  socialButtons: {
+  resendButton: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+  },
+  changeNumberButton: {
     flexDirection: 'row-reverse',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
+    gap: 8,
+    paddingVertical: 12,
     marginBottom: 24,
   },
-  socialButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+  changeNumberText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
   },
   toggleContainer: {
     flexDirection: 'row-reverse',
@@ -432,5 +485,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
+  },
+  privacyNotice: {
+    marginTop: 24,
+    paddingHorizontal: 16,
+  },
+  privacyText: {
+    fontSize: 13,
+    fontFamily: 'Tajawal_400Regular',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
