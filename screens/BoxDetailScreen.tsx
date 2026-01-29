@@ -16,13 +16,7 @@ import {
 import Animated, {
   FadeInDown,
   FadeInUp,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withSpring,
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
@@ -37,21 +31,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'BoxDetail'>;
 export default function BoxDetailScreen({ route, navigation }: Props) {
   const { boxId } = route.params;
   const colorScheme = useColorScheme();
-  const pulseAnim = useSharedValue(0);
 
   // Find the box data
   const box = SeedData.cards.find((card) => card.id === boxId);
-
-  useEffect(() => {
-    pulseAnim.value = withRepeat(
-      withSequence(
-        withSpring(1.05, { damping: 2, stiffness: 100 }),
-        withSpring(1, { damping: 2, stiffness: 100 })
-      ),
-      -1,
-      true
-    );
-  }, [pulseAnim]);
 
   // Theme Colors
   const COLORS = {
@@ -63,12 +45,6 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
     text: colorScheme === 'dark' ? '#F5E6D3' : '#4A3F35',
     textSecondary: colorScheme === 'dark' ? '#D4C4B0' : '#7A6F65',
   };
-
-  const pulseStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: pulseAnim.value }],
-    };
-  });
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -131,16 +107,14 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
 
           {/* Banner Content */}
           <View style={styles.bannerContent}>
-            <Animated.View style={pulseStyle}>
-              <LinearGradient
-                colors={['#E8B86D', '#D4A574', '#C9956A']}
-                style={styles.bannerIcon}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Ionicons name={box.icon as any} size={40} color="#FFF" />
-              </LinearGradient>
-            </Animated.View>
+            <LinearGradient
+              colors={['#E8B86D', '#D4A574', '#C9956A']}
+              style={styles.bannerIcon}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name={box.icon as any} size={40} color="#FFF" />
+            </LinearGradient>
 
             <Text style={styles.bannerTitle}>{box.title}</Text>
             <Text style={styles.bannerSubtitle}>{box.shortDescription}</Text>
