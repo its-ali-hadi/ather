@@ -17,13 +17,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
 import { useState } from 'react';
 
 import SeedData from '../constants/seed-data.json';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PostDetail'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Mock comments data
 const mockComments = [
@@ -76,7 +77,7 @@ const mockComments = [
 export default function PostDetailScreen({ route }: Props) {
   const { postId } = route.params;
   const colorScheme = useColorScheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState(mockComments);
 
@@ -101,6 +102,11 @@ export default function PostDetailScreen({ route }: Props) {
       </SafeAreaView>
     );
   }
+
+  const handleUserPress = (userId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('UserProfile', { userId });
+  };
 
   const handleLike = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -189,7 +195,11 @@ export default function PostDetailScreen({ route }: Props) {
           style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}
         >
           {/* Post Header */}
-          <View style={styles.postHeader}>
+          <TouchableOpacity 
+            style={styles.postHeader}
+            onPress={() => handleUserPress(post.userId)}
+            activeOpacity={0.7}
+          >
             <View style={styles.userInfo}>
               {post.userAvatar ? (
                 <ExpoImage
@@ -212,7 +222,7 @@ export default function PostDetailScreen({ route }: Props) {
             <View style={[styles.categoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
               <Text style={[styles.categoryText, { color: COLORS.accent }]}>{post.category}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
           {/* Post Title & Content */}
           <View style={styles.postContent}>
@@ -288,7 +298,11 @@ export default function PostDetailScreen({ route }: Props) {
                 entering={FadeInDown.delay(300 + index * 50).springify()}
                 style={[styles.commentCard, { backgroundColor: COLORS.cardBg }]}
               >
-                <View style={styles.commentHeader}>
+                <TouchableOpacity 
+                  style={styles.commentHeader}
+                  onPress={() => handleUserPress(comment.userId)}
+                  activeOpacity={0.7}
+                >
                   {comment.userAvatar ? (
                     <ExpoImage
                       source={{ uri: comment.userAvatar }}
@@ -308,7 +322,7 @@ export default function PostDetailScreen({ route }: Props) {
                       {new Date(comment.createdAt).toLocaleDateString('ar-SA')}
                     </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
 
                 <Text style={[styles.commentContent, { color: COLORS.textSecondary }]}>
                   {comment.content}
@@ -342,7 +356,11 @@ export default function PostDetailScreen({ route }: Props) {
                   <View style={styles.repliesContainer}>
                     {comment.replies.map((reply) => (
                       <View key={reply.id} style={styles.replyCard}>
-                        <View style={styles.commentHeader}>
+                        <TouchableOpacity 
+                          style={styles.commentHeader}
+                          onPress={() => handleUserPress(reply.userId)}
+                          activeOpacity={0.7}
+                        >
                           {reply.userAvatar ? (
                             <ExpoImage
                               source={{ uri: reply.userAvatar }}
@@ -365,7 +383,7 @@ export default function PostDetailScreen({ route }: Props) {
                               {new Date(reply.createdAt).toLocaleDateString('ar-SA')}
                             </Text>
                           </View>
-                        </View>
+                        </TouchableOpacity>
                         <Text style={[styles.replyContent, { color: COLORS.textSecondary }]}>
                           {reply.content}
                         </Text>

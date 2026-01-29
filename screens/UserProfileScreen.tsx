@@ -197,14 +197,6 @@ export default function UserProfileScreen({ route }: Props) {
                   {isFollowing ? 'يتابع' : 'متابعة'}
                 </Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleMessage}
-                style={[styles.messageButton, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}
-              >
-                <Ionicons name="chatbubble-outline" size={20} color={COLORS.text} />
-                <Text style={[styles.messageButtonText, { color: COLORS.text }]}>رسالة</Text>
-              </TouchableOpacity>
             </View>
           </View>
         </Animated.View>
@@ -393,7 +385,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   followButton: {
-    flex: 1,
+    width: '100%',
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
@@ -402,21 +394,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   followButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: 'Cairo_700Bold',
-  },
-  messageButton: {
-    flex: 1,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  messageButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
