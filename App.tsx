@@ -86,6 +86,10 @@ function MainTabs() {
     inactive: colorScheme === 'dark' ? '#7A6F65' : '#A8A8A8',
   };
 
+  // Calculate tab bar height including safe area
+  const tabBarHeight = Platform.OS === 'ios' ? 70 : 70;
+  const totalHeight = tabBarHeight + (Platform.OS === 'ios' ? insets.bottom : 0);
+
   return (
     <>
       <Tab.Navigator
@@ -98,8 +102,8 @@ function MainTabs() {
             backgroundColor: COLORS.tabBar,
             borderTopWidth: 0,
             elevation: 0,
-            height: Platform.OS === 'ios' ? 85 : 70,
-            paddingBottom: Platform.OS === 'ios' ? 10 : 10,
+            height: totalHeight,
+            paddingBottom: Platform.OS === 'ios' ? insets.bottom : 10,
             paddingTop: 15,
             ...Platform.select({
               ios: {
@@ -196,19 +200,6 @@ function MainTabs() {
           }}
         />
       </Tab.Navigator>
-      {/* Safe Area for Bottom Tab Bar */}
-      {insets.bottom > 0 && (
-        <View 
-          style={{ 
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: insets.bottom,
-            backgroundColor: COLORS.tabBar,
-          }} 
-        />
-      )}
     </>
   );
 }
