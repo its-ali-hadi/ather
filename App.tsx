@@ -28,6 +28,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import PostsListScreen from './screens/PostsListScreen';
 import FavoritesScreen from './screens/FavoritesScreen';
 import MyPostsScreen from './screens/MyPostsScreen';
+import AuthScreen from './screens/AuthScreen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -45,6 +46,7 @@ export type RootStackParamList = {
   PostsList: { boxId: string };
   Favorites: undefined;
   MyPosts: undefined;
+  Auth: undefined;
 };
 
 export type TabParamList = {
@@ -264,6 +266,7 @@ export default function App() {
           <Stack.Screen name="PostsList" component={PostsListScreen} />
           <Stack.Screen name="Favorites" component={FavoritesScreen} />
           <Stack.Screen name="MyPosts" component={MyPostsScreen} />
+          <Stack.Screen name="Auth" component={AuthScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="auto" />
