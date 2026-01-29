@@ -16,7 +16,7 @@ import Animated, {
   withTiming,
   interpolate
 } from 'react-native-reanimated';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -43,8 +43,13 @@ export default function HomeScreen({ navigation }: Props) {
   const { banners, about, cards, isLogged } = SeedData;
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  const { start } = useCopilot();
+  const { start, currentStep } = useCopilot();
   const [hasSeenTutorial, setHasSeenTutorial] = useState(true);
+
+  // Refs for scrolling
+  const scrollViewRef = useRef<ScrollView>(null);
+  const aboutSectionRef = useRef<View>(null);
+  const ctaButtonRef = useRef<View>(null);
 
   // Animated values
   const floatAnim = useSharedValue(0);
@@ -88,6 +93,48 @@ export default function HomeScreen({ navigation }: Props) {
 
     checkTutorial();
   }, [start]);
+
+  // Auto scroll based on current step
+  useEffect(() => {
+    if (!currentStep) return;
+
+    const scrollToElement = () => {
+      if (currentStep.order === 2 && aboutSectionRef.current) {
+        // Scroll to about section
+        aboutSectionRef.current.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({
+              y: y - 100, // Offset to show some space above
+              animated: true,
+            });
+          },
+          () => {}
+        );
+      } else if (currentStep.order === 3 && ctaButtonRef.current) {
+        // Scroll to CTA button
+        ctaButtonRef.current.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({
+              y: y - 150, // Offset to center the button
+              animated: true,
+            });
+          },
+          () => {}
+        );
+      } else if (currentStep.order === 1) {
+        // Scroll to top for notifications button
+        scrollViewRef.current?.scrollTo({
+          y: 0,
+          animated: true,
+        });
+      }
+    };
+
+    // Delay to ensure layout is ready
+    setTimeout(scrollToElement, 300);
+  }, [currentStep]);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -175,6 +222,7 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <ScrollView 
+        ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         bounces={true}
         scrollEventThrottle={16}
@@ -291,7 +339,12 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
 
         {/* About Section - Premium Card */}
-        <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.section}>
+        <Animated.View 
+          entering={FadeInUp.delay(500).springify()} 
+          style={styles.section}
+          ref={aboutSectionRef}
+          collapsable={false}
+        >
           <CopilotStep
             text="هنا تقدر تتعرف على منصة أثر وميزاتها المختلفة"
             order={2}
@@ -361,17 +414,19 @@ export default function HomeScreen({ navigation }: Props) {
                     onPress={handleStartJourney}
                     style={styles.ctaButton}
                   >
-                    <LinearGradient
-                      colors={['#C9A876', '#B8956A', '#A8855A']}
-                      style={styles.ctaGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
-                      <Text style={styles.ctaText}>{about.button}</Text>
-                      <View style={styles.ctaIconBg}>
-                        <Ionicons name="arrow-back" size={18} color="#B8956A" />
-                      </View>
-                    </LinearGradient>
+                    <View ref={ctaButtonRef} collapsable={false}>
+                      <LinearGradient
+                        colors={['#C9A876', '#B8956A', '#A8855A']}
+                        style={styles.ctaGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <Text style={styles.ctaText}>{about.button}</Text>
+                        <View style={styles.ctaIconBg}>
+                          <Ionicons name="arrow-back" size={18} color="#B8956A" />
+                        </View>
+                      </LinearGradient>
+                    </View>
                   </CopilotTouchableOpacity>
                 </CopilotStep>
               </LinearGradient>
