@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { useCopilot } from 'react-native-copilot';
@@ -18,160 +19,118 @@ export default function CustomTooltip() {
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
     accent: '#E8B86D',
-    background: colorScheme === 'dark' ? 'rgba(42, 36, 32, 0.98)' : 'rgba(255, 255, 255, 0.98)',
-    text: colorScheme === 'dark' ? '#F5E6D3' : '#4A3F35',
-    textSecondary: colorScheme === 'dark' ? '#D4C4B0' : '#7A6F65',
+    text: colorScheme === 'dark' ? '#F5E6D3' : '#FFFFFF',
+    border: colorScheme === 'dark' ? 'rgba(196, 165, 123, 0.3)' : 'rgba(184, 149, 106, 0.3)',
   };
 
   return (
-    <View style={[styles.tooltipContainer, { backgroundColor: COLORS.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <LinearGradient
-          colors={['#E8B86D', '#D4A574']}
-          style={styles.iconGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Ionicons name="bulb" size={24} color="#FFF" />
-        </LinearGradient>
-        <View style={styles.headerText}>
-          <Text style={[styles.stepNumber, { color: COLORS.accent }]}>
-            خطوة {currentStep?.order}
-          </Text>
-          <Text style={[styles.stepName, { color: COLORS.textSecondary }]}>
-            {currentStep?.name}
-          </Text>
-        </View>
-      </View>
+    <View style={styles.tooltipWrapper}>
+      <BlurView 
+        intensity={80} 
+        tint={colorScheme === 'dark' ? 'dark' : 'light'}
+        style={[styles.tooltipContainer, { borderColor: COLORS.border }]}
+      >
+        {/* Content */}
+        <Text style={[styles.tooltipText, { color: COLORS.text }]}>
+          {currentStep?.text}
+        </Text>
 
-      {/* Content */}
-      <Text style={[styles.tooltipText, { color: COLORS.text }]}>
-        {currentStep?.text}
-      </Text>
+        {/* Footer */}
+        <View style={styles.footer}>
+          {!isFirstStep && (
+            <TouchableOpacity
+              onPress={goToPrev}
+              style={[styles.button, styles.secondaryButton, { borderColor: COLORS.primary }]}
+            >
+              <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
+              <Text style={[styles.buttonText, { color: COLORS.primary }]}>
+                السابق
+              </Text>
+            </TouchableOpacity>
+          )}
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        {!isFirstStep && (
           <TouchableOpacity
-            onPress={goToPrev}
-            style={[styles.button, styles.secondaryButton, { borderColor: COLORS.primary }]}
+            onPress={stop}
+            style={[styles.button, styles.skipButton]}
           >
-            <Ionicons name="arrow-forward" size={18} color={COLORS.primary} />
-            <Text style={[styles.buttonText, { color: COLORS.primary }]}>
-              السابق
+            <Text style={[styles.skipText, { color: COLORS.text, opacity: 0.7 }]}>
+              تخطي
             </Text>
           </TouchableOpacity>
-        )}
 
-        <TouchableOpacity
-          onPress={stop}
-          style={[styles.button, styles.skipButton]}
-        >
-          <Text style={[styles.skipText, { color: COLORS.textSecondary }]}>
-            تخطي
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={goToNext}
-          style={[styles.button, styles.primaryButton]}
-        >
-          <LinearGradient
-            colors={['#C9A876', '#B8956A']}
-            style={styles.primaryGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+          <TouchableOpacity
+            onPress={goToNext}
+            style={[styles.button, styles.primaryButton]}
           >
-            <Text style={styles.primaryButtonText}>
-              {isLastStep ? 'إنهاء' : 'التالي'}
-            </Text>
-            <Ionicons 
-              name={isLastStep ? 'checkmark' : 'arrow-back'} 
-              size={18} 
-              color="#FFF" 
-            />
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
+            <LinearGradient
+              colors={['#C9A876', '#B8956A']}
+              style={styles.primaryGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={styles.primaryButtonText}>
+                {isLastStep ? 'إنهاء' : 'التالي'}
+              </Text>
+              <Ionicons 
+                name={isLastStep ? 'checkmark' : 'arrow-back'} 
+                size={16} 
+                color="#FFF" 
+              />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </BlurView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  tooltipContainer: {
-    borderRadius: 20,
-    padding: 20,
+  tooltipWrapper: {
     margin: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
   },
-  header: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
-  },
-  iconGradient: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerText: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  stepNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: 'Cairo_700Bold',
-  },
-  stepName: {
-    fontSize: 13,
-    fontFamily: 'Tajawal_400Regular',
-    marginTop: 2,
+  tooltipContainer: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    overflow: 'hidden',
   },
   tooltipText: {
-    fontSize: 16,
-    lineHeight: 26,
+    fontSize: 15,
+    lineHeight: 24,
     textAlign: 'right',
     fontFamily: 'Tajawal_400Regular',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   footer: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   button: {
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: 'hidden',
   },
   secondaryButton: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderWidth: 1.5,
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     fontFamily: 'Cairo_600SemiBold',
   },
   skipButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   skipText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Tajawal_400Regular',
   },
   primaryButton: {
@@ -180,13 +139,13 @@ const styles = StyleSheet.create({
   primaryGradient: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
   primaryButtonText: {
     color: '#FFF',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
   },
