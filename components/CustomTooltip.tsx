@@ -7,9 +7,9 @@ export default function CustomTooltip() {
   const {
     isFirstStep,
     isLastStep,
-    handleNext,
-    handlePrev,
-    handleStop,
+    goToNext,
+    goToPrev,
+    stop,
     currentStep,
   } = useCopilot();
 
@@ -18,7 +18,7 @@ export default function CustomTooltip() {
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
     accent: '#E8B86D',
-    background: colorScheme === 'dark' ? '#2A2420' : '#FFFFFF',
+    background: colorScheme === 'dark' ? 'rgba(42, 36, 32, 0.98)' : 'rgba(255, 255, 255, 0.98)',
     text: colorScheme === 'dark' ? '#F5E6D3' : '#4A3F35',
     textSecondary: colorScheme === 'dark' ? '#D4C4B0' : '#7A6F65',
   };
@@ -54,7 +54,7 @@ export default function CustomTooltip() {
       <View style={styles.footer}>
         {!isFirstStep && (
           <TouchableOpacity
-            onPress={handlePrev}
+            onPress={goToPrev}
             style={[styles.button, styles.secondaryButton, { borderColor: COLORS.primary }]}
           >
             <Ionicons name="arrow-forward" size={18} color={COLORS.primary} />
@@ -65,7 +65,7 @@ export default function CustomTooltip() {
         )}
 
         <TouchableOpacity
-          onPress={handleStop}
+          onPress={stop}
           style={[styles.button, styles.skipButton]}
         >
           <Text style={[styles.skipText, { color: COLORS.textSecondary }]}>
@@ -74,7 +74,7 @@ export default function CustomTooltip() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={handleNext}
+          onPress={goToNext}
           style={[styles.button, styles.primaryButton]}
         >
           <LinearGradient

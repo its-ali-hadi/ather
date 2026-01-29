@@ -14,6 +14,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { CopilotProvider, CopilotStep, walkthroughable } from 'react-native-copilot';
 
 import CustomTooltip from './components/CustomTooltip';
+import CustomStepNumber from './components/CustomStepNumber';
 import HomeScreen from './screens/HomeScreen';
 import ExploreScreen from './screens/ExploreScreen';
 import CreateScreen from './screens/CreateScreen';
@@ -277,6 +278,7 @@ export default function App() {
       <CopilotProvider
         overlay="svg"
         tooltipComponent={CustomTooltip}
+        stepNumberComponent={CustomStepNumber}
         backdropColor="rgba(0, 0, 0, 0.7)"
         labels={{
           previous: 'السابق',
@@ -285,6 +287,7 @@ export default function App() {
           finish: 'إنهاء',
         }}
         verticalOffset={24}
+        arrowColor="transparent"
       >
         <NavigationContainer>
           <Stack.Navigator
