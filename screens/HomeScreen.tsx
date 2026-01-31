@@ -643,24 +643,26 @@ export default function HomeScreen({ navigation }: Props) {
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* Sticky Notifications Button */}
-      <TouchableOpacity
-        ref={notificationButtonRef}
-        activeOpacity={0.85}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          if (isGuest) {
-            handleGuestAction('عرض الإشعارات');
-          } else {
-            navigation.navigate('Private');
-          }
-        }}
-        style={[styles.stickyNotificationButton, { 
-          backgroundColor: COLORS.accent,
-        }]}
-      >
-        <Ionicons name="lock-closed" size={28} color="#FFF" />
-      </TouchableOpacity>
+      {/* Sticky Notifications Button - Only show for logged in users */}
+      {!isGuest && user && (
+        <TouchableOpacity
+          ref={notificationButtonRef}
+          activeOpacity={0.85}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('Notifications' as any);
+          }}
+          style={[styles.stickyNotificationButton, { 
+            backgroundColor: COLORS.accent,
+          }]}
+        >
+          <Ionicons name="notifications" size={28} color="#FFF" />
+          {/* Notification Badge */}
+          <View style={styles.notificationBadge}>
+            <Text style={styles.notificationBadgeText}>3</Text>
+          </View>
+        </TouchableOpacity>
+      )}
 
       {/* Onboarding Overlay */}
       <OnboardingOverlay
@@ -1139,5 +1141,24 @@ const styles = StyleSheet.create({
         elevation: 8,
       },
     }),
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#E94B3C',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  notificationBadgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
   },
 });
