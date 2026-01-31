@@ -12,24 +12,29 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../App';
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import { useAuth } from '../contexts/AuthContext';
+import api from '../utils/api';
 
 export default function AuthScreen() {
   const colorScheme = useColorScheme();
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation();
+  const { login } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
+  const [orderId, setOrderId] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -42,7 +47,7 @@ export default function AuthScreen() {
     border: colorScheme === 'dark' ? '#3A3430' : '#E8E8E8',
   };
 
-  const handleSendCode = () => {
+  const handleSendCode = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     if (!phoneNumber) {
@@ -51,23 +56,9 @@ export default function AuthScreen() {
     }
 
     // Validate phone number format (Iraq format)
-    // Iraqi phone numbers: 07xxxxxxxxx (11 digits) or 7xxxxxxxxx (10 digits)
-    const phoneRegex = /^(07|7)[0-9]{9}$/;
+    const phoneRegex = /^07[3-9]\d{8}$/;
     if (!phoneRegex.test(phoneNumber)) {
-      Alert.alert('خطأ', 'الرجاء إدخال رقم هاتف صحيح (مثال: 07701234567)');
-      return;
-    }
-
-    // TODO: Implement send verification code logic
-    setIsCodeSent(true);
-    Alert.alert('تم الإرسال', 'تم إرسال رمز التحقق إلى رقم هاتفك');
-  };
-
-  const handleVerifyCode = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    if (!verificationCode) {
-      Alert.alert('خطأ', 'الرجاء إدخال رمز التحقق');
+      Alert.alert('خطأ', 'الرجاء إدخال رقم هاتف عراقي صحيح (مثال: 07701234567)');
       return;
     }
 
@@ -76,11 +67,86 @@ export default function AuthScreen() {
       return;
     }
 
-    // TODO: Implement verification logic
-    Alert.alert(
-      'نجح',
-      isLogin ? 'تم تسجيل الدخول بنجاح' : 'تم إنشاء الحساب بنجاح'
-    );
+    setIsLoading(true);
+
+    try {
+      const response = isLogin
+        ? await api.sendLoginOTP(phoneNumber)
+        : await api.sendRegistrationOTP(phoneNumber);
+
+      if (response.success) {
+        setOrderId(response.data.orderId);
+        setIsCodeSent(true);
+        Alert.alert('تم الإرسال', 'تم إرسال رمز التحقق إلى رقم هاتفك');
+      } else {
+        Alert.alert('خطأ', response.message || 'فشل إرسال رمز التحقق');
+      }
+    } catch (error: any) {
+      Alert.alert('خطأ', error.message || 'حدث خطأ أثناء إرسال رمز التحقق');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    if (!verificationCode) {
+      Alert.alert('خطأ', 'الرجاء إدخال رمز التحقق');
+      return;
+    }
+
+    if (verificationCode.length !== 6) {
+      Alert.alert('خطأ', 'رمز التحقق يجب أن يكون 6 أرقام');
+      return;
+    }
+
+    if (!isLogin && !password) {
+      Alert.alert('خطأ', 'الرجاء إدخال كلمة المرور');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      let response;
+
+      if (isLogin) {
+        // Login with OTP
+        response = await api.loginWithOTP({
+          phone: phoneNumber,
+          orderId,
+          code: verificationCode,
+        });
+      } else {
+        // Register with OTP
+        response = await api.register({
+          phone: phoneNumber,
+          name,
+          email: email || undefined,
+          password,
+          orderId,
+          code: verificationCode,
+        });
+      }
+
+      if (response.success) {
+        // Save auth data
+        await login(response.data.token, response.data.user);
+        
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert(
+          'نجح',
+          isLogin ? 'تم تسجيل الدخول بنجاح' : 'تم إنشاء الحساب بنجاح'
+        );
+      } else {
+        Alert.alert('خطأ', response.message || 'فشل التحقق من الرمز');
+      }
+    } catch (error: any) {
+      Alert.alert('خطأ', error.message || 'حدث خطأ أثناء التحقق');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleMode = () => {
@@ -89,13 +155,16 @@ export default function AuthScreen() {
     setPhoneNumber('');
     setVerificationCode('');
     setName('');
+    setEmail('');
+    setPassword('');
     setIsCodeSent(false);
+    setOrderId('');
   };
 
-  const handleResendCode = () => {
+  const handleResendCode = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Implement resend code logic
-    Alert.alert('تم الإرسال', 'تم إعادة إرسال رمز التحقق');
+    setVerificationCode('');
+    await handleSendCode();
   };
 
   return (
@@ -108,16 +177,6 @@ export default function AuthScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <Ionicons name="arrow-forward" size={24} color={COLORS.text} />
-            </TouchableOpacity>
-          </View>
-
           {/* Logo */}
           <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.logoContainer}>
             <LinearGradient
@@ -176,6 +235,26 @@ export default function AuthScreen() {
                           value={name}
                           onChangeText={setName}
                           autoCapitalize="words"
+                          editable={!isLoading}
+                        />
+                      </View>
+                    </Animated.View>
+                  )}
+
+                  {/* Email Input (Optional for Sign Up) */}
+                  {!isLogin && (
+                    <Animated.View entering={FadeInDown.delay(150).springify()}>
+                      <View style={[styles.inputContainer, { backgroundColor: COLORS.inputBg }]}>
+                        <Ionicons name="mail-outline" size={20} color={COLORS.textSecondary} />
+                        <TextInput
+                          style={[styles.input, { color: COLORS.text }]}
+                          placeholder="البريد الإلكتروني (اختياري)"
+                          placeholderTextColor={COLORS.textSecondary}
+                          value={email}
+                          onChangeText={setEmail}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          editable={!isLoading}
                         />
                       </View>
                     </Animated.View>
@@ -192,23 +271,49 @@ export default function AuthScreen() {
                       onChangeText={setPhoneNumber}
                       keyboardType="phone-pad"
                       maxLength={11}
+                      editable={!isLoading}
                     />
                   </View>
+
+                  {/* Password Input (Only for Sign Up) */}
+                  {!isLogin && (
+                    <Animated.View entering={FadeInDown.delay(200).springify()}>
+                      <View style={[styles.inputContainer, { backgroundColor: COLORS.inputBg }]}>
+                        <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
+                        <TextInput
+                          style={[styles.input, { color: COLORS.text }]}
+                          placeholder="كلمة المرور (6 أحرف على الأقل)"
+                          placeholderTextColor={COLORS.textSecondary}
+                          value={password}
+                          onChangeText={setPassword}
+                          secureTextEntry
+                          editable={!isLoading}
+                        />
+                      </View>
+                    </Animated.View>
+                  )}
 
                   {/* Send Code Button */}
                   <TouchableOpacity
                     activeOpacity={0.85}
                     onPress={handleSendCode}
+                    disabled={isLoading}
                     style={styles.authButton}
                   >
                     <LinearGradient
-                      colors={['#E8B86D', '#D4A574', '#C9956A']}
+                      colors={isLoading ? ['#999', '#777'] : ['#E8B86D', '#D4A574', '#C9956A']}
                       style={styles.authButtonGradient}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                     >
-                      <Text style={styles.authButtonText}>إرسال رمز التحقق</Text>
-                      <Ionicons name="send" size={20} color="#FFF" />
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="#FFF" />
+                      ) : (
+                        <>
+                          <Text style={styles.authButtonText}>إرسال رمز التحقق</Text>
+                          <Ionicons name="send" size={20} color="#FFF" />
+                        </>
+                      )}
                     </LinearGradient>
                   </TouchableOpacity>
                 </>
@@ -226,6 +331,7 @@ export default function AuthScreen() {
                         onChangeText={setVerificationCode}
                         keyboardType="number-pad"
                         maxLength={6}
+                        editable={!isLoading}
                       />
                     </View>
                   </Animated.View>
@@ -234,18 +340,25 @@ export default function AuthScreen() {
                   <TouchableOpacity
                     activeOpacity={0.85}
                     onPress={handleVerifyCode}
+                    disabled={isLoading}
                     style={styles.authButton}
                   >
                     <LinearGradient
-                      colors={['#E8B86D', '#D4A574', '#C9956A']}
+                      colors={isLoading ? ['#999', '#777'] : ['#E8B86D', '#D4A574', '#C9956A']}
                       style={styles.authButtonGradient}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                     >
-                      <Text style={styles.authButtonText}>
-                        {isLogin ? 'تسجيل الدخول' : 'إنشاء الحساب'}
-                      </Text>
-                      <Ionicons name="checkmark-circle" size={20} color="#FFF" />
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="#FFF" />
+                      ) : (
+                        <>
+                          <Text style={styles.authButtonText}>
+                            {isLogin ? 'تسجيل الدخول' : 'إنشاء الحساب'}
+                          </Text>
+                          <Ionicons name="checkmark-circle" size={20} color="#FFF" />
+                        </>
+                      )}
                     </LinearGradient>
                   </TouchableOpacity>
 
@@ -254,7 +367,7 @@ export default function AuthScreen() {
                     <Text style={[styles.resendText, { color: COLORS.textSecondary }]}>
                       لم تستلم الرمز؟
                     </Text>
-                    <TouchableOpacity onPress={handleResendCode}>
+                    <TouchableOpacity onPress={handleResendCode} disabled={isLoading}>
                       <Text style={[styles.resendButton, { color: COLORS.accent }]}>
                         إعادة الإرسال
                       </Text>
@@ -267,7 +380,9 @@ export default function AuthScreen() {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setIsCodeSent(false);
                       setVerificationCode('');
+                      setOrderId('');
                     }}
+                    disabled={isLoading}
                     style={styles.changeNumberButton}
                   >
                     <Ionicons name="create-outline" size={18} color={COLORS.primary} />
@@ -283,7 +398,7 @@ export default function AuthScreen() {
                 <Text style={[styles.toggleText, { color: COLORS.textSecondary }]}>
                   {isLogin ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟'}
                 </Text>
-                <TouchableOpacity onPress={toggleMode}>
+                <TouchableOpacity onPress={toggleMode} disabled={isLoading}>
                   <Text style={[styles.toggleButton, { color: COLORS.accent }]}>
                     {isLogin ? 'إنشاء حساب' : 'تسجيل الدخول'}
                   </Text>
@@ -296,23 +411,11 @@ export default function AuthScreen() {
           <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.privacyNotice}>
             <Text style={[styles.privacyText, { color: COLORS.textSecondary }]}>
               بالمتابعة، أنت توافق على{' '}
-              <Text 
-                style={{ color: COLORS.accent, fontFamily: 'Cairo_700Bold' }}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  navigation.navigate('TermsOfService');
-                }}
-              >
+              <Text style={{ color: COLORS.accent, fontFamily: 'Cairo_700Bold' }}>
                 شروط الخدمة
               </Text>
               {' '}و{' '}
-              <Text 
-                style={{ color: COLORS.accent, fontFamily: 'Cairo_700Bold' }}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  navigation.navigate('PrivacyPolicy');
-                }}
-              >
+              <Text style={{ color: COLORS.accent, fontFamily: 'Cairo_700Bold' }}>
                 سياسة الخصوصية
               </Text>
             </Text>
@@ -334,14 +437,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingBottom: 40,
-  },
-  header: {
-    paddingTop: 16,
-    paddingBottom: 24,
-  },
-  backButton: {
-    padding: 8,
-    alignSelf: 'flex-end',
+    paddingTop: 40,
   },
   logoContainer: {
     alignItems: 'center',

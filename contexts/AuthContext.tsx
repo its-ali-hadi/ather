@@ -1,169 +1,166 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import api, { User } from '../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../utils/api';
+import { getPushToken, requestNotificationPermissions } from '../utils/notifications-service';
 
-interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  login: (phone: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  loginWithOTP: (phone: string, orderId: string, code: string) => Promise<{ success: boolean; message?: string }>;
-  register: (data: RegisterData) => Promise<{ success: boolean; message?: string }>;
-  logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-  sendRegistrationOTP: (phone: string) => Promise<{ success: boolean; orderId?: string; message?: string }>;
-  sendLoginOTP: (phone: string) => Promise<{ success: boolean; orderId?: string; message?: string }>;
-}
-
-interface RegisterData {
+interface User {
+  id: number;
   phone: string;
   name: string;
   email?: string;
-  password: string;
-  orderId: string;
-  code: string;
+  bio?: string;
+  profile_image?: string;
+  is_verified: boolean;
+  role: string;
+  created_at: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (token: string, userData: User) => Promise<void>;
+  logout: () => Promise<void>;
+  updateUser: (userData: Partial<User>) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const TOKEN_KEY = '@athar_auth_token';
+const USER_KEY = '@athar_user_data';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user on mount
+  // Load saved auth data on mount
   useEffect(() => {
-    loadUser();
+    loadAuthData();
   }, []);
 
-  const loadUser = async () => {
+  // Setup notifications when user logs in
+  useEffect(() => {
+    if (user && token) {
+      setupNotifications();
+    }
+  }, [user, token]);
+
+  const loadAuthData = async () => {
     try {
-      const isAuth = await api.isAuthenticated();
-      if (isAuth) {
-        const storedUser = await api.getStoredUser();
-        if (storedUser) {
-          setUser(storedUser);
-          // Refresh user data from server
-          const response = await api.getCurrentUser();
-          if (response.success && response.data) {
-            setUser(response.data);
-            await AsyncStorage.setItem('@athar_user', JSON.stringify(response.data));
-          }
+      const savedToken = await AsyncStorage.getItem(TOKEN_KEY);
+      const savedUser = await AsyncStorage.getItem(USER_KEY);
+
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+        
+        // Verify token is still valid
+        const response = await api.getCurrentUser();
+        if (response.success) {
+          setUser(response.data);
+          await AsyncStorage.setItem(USER_KEY, JSON.stringify(response.data));
+        } else {
+          // Token invalid, clear auth
+          await clearAuthData();
         }
       }
     } catch (error) {
-      console.error('Error loading user:', error);
+      console.error('Error loading auth data:', error);
+      await clearAuthData();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const login = async (phone: string, password: string) => {
+  const setupNotifications = async () => {
     try {
-      const response = await api.login({ phone, password });
-      if (response.success && response.data) {
-        setUser(response.data.user);
-        return { success: true };
+      // Request permissions
+      const hasPermission = await requestNotificationPermissions();
+      
+      if (hasPermission) {
+        // Get push token
+        const pushToken = await getPushToken();
+        
+        if (pushToken) {
+          // Save push token to backend
+          await api.savePushToken(pushToken);
+        }
       }
-      return { success: false, message: response.message || 'فشل تسجيل الدخول' };
     } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, message: 'حدث خطأ أثناء تسجيل الدخول' };
+      console.error('Error setting up notifications:', error);
     }
   };
 
-  const loginWithOTP = async (phone: string, orderId: string, code: string) => {
+  const login = async (authToken: string, userData: User) => {
     try {
-      const response = await api.post('/auth/login-otp', { phone, orderId, code });
-      if (response.success && response.data) {
-        setUser(response.data.user);
-        return { success: true };
-      }
-      return { success: false, message: response.message || 'فشل تسجيل الدخول' };
-    } catch (error) {
-      console.error('Login with OTP error:', error);
-      return { success: false, message: 'حدث خطأ أثناء تسجيل الدخول' };
-    }
-  };
+      // Save to state
+      setToken(authToken);
+      setUser(userData);
 
-  const register = async (data: RegisterData) => {
-    try {
-      const response = await api.register(data);
-      if (response.success && response.data) {
-        setUser(response.data.user);
-        return { success: true };
-      }
-      return { success: false, message: response.message || 'فشل إنشاء الحساب' };
-    } catch (error) {
-      console.error('Register error:', error);
-      return { success: false, message: 'حدث خطأ أثناء إنشاء الحساب' };
-    }
-  };
+      // Save to AsyncStorage
+      await AsyncStorage.setItem(TOKEN_KEY, authToken);
+      await AsyncStorage.setItem(USER_KEY, JSON.stringify(userData));
 
-  const sendRegistrationOTP = async (phone: string) => {
-    try {
-      const response = await api.post('/auth/send-registration-otp', { phone });
-      if (response.success && response.data) {
-        return { success: true, orderId: response.data.orderId };
-      }
-      return { success: false, message: response.message || 'فشل إرسال رمز التحقق' };
+      // Set token for API calls
+      api.setAuthToken(authToken);
     } catch (error) {
-      console.error('Send registration OTP error:', error);
-      return { success: false, message: 'حدث خطأ أثناء إرسال رمز التحقق' };
-    }
-  };
-
-  const sendLoginOTP = async (phone: string) => {
-    try {
-      const response = await api.post('/auth/send-login-otp', { phone });
-      if (response.success && response.data) {
-        return { success: true, orderId: response.data.orderId };
-      }
-      return { success: false, message: response.message || 'فشل إرسال رمز التحقق' };
-    } catch (error) {
-      console.error('Send login OTP error:', error);
-      return { success: false, message: 'حدث خطأ أثناء إرسال رمز التحقق' };
+      console.error('Error saving auth data:', error);
+      throw error;
     }
   };
 
   const logout = async () => {
     try {
-      await api.logout();
-      setUser(null);
+      await clearAuthData();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Error during logout:', error);
+      throw error;
+    }
+  };
+
+  const clearAuthData = async () => {
+    setToken(null);
+    setUser(null);
+    await AsyncStorage.removeItem(TOKEN_KEY);
+    await AsyncStorage.removeItem(USER_KEY);
+    api.setAuthToken(null);
+  };
+
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...userData };
+      setUser(updatedUser);
+      AsyncStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
     }
   };
 
   const refreshUser = async () => {
     try {
       const response = await api.getCurrentUser();
-      if (response.success && response.data) {
+      if (response.success) {
         setUser(response.data);
-        await AsyncStorage.setItem('@athar_user', JSON.stringify(response.data));
+        await AsyncStorage.setItem(USER_KEY, JSON.stringify(response.data));
       }
     } catch (error) {
-      console.error('Refresh user error:', error);
+      console.error('Error refreshing user:', error);
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isAuthenticated: !!user,
-        login,
-        loginWithOTP,
-        register,
-        logout,
-        refreshUser,
-        sendRegistrationOTP,
-        sendLoginOTP,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const value: AuthContextType = {
+    user,
+    token,
+    isLoading,
+    isAuthenticated: !!user && !!token,
+    login,
+    logout,
+    updateUser,
+    refreshUser,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
