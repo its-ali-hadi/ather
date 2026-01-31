@@ -17,6 +17,7 @@ const likeRoutes = require('./routes/likes');
 const favoriteRoutes = require('./routes/favorites');
 const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
+const boxRoutes = require('./routes/boxes');
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/api/likes', require('./routes/likes'));
 app.use('/api/favorites', require('./routes/favorites'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/boxes', require('./routes/boxes'));
 
 // 404 handler
 app.use((req, res) => {

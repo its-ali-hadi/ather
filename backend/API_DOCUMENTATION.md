@@ -11,6 +11,7 @@
 - [Likes](#likes)
 - [Favorites](#favorites)
 - [Notifications](#notifications)
+- [📦 الصناديق والفئات](#📦-الصناديق-والفئات)
 
 ---
 
@@ -927,6 +928,136 @@ Authorization: Bearer {token}
 {
   "success": true,
   "message": "تم تعليم جميع الإشعارات كمقروءة"
+}
+```
+
+---
+
+## 📦 الصناديق والفئات
+
+### الحصول على جميع الصناديق
+
+```http
+GET /api/boxes
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "صندوق التقنية والبرمجة",
+      "description": "أحدث الأفكار والمشاريع في عالم التقنية",
+      "icon": "code-slash",
+      "color": "#3B82F6",
+      "posts_count": 45
+    }
+  ]
+}
+```
+
+### الحصول على صندوق واحد
+
+```http
+GET /api/boxes/:id
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "صندوق التقنية والبرمجة",
+    "description": "أحدث الأفكار والمشاريع",
+    "categories": [
+      {
+        "id": 1,
+        "name": "برمجة",
+        "icon": "code",
+        "color": "#3B82F6",
+        "posts_count": 20
+      }
+    ]
+  }
+}
+```
+
+### الحصول على جميع الفئات
+
+```http
+GET /api/boxes/categories?boxId=1
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "برمجة",
+      "description": "مواضيع البرمجة والتطوير",
+      "icon": "code",
+      "color": "#3B82F6",
+      "box_name": "صندوق التقنية والبرمجة",
+      "posts_count": 20
+    }
+  ]
+}
+```
+
+### Admin: إنشاء صندوق
+
+```http
+POST /api/boxes/admin
+```
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Body:**
+```json
+{
+  "name": "صندوق جديد",
+  "description": "وصف الصندوق",
+  "icon": "code-slash",
+  "color": "#3B82F6",
+  "order_index": 1
+}
+```
+
+### Admin: تحديث صندوق
+
+```http
+PUT /api/boxes/admin/:id
+```
+
+### Admin: حذف صندوق
+
+```http
+DELETE /api/boxes/admin/:id
+```
+
+### Admin: إنشاء فئة
+
+```http
+POST /api/boxes/admin/categories
+```
+
+**Body:**
+```json
+{
+  "name": "فئة جديدة",
+  "description": "وصف الفئة",
+  "icon": "code",
+  "color": "#3B82F6",
+  "box_id": 1,
+  "order_index": 1
 }
 ```
 

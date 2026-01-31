@@ -8,6 +8,8 @@ import PostsView from '@/views/PostsView.vue'
 import CommentsView from '@/views/CommentsView.vue'
 import NotificationsView from '@/views/NotificationsView.vue'
 import SettingsView from '@/views/SettingsView.vue'
+import BoxesView from '@/views/BoxesView.vue'
+import CategoriesView from '@/views/CategoriesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -42,6 +44,16 @@ const router = createRouter({
           path: 'comments',
           name: 'comments',
           component: CommentsView,
+        },
+        {
+          path: 'boxes',
+          name: 'boxes',
+          component: BoxesView,
+        },
+        {
+          path: 'categories',
+          name: 'categories',
+          component: CategoriesView,
         },
         {
           path: 'notifications',

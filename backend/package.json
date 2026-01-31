@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "init-db": "node src/scripts/initDatabase.js",
     "seed": "node src/scripts/seedData.js",
-    "create-test-user": "node src/scripts/createTestUser.js"
+    "create-test-user": "node src/scripts/createTestUser.js",
+    "add-boxes": "node src/scripts/addBoxesAndCategories.js"
   },
   "keywords": ["athar", "api", "backend"],
   "author": "",
