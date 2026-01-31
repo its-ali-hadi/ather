@@ -7,6 +7,7 @@ import {
   useColorScheme,
   View,
   Platform,
+  ScrollView,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -41,7 +42,10 @@ export default function GuestProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
-      <View style={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* Icon */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.iconContainer}>
           <LinearGradient
@@ -101,6 +105,24 @@ export default function GuestProfileScreen() {
               إنشاء منشوراتك الخاصة
             </Text>
           </View>
+
+          <View style={[styles.featureItem, { backgroundColor: COLORS.cardBg }]}>
+            <View style={[styles.featureIcon, { backgroundColor: '#E94B3C' + '20' }]}>
+              <Ionicons name="lock-closed" size={24} color="#E94B3C" />
+            </View>
+            <Text style={[styles.featureText, { color: COLORS.text }]}>
+              الوصول إلى المنشورات الخاصة
+            </Text>
+          </View>
+
+          <View style={[styles.featureItem, { backgroundColor: COLORS.cardBg }]}>
+            <View style={[styles.featureIcon, { backgroundColor: '#F39C12' + '20' }]}>
+              <Ionicons name="people" size={24} color="#F39C12" />
+            </View>
+            <Text style={[styles.featureText, { color: COLORS.text }]}>
+              متابعة المستخدمين الآخرين
+            </Text>
+          </View>
         </Animated.View>
 
         {/* Action Buttons */}
@@ -135,7 +157,17 @@ export default function GuestProfileScreen() {
             <Ionicons name="person-add" size={24} color={COLORS.primary} />
           </TouchableOpacity>
         </Animated.View>
-      </View>
+
+        {/* Info Box */}
+        <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.infoContainer}>
+          <View style={[styles.infoBox, { backgroundColor: COLORS.cardBg }]}>
+            <Ionicons name="information-circle" size={24} color={COLORS.accent} />
+            <Text style={[styles.infoText, { color: COLORS.textSecondary }]}>
+              بعد التسجيل، ستتمكن من الوصول إلى جميع ميزات المنصة والتفاعل مع المجتمع بشكل كامل
+            </Text>
+          </View>
+        </Animated.View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -144,15 +176,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingTop: 20,
+    paddingBottom: Platform.OS === 'ios' ? 100 : 80,
   },
   iconContainer: {
+    alignItems: 'center',
     marginBottom: 32,
   },
   iconGradient: {
@@ -230,6 +260,7 @@ const styles = StyleSheet.create({
   buttonsContainer: {
     width: '100%',
     gap: 16,
+    marginBottom: 24,
   },
   loginButton: {
     borderRadius: 16,
@@ -283,5 +314,33 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
+  },
+  infoContainer: {
+    width: '100%',
+  },
+  infoBox: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Tajawal_400Regular',
+    textAlign: 'right',
+    lineHeight: 22,
   },
 });

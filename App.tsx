@@ -19,6 +19,7 @@ import {
   Tajawal_700Bold,
 } from '@expo-google-fonts/tajawal';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Platform } from 'react-native';
 
 // Screens
 import AuthScreen from './screens/AuthScreen';
@@ -72,8 +73,8 @@ function TabNavigator() {
           borderTopWidth: 0,
           elevation: 0,
           shadowOpacity: 0,
-          height: 60,
-          paddingBottom: 8,
+          height: Platform.OS === 'ios' ? 88 : 60,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
           paddingTop: 8,
         },
         tabBarActiveTintColor: COLORS.primary,
@@ -115,12 +116,12 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Notifications"
-        component={NotificationsScreen}
+        name="Private"
+        component={PrivateScreen}
         options={{
-          tabBarLabel: 'الإشعارات',
+          tabBarLabel: 'خاص',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications" size={size} color={color} />
+            <Ionicons name="lock-closed" size={size} color={color} />
           ),
         }}
       />

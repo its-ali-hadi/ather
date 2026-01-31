@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const { testConnection } = require('./config/database');
 const { errorHandler } = require('./middleware/errorHandler');
+const { seedData } = require('./scripts/seedData');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -63,6 +64,16 @@ async function startServer() {
     // Test database connection
     await testConnection();
     console.log('✅ Database connected successfully');
+
+    // Seed data if AUTO_SEED is enabled
+    if (process.env.AUTO_SEED === 'true') {
+      console.log('\n🌱 Auto-seeding enabled...');
+      try {
+        await seedData();
+      } catch (error) {
+        console.log('ℹ️  Seeding skipped (data may already exist)');
+      }
+    }
 
     // Start listening
     app.listen(PORT, () => {

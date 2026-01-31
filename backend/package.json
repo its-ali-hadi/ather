@@ -7,12 +7,9 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "init-db": "node src/scripts/initDatabase.js",
-<<<<<<< Updated upstream
+    "seed": "node src/scripts/seedData.js",
     "add-ban-fields": "node src/scripts/addBanFields.js",
     "create-test-user": "node src/scripts/createTestUser.js"
-=======
-    "add-ban-fields": "node src/scripts/addBanFields.js"
->>>>>>> Stashed changes
   },
   "keywords": ["athar", "api", "backend"],
   "author": "",

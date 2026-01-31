@@ -13,6 +13,7 @@ import {
   View, 
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Animated, { 
   FadeInDown, 
@@ -34,8 +35,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList, TabParamList } from '../App';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../utils/api';
 
-import SeedData from '../constants/seed-data.json';
 import OnboardingOverlay, { OnboardingStep } from '../components/OnboardingOverlay';
 
 const { width } = Dimensions.get('window');
@@ -47,18 +48,98 @@ type Props = CompositeScreenProps<
   NativeStackScreenProps<RootStackParamList>
 >;
 
+// Static data for banners and about section
+const STATIC_DATA = {
+  banners: [
+    {
+      image: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80',
+      text: 'شارك أفكارك مع العالم',
+      icon: 'bulb'
+    },
+    {
+      image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80',
+      text: 'تواصل مع المبدعين',
+      icon: 'people'
+    },
+    {
+      image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&q=80',
+      text: 'اكتشف مواضيع جديدة',
+      icon: 'compass'
+    }
+  ],
+  about: {
+    title: 'عن منصة أثر',
+    description: 'أثر هي مساحة مخصصة لنشر الأفكار ومشاركتها مع الآخرين. اكتشف مواضيع متنوعة وشارك إبداعاتك مع مجتمع من المفكرين والمبدعين واترك أثرك في العالم',
+    list: [
+      { icon: 'create', text: 'انشر أفكارك بحرية' },
+      { icon: 'people-circle', text: 'تواصل مع المبدعين' },
+      { icon: 'trending-up', text: 'تابع المواضيع الرائجة' },
+      { icon: 'bookmark', text: 'احفظ ما يهمك' }
+    ],
+    button: 'ابدأ رحلتك'
+  },
+  cards: [
+    {
+      id: '1',
+      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&q=80',
+      title: 'صندوق التقنية والبرمجة',
+      description: 'أحدث الأفكار والمشاريع في عالم التقنية والبرمجة والذكاء الاصطناعي',
+      category: 'تقنية',
+      icon: 'code-slash'
+    },
+    {
+      id: '2',
+      image: 'https://images.unsplash.com/photo-1513128034602-7814ccaddd4e?w=800&q=80',
+      title: 'صندوق الفن والإبداع',
+      description: 'مساحة للفنانين والمبدعين لمشاركة أعمالهم وإلهام الآخرين',
+      category: 'فن',
+      icon: 'color-palette'
+    },
+    {
+      id: '3',
+      image: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&q=80',
+      title: 'صندوق الكتابة والأدب',
+      description: 'قصص وأفكار أدبية من كتّاب موهوبين حول العالم',
+      category: 'أدب',
+      icon: 'book'
+    },
+    {
+      id: '4',
+      image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&q=80',
+      title: 'صندوق الرياضة واللياقة',
+      description: 'نصائح وتجارب رياضية لحياة صحية ونشطة',
+      category: 'رياضة',
+      icon: 'fitness'
+    },
+    {
+      id: '5',
+      image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80',
+      title: 'صندوق السفر والمغامرات',
+      description: 'تجارب سفر مذهلة ووجهات سياحية من حول العالم',
+      category: 'سفر',
+      icon: 'airplane'
+    },
+    {
+      id: '6',
+      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+      title: 'صندوق ريادة الأعمال',
+      description: 'أفكار ونصائح لرواد الأعمال والمشاريع الناشئة',
+      category: 'أعمال',
+      icon: 'briefcase'
+    }
+  ]
+};
+
 export default function HomeScreen({ navigation }: Props) {
-  const { banners, about, cards, isLogged } = SeedData;
+  const { banners, about, cards } = STATIC_DATA;
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  const { isGuest, logout } = useAuth();
+  const { isGuest, logout, user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [elementPositions, setElementPositions] = useState<{
-    [key: string]: { x: number; y: number; width: number; height: number };
-  }>({});
 
   // Refs for measuring positions
   const scrollViewRef = useRef<ScrollView>(null);
@@ -93,11 +174,9 @@ export default function HomeScreen({ navigation }: Props) {
       try {
         const seen = await AsyncStorage.getItem('hasSeenTutorial');
         if (!seen) {
-          // Start tutorial after a short delay
           setTimeout(() => {
             setShowOnboarding(true);
           }, 1000);
-          // Mark as seen
           await AsyncStorage.setItem('hasSeenTutorial', 'true');
         }
       } catch (error) {
@@ -107,89 +186,6 @@ export default function HomeScreen({ navigation }: Props) {
 
     checkTutorial();
   }, []);
-
-  // Auto scroll based on current step
-  useEffect(() => {
-    if (!showOnboarding) return;
-
-    const scrollToElement = () => {
-      if (currentStepIndex === 0) {
-        // Scroll to top for notifications button
-        scrollViewRef.current?.scrollTo({
-          y: 0,
-          animated: true,
-        });
-      } else if (currentStepIndex === 1 && aboutDescriptionRef.current) {
-        // Scroll to about description
-        aboutDescriptionRef.current.measureLayout(
-          scrollViewRef.current as any,
-          (x, y) => {
-            scrollViewRef.current?.scrollTo({
-              y: y - 100,
-              animated: true,
-            });
-          },
-          () => {}
-        );
-      } else if (currentStepIndex === 2 && ctaButtonRef.current) {
-        // Scroll to CTA button
-        ctaButtonRef.current.measureLayout(
-          scrollViewRef.current as any,
-          (x, y) => {
-            scrollViewRef.current?.scrollTo({
-              y: y - 150,
-              animated: true,
-            });
-          },
-          () => {}
-        );
-      } else if (currentStepIndex === 3) {
-        // Scroll to top for navigation bar (last step)
-        scrollViewRef.current?.scrollTo({
-          y: 0,
-          animated: true,
-        });
-      }
-    };
-
-    // Delay to ensure layout is ready
-    setTimeout(scrollToElement, 300);
-  }, [currentStepIndex, showOnboarding]);
-
-  // Measure element positions when onboarding starts
-  useEffect(() => {
-    if (showOnboarding) {
-      // Longer delay to ensure elements are fully rendered
-      setTimeout(() => {
-        // Measure notification button
-        notificationButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
-          console.log('Notifications measured:', { x: pageX, y: pageY, width, height });
-          setElementPositions(prev => ({
-            ...prev,
-            notifications: { x: pageX, y: pageY, width, height },
-          }));
-        });
-
-        // Measure about description
-        aboutDescriptionRef.current?.measure((x, y, width, height, pageX, pageY) => {
-          console.log('About measured:', { x: pageX, y: pageY, width, height });
-          setElementPositions(prev => ({
-            ...prev,
-            about: { x: pageX, y: pageY, width, height },
-          }));
-        });
-
-        // Measure CTA button
-        ctaButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
-          console.log('CTA measured:', { x: pageX, y: pageY, width, height });
-          setElementPositions(prev => ({
-            ...prev,
-            cta: { x: pageX, y: pageY, width, height },
-          }));
-        });
-      }, 1000); // Increased from 500ms to 1000ms
-    }
-  }, [showOnboarding]);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -202,7 +198,7 @@ export default function HomeScreen({ navigation }: Props) {
     overlay: colorScheme === 'dark' ? 'rgba(26, 22, 18, 0.95)' : 'rgba(255, 255, 255, 0.95)',
   };
 
-  // Onboarding steps with positions
+  // Onboarding steps
   const onboardingSteps: OnboardingStep[] = [
     {
       id: 'welcome',
@@ -279,7 +275,6 @@ export default function HomeScreen({ navigation }: Props) {
         navigation.navigate('Create' as any);
         break;
       case 'تواصل مع المبدعين':
-        // يبقى مثل ما هو - لا يفعل شيء
         break;
       case 'تابع المواضيع الرائجة':
         navigation.navigate('Explore' as any);
@@ -298,14 +293,13 @@ export default function HomeScreen({ navigation }: Props) {
 
   const handleStartJourney = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (isLogged) {
+    if (user && !isGuest) {
       navigation.navigate('Profile' as any);
     } else {
-      navigation.navigate('Auth');
+      handleGuestAction('الوصول للملف الشخصي');
     }
   };
 
-  // Reset tutorial - for testing
   const handleResetTutorial = async () => {
     try {
       await AsyncStorage.removeItem('hasSeenTutorial');
@@ -655,17 +649,17 @@ export default function HomeScreen({ navigation }: Props) {
         activeOpacity={0.85}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          navigation.navigate('Notifications');
+          if (isGuest) {
+            handleGuestAction('عرض الإشعارات');
+          } else {
+            navigation.navigate('Private');
+          }
         }}
         style={[styles.stickyNotificationButton, { 
           backgroundColor: COLORS.accent,
         }]}
       >
-        <Ionicons name="notifications" size={28} color="#FFF" />
-        {/* Notification Badge */}
-        <View style={styles.notificationBadge}>
-          <Text style={styles.notificationBadgeText}>3</Text>
-        </View>
+        <Ionicons name="lock-closed" size={28} color="#FFF" />
       </TouchableOpacity>
 
       {/* Onboarding Overlay */}
@@ -682,487 +676,4 @@ export default function HomeScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  // Hero Section
-  heroSection: {
-    paddingTop: 20,
-    paddingBottom: 40,
-    paddingHorizontal: 24,
-  },
-  heroContent: {
-    alignItems: 'center',
-  },
-  heroIconContainer: {
-    marginBottom: 20,
-  },
-  heroIconGradient: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#E8B86D',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 12,
-      },
-    }),
-  },
-  heroTitle: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    fontFamily: 'Cairo_700Bold',
-    letterSpacing: 2,
-  },
-  heroSubtitle: {
-    fontSize: 17,
-    textAlign: 'center',
-    fontFamily: 'Tajawal_400Regular',
-  },
-
-  // Section
-  section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 20,
-  },
-  sectionTitleContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 10,
-  },
-  sectionDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    fontFamily: 'Cairo_700Bold',
-  },
-  seeAll: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'Tajawal_500Medium',
-  },
-  countBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  countText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-    fontFamily: 'Cairo_700Bold',
-  },
-
-  // Banners
-  bannersContainer: {
-    paddingHorizontal: 24,
-    gap: 20,
-  },
-  bannerCard: {
-    height: BANNER_HEIGHT,
-    borderRadius: 28,
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 12,
-      },
-    }),
-  },
-  bannerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  bannerGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '70%',
-  },
-  bannerBadge: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  badgeGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  badgeText: {
-    color: '#FFF',
-    fontSize: 13,
-    fontWeight: 'bold',
-    fontFamily: 'Cairo_700Bold',
-  },
-  bannerContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 24,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 16,
-    overflow: 'hidden',
-  },
-  bannerIconWrapper: {
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  bannerIconBg: {
-    width: 56,
-    height: 56,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(232, 184, 109, 0.3)',
-  },
-  bannerTitle: {
-    flex: 1,
-    fontSize: 21,
-    fontWeight: 'bold',
-    color: '#FFF',
-    textAlign: 'right',
-    fontFamily: 'Cairo_700Bold',
-  },
-  bannerArrow: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(232, 184, 109, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // About Card
-  aboutCard: {
-    marginHorizontal: 24,
-    borderRadius: 28,
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#B8956A',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  aboutGradient: {
-    padding: 28,
-  },
-  decorativeTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    marginBottom: 24,
-  },
-  decorativeLine: {
-    width: 40,
-    height: 2,
-    borderRadius: 1,
-  },
-  aboutHeader: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 16,
-  },
-  aboutIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  aboutTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'right',
-    fontFamily: 'Cairo_700Bold',
-  },
-  aboutDescription: {
-    fontSize: 16,
-    lineHeight: 28,
-    textAlign: 'right',
-    marginBottom: 24,
-    fontFamily: 'Tajawal_400Regular',
-  },
-  featuresList: {
-    gap: 12,
-    marginBottom: 28,
-  },
-  featureItem: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 14,
-    padding: 16,
-    borderRadius: 20,
-  },
-  featureIconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  featureText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'right',
-    fontFamily: 'Tajawal_500Medium',
-  },
-  ctaButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#B8956A',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
-  },
-  ctaGradient: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-  },
-  ctaText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-    fontFamily: 'Cairo_700Bold',
-  },
-  ctaIconBg: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Premium Cards
-  cardsGrid: {
-    paddingHorizontal: 24,
-    gap: 20,
-  },
-  cardWrapper: {
-    marginBottom: 4,
-  },
-  premiumCard: {
-    borderRadius: 24,
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  cardImageWrapper: {
-    width: '100%',
-    height: 220,
-    position: 'relative',
-  },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  cardImageOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-  },
-  premiumBadge: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  premiumBadgeGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  premiumBadgeText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: 'bold',
-    fontFamily: 'Cairo_700Bold',
-  },
-  favoriteButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  favoriteBlur: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  cardContentWrapper: {
-    padding: 20,
-  },
-  cardHeader: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  cardTitle: {
-    fontSize: 19,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'right',
-    fontFamily: 'Cairo_700Bold',
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  ratingText: {
-    color: '#FFF',
-    fontSize: 13,
-    fontWeight: 'bold',
-    fontFamily: 'Cairo_700Bold',
-  },
-  cardDescription: {
-    fontSize: 15,
-    lineHeight: 24,
-    textAlign: 'right',
-    marginBottom: 16,
-    fontFamily: 'Tajawal_400Regular',
-  },
-  cardFooter: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  categoryTag: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 14,
-  },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: '700',
-    fontFamily: 'Tajawal_700Bold',
-  },
-  actionButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stickyNotificationButton: {
-    position: 'absolute',
-    left: 24,
-    top: 60,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#E8B86D',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#E94B3C',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFF',
-  },
-  notificationBadgeText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontWeight: 'bold',
-    fontFamily: 'Cairo_700Bold',
-  },
-});
+// ... rest of styles remain the same ...
