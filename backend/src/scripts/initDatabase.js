@@ -34,6 +34,8 @@ const initDatabase = async () => {
         profile_image VARCHAR(500),
         push_token VARCHAR(500),
         is_verified BOOLEAN DEFAULT FALSE,
+        is_banned BOOLEAN DEFAULT FALSE,
+        ban_reason TEXT,
         role ENUM('user', 'admin') DEFAULT 'user',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -57,6 +59,7 @@ const initDatabase = async () => {
         category VARCHAR(50),
         is_archived BOOLEAN DEFAULT FALSE,
         is_private BOOLEAN DEFAULT FALSE,
+        is_featured BOOLEAN DEFAULT FALSE,
         views_count INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -65,6 +68,7 @@ const initDatabase = async () => {
         INDEX idx_type (type),
         INDEX idx_category (category),
         INDEX idx_is_private (is_private),
+        INDEX idx_is_featured (is_featured),
         INDEX idx_created_at (created_at),
         FULLTEXT INDEX idx_content (title, content)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -163,8 +167,8 @@ const initDatabase = async () => {
     console.log('   ═══════════════════════════════════════════════════');
     console.log('');
     console.log('   📊 Tables created:');
-    console.log('   - users (with push_token field)');
-    console.log('   - posts');
+    console.log('   - users (with push_token, is_banned, ban_reason)');
+    console.log('   - posts (with is_private, is_featured)');
     console.log('   - comments');
     console.log('   - likes');
     console.log('   - favorites');
