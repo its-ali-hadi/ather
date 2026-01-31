@@ -11,13 +11,17 @@ import {
   Platform,
   Alert,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import seedData from '../constants/seed-data.json';
+import { uploadPostImage } from '../utils/s3-service';
+import api from '../utils/api';
 
 export default function CreateImagePostScreen() {
   const colorScheme = useColorScheme();
@@ -27,6 +31,8 @@ export default function CreateImagePostScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -41,21 +47,80 @@ export default function CreateImagePostScreen() {
   const boxes = seedData.cards;
   const categories = ['تقنية', 'فن', 'أدب', 'رياضة', 'سفر', 'أعمال'];
 
-  const handlePickImage = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert('اختيار صورة', 'سيتم إضافة وظيفة اختيار الصورة قريباً');
+  const handlePickImage = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // طلب الصلاحيات
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('خطأ', 'نحتاج صلاحية الوصول للصور');
+        return;
+      }
+
+      // اختيار الصورة
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('خطأ', 'فشل اختيار الصورة');
+    }
   };
 
-  const handleSubmit = () => {
-    if (!selectedBox || !selectedCategory || !title || !description) {
+  const handleSubmit = async () => {
+    if (!selectedBox || !selectedCategory || !title || !description || !imageUri) {
       Alert.alert('خطأ', 'الرجاء ملء جميع الحقول المطلوبة');
       return;
     }
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert('نجح', 'تم إنشاء المنشور بنجاح!', [
-      { text: 'حسناً', onPress: () => navigation.goBack() }
-    ]);
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // 1. رفع الصورة لـ S3
+      const uploadResult = await uploadPostImage(imageUri, (progress) => {
+        setUploadProgress(progress.percentage);
+      });
+
+      if (!uploadResult.success) {
+        Alert.alert('خطأ', uploadResult.error || 'فشل رفع الصورة');
+        setUploading(false);
+        return;
+      }
+
+      // 2. إنشاء المنشور مع رابط الصورة
+      const response = await api.createPost({
+        type: 'image',
+        title,
+        content: description,
+        media_url: uploadResult.url,
+        category: selectedCategory,
+      });
+
+      if (response.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert('نجح', 'تم نشر المنشور بنجاح!', [
+          { text: 'حسناً', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        Alert.alert('خطأ', response.message || 'فشل نشر المنشور');
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      Alert.alert('خطأ', 'حدث خطأ أثناء النشر');
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   return (
@@ -69,6 +134,7 @@ export default function CreateImagePostScreen() {
           <TouchableOpacity 
             onPress={() => navigation.goBack()}
             style={styles.backButton}
+            disabled={uploading}
           >
             <Ionicons name="arrow-forward" size={24} color={COLORS.text} />
           </TouchableOpacity>
@@ -94,6 +160,7 @@ export default function CreateImagePostScreen() {
             </Text>
             <TouchableOpacity
               onPress={handlePickImage}
+              disabled={uploading}
               style={[
                 styles.imagePicker,
                 { 
@@ -115,6 +182,23 @@ export default function CreateImagePostScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Upload Progress */}
+          {uploading && uploadProgress > 0 && (
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { width: `${uploadProgress}%`, backgroundColor: COLORS.accent }
+                  ]} 
+                />
+              </View>
+              <Text style={[styles.progressText, { color: COLORS.text }]}>
+                {uploadProgress}% جاري الرفع...
+              </Text>
+            </View>
+          )}
+
           {/* Box Selection */}
           <View style={styles.fieldContainer}>
             <Text style={[styles.label, { color: COLORS.text }]}>
@@ -132,6 +216,7 @@ export default function CreateImagePostScreen() {
                     setSelectedBox(box.id);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
+                  disabled={uploading}
                   style={[
                     styles.optionChip,
                     { 
@@ -171,6 +256,7 @@ export default function CreateImagePostScreen() {
                     setSelectedCategory(category);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
+                  disabled={uploading}
                   style={[
                     styles.categoryChip,
                     { 
@@ -211,6 +297,7 @@ export default function CreateImagePostScreen() {
               value={title}
               onChangeText={setTitle}
               textAlign="right"
+              editable={!uploading}
             />
           </View>
 
@@ -236,6 +323,7 @@ export default function CreateImagePostScreen() {
               numberOfLines={6}
               textAlign="right"
               textAlignVertical="top"
+              editable={!uploading}
             />
           </View>
 
@@ -243,16 +331,26 @@ export default function CreateImagePostScreen() {
           <TouchableOpacity
             onPress={handleSubmit}
             activeOpacity={0.8}
+            disabled={uploading}
             style={styles.submitButton}
           >
             <LinearGradient
-              colors={['#E8B86D', '#D4A574']}
+              colors={uploading ? ['#999', '#777'] : ['#E8B86D', '#D4A574']}
               style={styles.submitGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Ionicons name="checkmark-circle" size={24} color="#FFF" />
-              <Text style={styles.submitText}>نشر المنشور</Text>
+              {uploading ? (
+                <>
+                  <ActivityIndicator size="small" color="#FFF" />
+                  <Text style={styles.submitText}>جاري النشر...</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={24} color="#FFF" />
+                  <Text style={styles.submitText}>نشر المنشور</Text>
+                </>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -315,6 +413,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 12,
+    overflow: 'hidden',
   },
   imagePickerText: {
     fontSize: 16,
@@ -324,6 +423,24 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 14,
+  },
+  progressContainer: {
+    gap: 8,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 14,
+    fontFamily: 'Tajawal_500Medium',
+    textAlign: 'center',
   },
   optionsScrollContent: {
     paddingRight: 4,

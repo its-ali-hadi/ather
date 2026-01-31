@@ -10,13 +10,17 @@ import {
   View,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import seedData from '../constants/seed-data.json';
+import { uploadPostVideo } from '../utils/s3-service';
+import api from '../utils/api';
 
 export default function CreateVideoPostScreen() {
   const colorScheme = useColorScheme();
@@ -26,6 +30,8 @@ export default function CreateVideoPostScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [videoUri, setVideoUri] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -40,21 +46,80 @@ export default function CreateVideoPostScreen() {
   const boxes = seedData.cards;
   const categories = ['تقنية', 'فن', 'أدب', 'رياضة', 'سفر', 'أعمال'];
 
-  const handlePickVideo = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert('اختيار فيديو', 'سيتم إضافة وظيفة اختيار الفيديو قريباً');
+  const handlePickVideo = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // طلب الصلاحيات
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('خطأ', 'نحتاج صلاحية الوصول للفيديوهات');
+        return;
+      }
+
+      // اختيار الفيديو
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: true,
+        quality: 0.8,
+        videoMaxDuration: 300, // 5 دقائق
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setVideoUri(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking video:', error);
+      Alert.alert('خطأ', 'فشل اختيار الفيديو');
+    }
   };
 
-  const handleSubmit = () => {
-    if (!selectedBox || !selectedCategory || !title || !description) {
+  const handleSubmit = async () => {
+    if (!selectedBox || !selectedCategory || !title || !description || !videoUri) {
       Alert.alert('خطأ', 'الرجاء ملء جميع الحقول المطلوبة');
       return;
     }
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert('نجح', 'تم إنشاء المنشور بنجاح!', [
-      { text: 'حسناً', onPress: () => navigation.goBack() }
-    ]);
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // 1. رفع الفيديو لـ S3
+      const uploadResult = await uploadPostVideo(videoUri, (progress) => {
+        setUploadProgress(progress.percentage);
+      });
+
+      if (!uploadResult.success) {
+        Alert.alert('خطأ', uploadResult.error || 'فشل رفع الفيديو');
+        setUploading(false);
+        return;
+      }
+
+      // 2. إنشاء المنشور مع رابط الفيديو
+      const response = await api.createPost({
+        type: 'video',
+        title,
+        content: description,
+        media_url: uploadResult.url,
+        category: selectedCategory,
+      });
+
+      if (response.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert('نجح', 'تم نشر المنشور بنجاح!', [
+          { text: 'حسناً', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        Alert.alert('خطأ', response.message || 'فشل نشر المنشور');
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      Alert.alert('خطأ', 'حدث خطأ أثناء النشر');
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   return (
@@ -68,6 +133,7 @@ export default function CreateVideoPostScreen() {
           <TouchableOpacity 
             onPress={() => navigation.goBack()}
             style={styles.backButton}
+            disabled={uploading}
           >
             <Ionicons name="arrow-forward" size={24} color={COLORS.text} />
           </TouchableOpacity>
@@ -93,6 +159,7 @@ export default function CreateVideoPostScreen() {
             </Text>
             <TouchableOpacity
               onPress={handlePickVideo}
+              disabled={uploading}
               style={[
                 styles.videoPicker,
                 { 
@@ -101,15 +168,36 @@ export default function CreateVideoPostScreen() {
                 }
               ]}
             >
-              <Ionicons name="play-circle-outline" size={64} color={COLORS.textSecondary} />
+              <Ionicons 
+                name={videoUri ? "checkmark-circle" : "play-circle-outline"} 
+                size={64} 
+                color={videoUri ? '#4CAF50' : COLORS.textSecondary} 
+              />
               <Text style={[styles.videoPickerText, { color: COLORS.textSecondary }]}>
-                اضغط لاختيار فيديو
+                {videoUri ? 'تم اختيار الفيديو ✓' : 'اضغط لاختيار فيديو'}
               </Text>
               <Text style={[styles.videoPickerHint, { color: COLORS.textSecondary }]}>
-                الحد الأقصى: 100 ميجابايت
+                الحد الأقصى: 5 دقائق
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Upload Progress */}
+          {uploading && uploadProgress > 0 && (
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { width: `${uploadProgress}%`, backgroundColor: COLORS.accent }
+                  ]} 
+                />
+              </View>
+              <Text style={[styles.progressText, { color: COLORS.text }]}>
+                {uploadProgress}% جاري الرفع...
+              </Text>
+            </View>
+          )}
 
           {/* Box Selection */}
           <View style={styles.fieldContainer}>
@@ -128,6 +216,7 @@ export default function CreateVideoPostScreen() {
                     setSelectedBox(box.id);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
+                  disabled={uploading}
                   style={[
                     styles.optionChip,
                     { 
@@ -167,6 +256,7 @@ export default function CreateVideoPostScreen() {
                     setSelectedCategory(category);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
+                  disabled={uploading}
                   style={[
                     styles.categoryChip,
                     { 
@@ -207,6 +297,7 @@ export default function CreateVideoPostScreen() {
               value={title}
               onChangeText={setTitle}
               textAlign="right"
+              editable={!uploading}
             />
           </View>
 
@@ -232,6 +323,7 @@ export default function CreateVideoPostScreen() {
               numberOfLines={6}
               textAlign="right"
               textAlignVertical="top"
+              editable={!uploading}
             />
           </View>
 
@@ -239,16 +331,26 @@ export default function CreateVideoPostScreen() {
           <TouchableOpacity
             onPress={handleSubmit}
             activeOpacity={0.8}
+            disabled={uploading}
             style={styles.submitButton}
           >
             <LinearGradient
-              colors={['#E8B86D', '#D4A574']}
+              colors={uploading ? ['#999', '#777'] : ['#E8B86D', '#D4A574']}
               style={styles.submitGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Ionicons name="checkmark-circle" size={24} color="#FFF" />
-              <Text style={styles.submitText}>نشر المنشور</Text>
+              {uploading ? (
+                <>
+                  <ActivityIndicator size="small" color="#FFF" />
+                  <Text style={styles.submitText}>جاري النشر...</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={24} color="#FFF" />
+                  <Text style={styles.submitText}>نشر المنشور</Text>
+                </>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -319,6 +421,24 @@ const styles = StyleSheet.create({
   videoPickerHint: {
     fontSize: 13,
     fontFamily: 'Tajawal_400Regular',
+  },
+  progressContainer: {
+    gap: 8,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 14,
+    fontFamily: 'Tajawal_500Medium',
+    textAlign: 'center',
   },
   optionsScrollContent: {
     paddingRight: 4,

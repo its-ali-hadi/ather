@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
+const { sendOTP, verifyOTP } = require('../config/otp');
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -15,10 +16,66 @@ const generateToken = (user) => {
   );
 };
 
-// Register new user
+// Send OTP for registration
+exports.sendRegistrationOTP = async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+
+    // Check if user already exists
+    const [existingUsers] = await pool.query(
+      'SELECT id FROM users WHERE phone = ?',
+      [phone]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'رقم الهاتف مستخدم مسبقاً'
+      });
+    }
+
+    // تحويل رقم الهاتف العراقي إلى صيغة دولية
+    // من 07XXXXXXXXX إلى +9647XXXXXXXXX
+    const internationalPhone = phone.startsWith('07') 
+      ? `+964${phone.substring(1)}` 
+      : phone;
+
+    // Send OTP
+    const otpResult = await sendOTP(internationalPhone);
+
+    if (!otpResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: otpResult.error || 'فشل إرسال رمز التحقق'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'تم إرسال رمز التحقق إلى هاتفك',
+      data: {
+        orderId: otpResult.orderId
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Register new user with OTP verification
 exports.register = async (req, res, next) => {
   try {
-    const { phone, name, email, password } = req.body;
+    const { phone, name, email, password, orderId, code } = req.body;
+
+    // Verify OTP
+    const verifyResult = await verifyOTP(orderId, code);
+
+    if (!verifyResult.success || !verifyResult.verified) {
+      return res.status(400).json({
+        success: false,
+        message: verifyResult.error || 'رمز التحقق غير صحيح'
+      });
+    }
 
     // Check if user exists
     const [existingUsers] = await pool.query(
@@ -36,15 +93,15 @@ exports.register = async (req, res, next) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Create user with verified phone
     const [result] = await pool.query(
-      'INSERT INTO users (phone, name, email, password) VALUES (?, ?, ?, ?)',
-      [phone, name, email, hashedPassword]
+      'INSERT INTO users (phone, name, email, password, is_verified) VALUES (?, ?, ?, ?, ?)',
+      [phone, name, email, hashedPassword, true]
     );
 
     // Get created user
     const [users] = await pool.query(
-      'SELECT id, phone, name, email, bio, profile_image, role, created_at FROM users WHERE id = ?',
+      'SELECT id, phone, name, email, bio, profile_image, is_verified, role, created_at FROM users WHERE id = ?',
       [result.insertId]
     );
 
@@ -64,7 +121,52 @@ exports.register = async (req, res, next) => {
   }
 };
 
-// Login user
+// Send OTP for login
+exports.sendLoginOTP = async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+
+    // Find user
+    const [users] = await pool.query(
+      'SELECT id FROM users WHERE phone = ?',
+      [phone]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'رقم الهاتف غير مسجل'
+      });
+    }
+
+    // تحويل رقم الهاتف العراقي إلى صيغة دولية
+    const internationalPhone = phone.startsWith('07') 
+      ? `+964${phone.substring(1)}` 
+      : phone;
+
+    // Send OTP
+    const otpResult = await sendOTP(internationalPhone);
+
+    if (!otpResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: otpResult.error || 'فشل إرسال رمز التحقق'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'تم إرسال رمز التحقق إلى هاتفك',
+      data: {
+        orderId: otpResult.orderId
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Login user (original with password)
 exports.login = async (req, res, next) => {
   try {
     const { phone, password } = req.body;
@@ -97,6 +199,50 @@ exports.login = async (req, res, next) => {
     // Remove password from response
     delete user.password;
 
+    const token = generateToken(user);
+
+    res.json({
+      success: true,
+      message: 'تم تسجيل الدخول بنجاح',
+      data: {
+        user,
+        token
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Login with OTP
+exports.loginWithOTP = async (req, res, next) => {
+  try {
+    const { phone, orderId, code } = req.body;
+
+    // Verify OTP
+    const verifyResult = await verifyOTP(orderId, code);
+
+    if (!verifyResult.success || !verifyResult.verified) {
+      return res.status(400).json({
+        success: false,
+        message: verifyResult.error || 'رمز التحقق غير صحيح'
+      });
+    }
+
+    // Find user
+    const [users] = await pool.query(
+      'SELECT id, phone, name, email, bio, profile_image, is_verified, role, created_at FROM users WHERE phone = ?',
+      [phone]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'رقم الهاتف غير مسجل'
+      });
+    }
+
+    const user = users[0];
     const token = generateToken(user);
 
     res.json({
@@ -176,6 +322,27 @@ exports.updatePassword = async (req, res, next) => {
     res.json({
       success: true,
       message: 'تم تحديث كلمة المرور بنجاح'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Save push token
+exports.savePushToken = async (req, res, next) => {
+  try {
+    const { pushToken } = req.body;
+    const userId = req.user.id;
+
+    // Update user's push token
+    await pool.query(
+      'UPDATE users SET push_token = ? WHERE id = ?',
+      [pushToken, userId]
+    );
+
+    res.json({
+      success: true,
+      message: 'تم حفظ رمز الإشعارات بنجاح'
     });
   } catch (error) {
     next(error);

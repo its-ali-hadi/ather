@@ -3,13 +3,18 @@ const { pool } = require('../config/database');
 // Get user profile
 exports.getUserProfile = async (req, res, next) => {
   try {
-    const userId = req.params.id;
-    const currentUserId = req.user?.id;
+    const userId = req.params.userId;
 
-    // Get user info
     const [users] = await pool.query(
-      'SELECT id, phone, name, email, bio, profile_image, is_verified, created_at FROM users WHERE id = ?',
-      [userId]
+      `SELECT 
+        u.id, u.phone, u.name, u.email, u.bio, u.profile_image, u.is_verified, u.role, u.created_at,
+        (SELECT COUNT(*) FROM posts WHERE user_id = u.id AND is_archived = 0) as posts_count,
+        (SELECT COUNT(*) FROM follows WHERE followed_id = u.id) as followers_count,
+        (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count,
+        (SELECT COUNT(*) > 0 FROM follows WHERE follower_id = ? AND followed_id = u.id) as is_following
+      FROM users u
+      WHERE u.id = ?`,
+      [req.user.id, userId]
     );
 
     if (users.length === 0) {
@@ -19,47 +24,9 @@ exports.getUserProfile = async (req, res, next) => {
       });
     }
 
-    const user = users[0];
-
-    // Get posts count
-    const [postsCount] = await pool.query(
-      'SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND is_archived = FALSE',
-      [userId]
-    );
-
-    // Get followers count
-    const [followersCount] = await pool.query(
-      'SELECT COUNT(*) as count FROM follows WHERE following_id = ?',
-      [userId]
-    );
-
-    // Get following count
-    const [followingCount] = await pool.query(
-      'SELECT COUNT(*) as count FROM follows WHERE follower_id = ?',
-      [userId]
-    );
-
-    // Check if current user follows this user
-    let isFollowing = false;
-    if (currentUserId) {
-      const [followCheck] = await pool.query(
-        'SELECT id FROM follows WHERE follower_id = ? AND following_id = ?',
-        [currentUserId, userId]
-      );
-      isFollowing = followCheck.length > 0;
-    }
-
     res.json({
       success: true,
-      data: {
-        ...user,
-        stats: {
-          posts: postsCount[0].count,
-          followers: followersCount[0].count,
-          following: followingCount[0].count
-        },
-        isFollowing
-      }
+      data: users[0]
     });
   } catch (error) {
     next(error);
@@ -69,28 +36,13 @@ exports.getUserProfile = async (req, res, next) => {
 // Update user profile
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { name, email, bio } = req.body;
+    const { name, email, bio, profile_image } = req.body;
     const userId = req.user.id;
-
-    // Check if email is already used by another user
-    if (email) {
-      const [existingUsers] = await pool.query(
-        'SELECT id FROM users WHERE email = ? AND id != ?',
-        [email, userId]
-      );
-
-      if (existingUsers.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'البريد الإلكتروني مستخدم مسبقاً'
-        });
-      }
-    }
 
     // Update user
     await pool.query(
-      'UPDATE users SET name = ?, email = ?, bio = ? WHERE id = ?',
-      [name, email, bio, userId]
+      'UPDATE users SET name = ?, email = ?, bio = ?, profile_image = ? WHERE id = ?',
+      [name, email, bio, profile_image, userId]
     );
 
     // Get updated user
@@ -112,34 +64,20 @@ exports.updateProfile = async (req, res, next) => {
 // Follow user
 exports.followUser = async (req, res, next) => {
   try {
-    const followingId = req.params.id;
     const followerId = req.user.id;
+    const followedId = req.params.userId;
 
-    // Can't follow yourself
-    if (followerId === parseInt(followingId)) {
+    if (followerId === parseInt(followedId)) {
       return res.status(400).json({
         success: false,
         message: 'لا يمكنك متابعة نفسك'
       });
     }
 
-    // Check if user exists
-    const [users] = await pool.query(
-      'SELECT id FROM users WHERE id = ?',
-      [followingId]
-    );
-
-    if (users.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'المستخدم غير موجود'
-      });
-    }
-
     // Check if already following
     const [existing] = await pool.query(
-      'SELECT id FROM follows WHERE follower_id = ? AND following_id = ?',
-      [followerId, followingId]
+      'SELECT id FROM follows WHERE follower_id = ? AND followed_id = ?',
+      [followerId, followedId]
     );
 
     if (existing.length > 0) {
@@ -151,14 +89,14 @@ exports.followUser = async (req, res, next) => {
 
     // Create follow
     await pool.query(
-      'INSERT INTO follows (follower_id, following_id) VALUES (?, ?)',
-      [followerId, followingId]
+      'INSERT INTO follows (follower_id, followed_id) VALUES (?, ?)',
+      [followerId, followedId]
     );
 
     // Create notification
     await pool.query(
       'INSERT INTO notifications (user_id, type, content, related_id) VALUES (?, ?, ?, ?)',
-      [followingId, 'follow', 'بدأ بمتابعتك', followerId]
+      [followedId, 'follow', 'بدأ بمتابعتك', followerId]
     );
 
     res.json({
@@ -173,20 +111,13 @@ exports.followUser = async (req, res, next) => {
 // Unfollow user
 exports.unfollowUser = async (req, res, next) => {
   try {
-    const followingId = req.params.id;
     const followerId = req.user.id;
+    const followedId = req.params.userId;
 
-    const [result] = await pool.query(
-      'DELETE FROM follows WHERE follower_id = ? AND following_id = ?',
-      [followerId, followingId]
+    await pool.query(
+      'DELETE FROM follows WHERE follower_id = ? AND followed_id = ?',
+      [followerId, followedId]
     );
-
-    if (result.affectedRows === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'أنت لا تتابع هذا المستخدم'
-      });
-    }
 
     res.json({
       success: true,
@@ -197,26 +128,28 @@ exports.unfollowUser = async (req, res, next) => {
   }
 };
 
-// Get user followers
+// Get followers
 exports.getFollowers = async (req, res, next) => {
   try {
-    const userId = req.params.id;
+    const userId = req.params.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
     const [followers] = await pool.query(
-      `SELECT u.id, u.name, u.profile_image, u.bio, u.is_verified
-       FROM follows f
-       JOIN users u ON f.follower_id = u.id
-       WHERE f.following_id = ?
-       ORDER BY f.created_at DESC
-       LIMIT ? OFFSET ?`,
-      [userId, limit, offset]
+      `SELECT 
+        u.id, u.name, u.profile_image, u.bio, u.is_verified,
+        (SELECT COUNT(*) > 0 FROM follows WHERE follower_id = ? AND followed_id = u.id) as is_following
+      FROM users u
+      INNER JOIN follows f ON u.id = f.follower_id
+      WHERE f.followed_id = ?
+      ORDER BY f.created_at DESC
+      LIMIT ? OFFSET ?`,
+      [req.user.id, userId, limit, offset]
     );
 
-    const [total] = await pool.query(
-      'SELECT COUNT(*) as count FROM follows WHERE following_id = ?',
+    const [countResult] = await pool.query(
+      'SELECT COUNT(*) as total FROM follows WHERE followed_id = ?',
       [userId]
     );
 
@@ -226,8 +159,8 @@ exports.getFollowers = async (req, res, next) => {
       pagination: {
         page,
         limit,
-        total: total[0].count,
-        pages: Math.ceil(total[0].count / limit)
+        total: countResult[0].total,
+        pages: Math.ceil(countResult[0].total / limit)
       }
     });
   } catch (error) {
@@ -235,26 +168,28 @@ exports.getFollowers = async (req, res, next) => {
   }
 };
 
-// Get user following
+// Get following
 exports.getFollowing = async (req, res, next) => {
   try {
-    const userId = req.params.id;
+    const userId = req.params.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
     const [following] = await pool.query(
-      `SELECT u.id, u.name, u.profile_image, u.bio, u.is_verified
-       FROM follows f
-       JOIN users u ON f.following_id = u.id
-       WHERE f.follower_id = ?
-       ORDER BY f.created_at DESC
-       LIMIT ? OFFSET ?`,
-      [userId, limit, offset]
+      `SELECT 
+        u.id, u.name, u.profile_image, u.bio, u.is_verified,
+        (SELECT COUNT(*) > 0 FROM follows WHERE follower_id = ? AND followed_id = u.id) as is_following
+      FROM users u
+      INNER JOIN follows f ON u.id = f.followed_id
+      WHERE f.follower_id = ?
+      ORDER BY f.created_at DESC
+      LIMIT ? OFFSET ?`,
+      [req.user.id, userId, limit, offset]
     );
 
-    const [total] = await pool.query(
-      'SELECT COUNT(*) as count FROM follows WHERE follower_id = ?',
+    const [countResult] = await pool.query(
+      'SELECT COUNT(*) as total FROM follows WHERE follower_id = ?',
       [userId]
     );
 
@@ -264,8 +199,8 @@ exports.getFollowing = async (req, res, next) => {
       pagination: {
         page,
         limit,
-        total: total[0].count,
-        pages: Math.ceil(total[0].count / limit)
+        total: countResult[0].total,
+        pages: Math.ceil(countResult[0].total / limit)
       }
     });
   } catch (error) {
@@ -276,32 +211,28 @@ exports.getFollowing = async (req, res, next) => {
 // Search users
 exports.searchUsers = async (req, res, next) => {
   try {
-    const { q } = req.query;
+    const query = req.query.q || '';
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
-    if (!q || q.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'يرجى إدخال كلمة البحث'
-      });
-    }
-
-    const searchTerm = `%${q}%`;
+    const searchPattern = `%${query}%`;
 
     const [users] = await pool.query(
-      `SELECT id, name, phone, bio, profile_image, is_verified
-       FROM users
-       WHERE name LIKE ? OR phone LIKE ?
-       ORDER BY is_verified DESC, name ASC
-       LIMIT ? OFFSET ?`,
-      [searchTerm, searchTerm, limit, offset]
+      `SELECT 
+        u.id, u.name, u.profile_image, u.bio, u.is_verified,
+        (SELECT COUNT(*) FROM follows WHERE followed_id = u.id) as followers_count,
+        (SELECT COUNT(*) > 0 FROM follows WHERE follower_id = ? AND followed_id = u.id) as is_following
+      FROM users u
+      WHERE u.name LIKE ? OR u.phone LIKE ?
+      ORDER BY followers_count DESC
+      LIMIT ? OFFSET ?`,
+      [req.user.id, searchPattern, searchPattern, limit, offset]
     );
 
-    const [total] = await pool.query(
-      'SELECT COUNT(*) as count FROM users WHERE name LIKE ? OR phone LIKE ?',
-      [searchTerm, searchTerm]
+    const [countResult] = await pool.query(
+      'SELECT COUNT(*) as total FROM users WHERE name LIKE ? OR phone LIKE ?',
+      [searchPattern, searchPattern]
     );
 
     res.json({
@@ -310,8 +241,8 @@ exports.searchUsers = async (req, res, next) => {
       pagination: {
         page,
         limit,
-        total: total[0].count,
-        pages: Math.ceil(total[0].count / limit)
+        total: countResult[0].total,
+        pages: Math.ceil(countResult[0].total / limit)
       }
     });
   } catch (error) {

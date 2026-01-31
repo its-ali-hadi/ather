@@ -7,6 +7,12 @@ const authController = require('../controllers/authController');
 const router = express.Router();
 
 // Validation rules
+const phoneValidation = [
+  body('phone')
+    .matches(/^07[3-9]\d{8}$/)
+    .withMessage('رقم الهاتف يجب أن يكون عراقي صحيح'),
+];
+
 const registerValidation = [
   body('phone')
     .matches(/^07[3-9]\d{8}$/)
@@ -22,7 +28,13 @@ const registerValidation = [
     .withMessage('البريد الإلكتروني غير صحيح'),
   body('password')
     .isLength({ min: 6 })
-    .withMessage('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+    .withMessage('كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
+  body('orderId')
+    .notEmpty()
+    .withMessage('معرف الطلب مطلوب'),
+  body('code')
+    .notEmpty()
+    .withMessage('رمز التحقق مطلوب'),
 ];
 
 const loginValidation = [
@@ -34,6 +46,18 @@ const loginValidation = [
     .withMessage('كلمة المرور مطلوبة')
 ];
 
+const loginOTPValidation = [
+  body('phone')
+    .matches(/^07[3-9]\d{8}$/)
+    .withMessage('رقم الهاتف غير صحيح'),
+  body('orderId')
+    .notEmpty()
+    .withMessage('معرف الطلب مطلوب'),
+  body('code')
+    .notEmpty()
+    .withMessage('رمز التحقق مطلوب'),
+];
+
 const updatePasswordValidation = [
   body('currentPassword')
     .notEmpty()
@@ -43,10 +67,24 @@ const updatePasswordValidation = [
     .withMessage('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل')
 ];
 
-// Routes
+const pushTokenValidation = [
+  body('pushToken')
+    .notEmpty()
+    .withMessage('رمز الإشعارات مطلوب'),
+];
+
+// OTP Routes
+router.post('/send-registration-otp', phoneValidation, validate, authController.sendRegistrationOTP);
+router.post('/send-login-otp', phoneValidation, validate, authController.sendLoginOTP);
+
+// Auth Routes
 router.post('/register', registerValidation, validate, authController.register);
 router.post('/login', loginValidation, validate, authController.login);
+router.post('/login-otp', loginOTPValidation, validate, authController.loginWithOTP);
 router.get('/me', auth, authController.getCurrentUser);
 router.put('/password', auth, updatePasswordValidation, validate, authController.updatePassword);
+
+// Push Token
+router.post('/push-token', auth, pushTokenValidation, validate, authController.savePushToken);
 
 module.exports = router;

@@ -3,25 +3,26 @@ require('dotenv').config();
 
 const initDatabase = async () => {
   let connection;
-  
+
   try {
-    // Connect without database first
+    // Connect to MySQL server (without database)
     connection = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || '',
-      port: process.env.DB_PORT || 3306
+      port: process.env.DB_PORT || 3306,
     });
 
-    console.log('📦 Creating database...');
-    
+    console.log('✅ Connected to MySQL server');
+
     // Create database if not exists
-    await connection.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || 'athar_db'} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+    await connection.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || 'athar_db'}`);
+    console.log(`✅ Database '${process.env.DB_NAME || 'athar_db'}' created or already exists`);
+
+    // Use the database
     await connection.query(`USE ${process.env.DB_NAME || 'athar_db'}`);
 
-    console.log('📋 Creating tables...');
-
-    // Users table
+    // Create users table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS users (
         id INT PRIMARY KEY AUTO_INCREMENT,
@@ -30,18 +31,20 @@ const initDatabase = async () => {
         email VARCHAR(255) UNIQUE,
         password VARCHAR(255) NOT NULL,
         bio TEXT,
-        profile_image VARCHAR(255),
+        profile_image VARCHAR(500),
+        push_token VARCHAR(500),
         is_verified BOOLEAN DEFAULT FALSE,
         role ENUM('user', 'admin') DEFAULT 'user',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_phone (phone),
         INDEX idx_email (email),
-        INDEX idx_created_at (created_at)
+        INDEX idx_name (name)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    console.log('✅ Users table created');
 
-    // Posts table
+    // Create posts table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS posts (
         id INT PRIMARY KEY AUTO_INCREMENT,
@@ -61,11 +64,12 @@ const initDatabase = async () => {
         INDEX idx_type (type),
         INDEX idx_category (category),
         INDEX idx_created_at (created_at),
-        INDEX idx_archived (is_archived)
+        FULLTEXT INDEX idx_content (title, content)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    console.log('✅ Posts table created');
 
-    // Comments table
+    // Create comments table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS comments (
         id INT PRIMARY KEY AUTO_INCREMENT,
@@ -80,12 +84,12 @@ const initDatabase = async () => {
         FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE,
         INDEX idx_post_id (post_id),
         INDEX idx_user_id (user_id),
-        INDEX idx_parent_id (parent_id),
-        INDEX idx_created_at (created_at)
+        INDEX idx_parent_id (parent_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    console.log('✅ Comments table created');
 
-    // Likes table
+    // Create likes table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS likes (
         id INT PRIMARY KEY AUTO_INCREMENT,
@@ -99,8 +103,9 @@ const initDatabase = async () => {
         INDEX idx_user_id (user_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    console.log('✅ Likes table created');
 
-    // Favorites table
+    // Create favorites table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS favorites (
         id INT PRIMARY KEY AUTO_INCREMENT,
@@ -114,24 +119,25 @@ const initDatabase = async () => {
         INDEX idx_user_id (user_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    console.log('✅ Favorites table created');
 
-    // Follows table
+    // Create follows table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS follows (
         id INT PRIMARY KEY AUTO_INCREMENT,
         follower_id INT NOT NULL,
-        following_id INT NOT NULL,
+        followed_id INT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
-        UNIQUE KEY unique_follow (follower_id, following_id),
+        FOREIGN KEY (followed_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_follow (follower_id, followed_id),
         INDEX idx_follower_id (follower_id),
-        INDEX idx_following_id (following_id),
-        CHECK (follower_id != following_id)
+        INDEX idx_followed_id (followed_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    console.log('✅ Follows table created');
 
-    // Notifications table
+    // Create notifications table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS notifications (
         id INT PRIMARY KEY AUTO_INCREMENT,
@@ -147,19 +153,31 @@ const initDatabase = async () => {
         INDEX idx_created_at (created_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    console.log('✅ Notifications table created');
 
-    console.log('✅ Database initialized successfully!');
-    console.log('📊 Tables created:');
-    console.log('   - users');
+    console.log('');
+    console.log('🎉 ═══════════════════════════════════════════════════');
+    console.log('   Database initialization completed successfully!');
+    console.log('   ═══════════════════════════════════════════════════');
+    console.log('');
+    console.log('   📊 Tables created:');
+    console.log('   - users (with push_token field)');
     console.log('   - posts');
     console.log('   - comments');
     console.log('   - likes');
     console.log('   - favorites');
     console.log('   - follows');
     console.log('   - notifications');
+    console.log('');
+    console.log('   💡 Next steps:');
+    console.log('   1. Update your .env file with database credentials');
+    console.log('   2. Run: npm start (to start the server)');
+    console.log('   3. Test the API endpoints');
+    console.log('');
+    console.log('   ═══════════════════════════════════════════════════');
 
   } catch (error) {
-    console.error('❌ Error initializing database:', error.message);
+    console.error('❌ Error initializing database:', error);
     process.exit(1);
   } finally {
     if (connection) {

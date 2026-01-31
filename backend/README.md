@@ -2,38 +2,33 @@
 
 Backend API لتطبيق أثر - منصة مشاركة الأفكار
 
-## 🚀 التقنيات المستخدمة
+## 📋 المحتويات
 
-- **Node.js** - JavaScript Runtime
-- **Express.js** - Web Framework
-- **MySQL** - Database
-- **JWT** - Authentication
-- **bcryptjs** - Password Hashing
+- [المتطلبات](#المتطلبات)
+- [التثبيت](#التثبيت)
+- [الإعداد](#الإعداد)
+- [تشغيل المشروع](#تشغيل-المشروع)
+- [API Endpoints](#api-endpoints)
+- [OTP.dev Integration](#otpdev-integration)
+- [AWS S3 Integration](#aws-s3-integration)
+- [Push Notifications](#push-notifications)
 
-## 📋 المتطلبات
+## 🔧 المتطلبات
 
 - Node.js (v14 أو أحدث)
 - MySQL (v5.7 أو أحدث)
 - npm أو yarn
 
-## ⚙️ التثبيت والإعداد
-
-### 1. تثبيت المكتبات
+## 📦 التثبيت
 
 ```bash
 cd backend
 npm install
 ```
 
-### 2. إعداد قاعدة البيانات
+## ⚙️ الإعداد
 
-أولاً، قم بإنشاء قاعدة بيانات MySQL:
-
-```sql
-CREATE DATABASE athar_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-### 3. إعداد ملف البيئة
+### 1. إنشاء ملف .env
 
 انسخ ملف `.env.example` إلى `.env`:
 
@@ -41,7 +36,7 @@ CREATE DATABASE athar_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 cp .env.example .env
 ```
 
-ثم قم بتعديل القيم في ملف `.env`:
+### 2. تعديل ملف .env
 
 ```env
 # Server Configuration
@@ -51,7 +46,7 @@ NODE_ENV=development
 # Database Configuration
 DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD=your_password_here
+DB_PASSWORD=your_password
 DB_NAME=athar_db
 DB_PORT=3306
 
@@ -61,35 +56,61 @@ JWT_EXPIRE=7d
 
 # CORS Configuration
 FRONTEND_URL=http://localhost:8081
+
+# File Upload Configuration
+MAX_FILE_SIZE=104857600
+UPLOAD_PATH=./uploads
+
+# OTP.dev Configuration
+OTP_DEV_APP_ID=your_otp_dev_app_id_here
+OTP_DEV_CLIENT_ID=your_otp_dev_client_id_here
+OTP_DEV_CLIENT_SECRET=your_otp_dev_client_secret_here
+OTP_DEV_API_URL=https://api.otp.dev/v1
+
+# AWS S3 Configuration (Optional)
+AWS_REGION=us-east-1
+AWS_BUCKET_NAME=athar-media
+AWS_ACCESS_KEY_ID=your_aws_access_key_id_here
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key_here
 ```
 
-### 4. تهيئة قاعدة البيانات
-
-قم بتشغيل السكريبت لإنشاء الجداول:
+### 3. إنشاء قاعدة البيانات
 
 ```bash
 npm run init-db
 ```
 
-### 5. تشغيل السيرفر
+## 🚀 تشغيل المشروع
 
-للتطوير (مع auto-reload):
+### Development Mode
+
 ```bash
 npm run dev
 ```
 
-للإنتاج:
+### Production Mode
+
 ```bash
 npm start
 ```
 
 السيرفر سيعمل على: `http://localhost:3000`
 
-## 📚 API Endpoints
+## 📡 API Endpoints
 
 ### Authentication
 
-#### تسجيل مستخدم جديد
+#### إرسال OTP للتسجيل
+```http
+POST /api/auth/send-registration-otp
+Content-Type: application/json
+
+{
+  "phone": "07XXXXXXXXX"
+}
+```
+
+#### التسجيل مع OTP
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -98,11 +119,35 @@ Content-Type: application/json
   "phone": "07XXXXXXXXX",
   "name": "اسم المستخدم",
   "email": "user@example.com",
-  "password": "password123"
+  "password": "password123",
+  "orderId": "order_id_from_send_otp",
+  "code": "123456"
 }
 ```
 
-#### تسجيل الدخول
+#### إرسال OTP لتسجيل الدخول
+```http
+POST /api/auth/send-login-otp
+Content-Type: application/json
+
+{
+  "phone": "07XXXXXXXXX"
+}
+```
+
+#### تسجيل الدخول مع OTP
+```http
+POST /api/auth/login-otp
+Content-Type: application/json
+
+{
+  "phone": "07XXXXXXXXX",
+  "orderId": "order_id_from_send_otp",
+  "code": "123456"
+}
+```
+
+#### تسجيل الدخول بكلمة المرور (التقليدي)
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -113,91 +158,18 @@ Content-Type: application/json
 }
 ```
 
-#### الحصول على بيانات المستخدم الحالي
+#### حفظ Push Token
 ```http
-GET /api/auth/me
-Authorization: Bearer {token}
-```
-
-#### تحديث كلمة المرور
-```http
-PUT /api/auth/password
+POST /api/auth/push-token
 Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "currentPassword": "oldpassword",
-  "newPassword": "newpassword"
+  "pushToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
 }
-```
-
-### Users
-
-#### الحصول على ملف مستخدم
-```http
-GET /api/users/:id
-Authorization: Bearer {token} (optional)
-```
-
-#### تحديث الملف الشخصي
-```http
-PUT /api/users/profile
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "name": "الاسم الجديد",
-  "email": "newemail@example.com",
-  "bio": "نبذة عني"
-}
-```
-
-#### متابعة مستخدم
-```http
-POST /api/users/:id/follow
-Authorization: Bearer {token}
-```
-
-#### إلغاء متابعة مستخدم
-```http
-DELETE /api/users/:id/follow
-Authorization: Bearer {token}
-```
-
-#### الحصول على المتابعين
-```http
-GET /api/users/:id/followers?page=1&limit=20
-```
-
-#### الحصول على المتابَعين
-```http
-GET /api/users/:id/following?page=1&limit=20
-```
-
-#### البحث عن مستخدمين
-```http
-GET /api/users/search?q=keyword&page=1&limit=20
 ```
 
 ### Posts
-
-#### الحصول على جميع المنشورات
-```http
-GET /api/posts?page=1&limit=20&category=tech&type=text
-Authorization: Bearer {token} (optional)
-```
-
-#### الحصول على منشور واحد
-```http
-GET /api/posts/:id
-Authorization: Bearer {token} (optional)
-```
-
-#### الحصول على منشورات مستخدم
-```http
-GET /api/posts/user/:userId?page=1&limit=20
-Authorization: Bearer {token} (optional)
-```
 
 #### إنشاء منشور
 ```http
@@ -206,236 +178,201 @@ Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "type": "text",
+  "type": "image",
   "title": "عنوان المنشور",
   "content": "محتوى المنشور",
-  "category": "tech"
+  "media_url": "https://bucket.s3.region.amazonaws.com/posts/image.jpg",
+  "category": "تقنية"
 }
 ```
 
-#### تحديث منشور
+#### الحصول على المنشورات
 ```http
-PUT /api/posts/:id
+GET /api/posts?page=1&limit=20&category=تقنية&type=image
+```
+
+### Users
+
+#### تحديث الملف الشخصي
+```http
+PUT /api/users/profile
 Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "title": "العنوان المحدث",
-  "content": "المحتوى المحدث",
-  "category": "tech"
+  "name": "اسم جديد",
+  "bio": "نبذة عني",
+  "profile_image": "https://bucket.s3.region.amazonaws.com/profiles/image.jpg"
 }
 ```
 
-#### حذف منشور
-```http
-DELETE /api/posts/:id
-Authorization: Bearer {token}
+## 🔐 OTP.dev Integration
+
+### إعداد OTP.dev
+
+1. **إنشاء حساب في OTP.dev**
+   - اذهب إلى [https://otp.dev](https://otp.dev)
+   - أنشئ حساب جديد
+
+2. **إنشاء Application**
+   - من Dashboard، اضغط على "Create Application"
+   - احفظ:
+     - App ID
+     - Client ID
+     - Client Secret
+
+3. **إضافة المعلومات في .env**
+   ```env
+   OTP_DEV_APP_ID=your_app_id
+   OTP_DEV_CLIENT_ID=your_client_id
+   OTP_DEV_CLIENT_SECRET=your_client_secret
+   ```
+
+### كيفية عمل OTP
+
+1. **إرسال OTP**
+   - المستخدم يدخل رقم هاتفه
+   - الباكاند يرسل طلب لـ OTP.dev
+   - OTP.dev يرسل SMS للمستخدم
+   - الباكاند يرجع `orderId`
+
+2. **التحقق من OTP**
+   - المستخدم يدخل الرمز
+   - الباكاند يرسل `orderId` و `code` لـ OTP.dev
+   - OTP.dev يتحقق من الرمز
+   - إذا صحيح، يتم إنشاء الحساب أو تسجيل الدخول
+
+### تنسيق رقم الهاتف
+
+- **الإدخال**: `07XXXXXXXXX` (عراقي)
+- **التحويل**: `+9647XXXXXXXXX` (دولي)
+- الباكاند يحول الرقم تلقائياً
+
+## ☁️ AWS S3 Integration
+
+### ملاحظة مهمة
+
+الباكاند **لا يرفع** الملفات مباشرة. الفرونت اند يرفع الملفات مباشرة لـ S3 ويرسل الرابط للباكاند.
+
+### لماذا هذه الطريقة؟
+
+- ✅ أسرع (الملف لا يمر عبر الباكاند)
+- ✅ أقل حمل على السيرفر
+- ✅ أرخص (bandwidth أقل)
+- ✅ أكثر أماناً
+
+### Flow
+
+1. **الفرونت اند** يرفع الصورة/الفيديو لـ S3
+2. **S3** يرجع رابط الملف
+3. **الفرونت اند** يرسل الرابط للباكاند
+4. **الباكاند** يحفظ الرابط في قاعدة البيانات
+
+## 🔔 Push Notifications
+
+### حفظ Push Token
+
+عند تسجيل الدخول، الفرونت اند يرسل Push Token:
+
+```javascript
+const token = await getPushToken();
+await api.savePushToken(token);
 ```
 
-#### أرشفة منشور
-```http
-POST /api/posts/:id/archive
-Authorization: Bearer {token}
+### إرسال إشعار (من الباكاند)
+
+```javascript
+// في المستقبل، يمكن إضافة خدمة لإرسال Push Notifications
+// باستخدام Expo Push Notification Service
 ```
 
-#### البحث في المنشورات
-```http
-GET /api/posts/search?q=keyword&page=1&limit=20
-Authorization: Bearer {token} (optional)
+## 📊 Database Schema
+
+### users
+- id, phone, name, email, password
+- bio, profile_image, push_token
+- is_verified, role
+- created_at, updated_at
+
+### posts
+- id, user_id, type, title, content
+- media_url, link_url, category
+- is_archived, views_count
+- created_at, updated_at
+
+### comments
+- id, post_id, user_id, content
+- parent_id (للردود)
+- created_at, updated_at
+
+### likes
+- id, post_id, user_id
+- created_at
+
+### favorites
+- id, post_id, user_id
+- created_at
+
+### follows
+- id, follower_id, followed_id
+- created_at
+
+### notifications
+- id, user_id, type, content
+- related_id, is_read
+- created_at
+
+## 🛠️ Scripts
+
+```bash
+# تشغيل السيرفر (development)
+npm run dev
+
+# تشغيل السيرفر (production)
+npm start
+
+# إنشاء قاعدة البيانات
+npm run init-db
 ```
 
-### Comments
-
-#### الحصول على تعليقات منشور
-```http
-GET /api/comments/post/:postId?page=1&limit=20
-```
-
-#### الحصول على ردود تعليق
-```http
-GET /api/comments/:commentId/replies?page=1&limit=10
-```
-
-#### إضافة تعليق
-```http
-POST /api/comments
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "post_id": 1,
-  "content": "محتوى التعليق",
-  "parent_id": null
-}
-```
-
-#### تحديث تعليق
-```http
-PUT /api/comments/:id
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "content": "المحتوى المحدث"
-}
-```
-
-#### حذف تعليق
-```http
-DELETE /api/comments/:id
-Authorization: Bearer {token}
-```
-
-### Likes
-
-#### إعجاب/إلغاء إعجاب بمنشور
-```http
-POST /api/likes/:postId
-Authorization: Bearer {token}
-```
-
-#### الحصول على قائمة الإعجابات
-```http
-GET /api/likes/:postId?page=1&limit=20
-```
-
-### Favorites
-
-#### إضافة/إزالة من المفضلة
-```http
-POST /api/favorites/:postId
-Authorization: Bearer {token}
-```
-
-#### الحصول على المفضلة
-```http
-GET /api/favorites?page=1&limit=20
-Authorization: Bearer {token}
-```
-
-### Notifications
-
-#### الحصول على الإشعارات
-```http
-GET /api/notifications?page=1&limit=20
-Authorization: Bearer {token}
-```
-
-#### تحديد إشعار كمقروء
-```http
-PUT /api/notifications/:id/read
-Authorization: Bearer {token}
-```
-
-#### تحديد جميع الإشعارات كمقروءة
-```http
-PUT /api/notifications/read-all
-Authorization: Bearer {token}
-```
-
-#### حذف إشعار
-```http
-DELETE /api/notifications/:id
-Authorization: Bearer {token}
-```
-
-## 🗄️ هيكل قاعدة البيانات
-
-### الجداول الرئيسية:
-
-- **users** - بيانات المستخدمين
-- **posts** - المنشورات
-- **comments** - التعليقات
-- **likes** - الإعجابات
-- **favorites** - المفضلة
-- **follows** - المتابعات
-- **notifications** - الإشعارات
-
-## 🔒 الأمان
-
-- تشفير كلمات المرور باستخدام bcrypt
-- JWT للمصادقة
-- Rate limiting للحماية من الهجمات
-- Input validation باستخدام express-validator
-- Helmet للحماية من الثغرات الشائعة
-- CORS configuration
-
-## 📝 ملاحظات
+## 📝 Notes
 
 ### أرقام الهواتف العراقية
-يجب أن تكون أرقام الهواتف بالصيغة: `07XXXXXXXXX` (11 رقم تبدأ بـ 07)
 
-### Pagination
-جميع الـ endpoints التي تعيد قوائم تدعم pagination:
-- `page`: رقم الصفحة (افتراضي: 1)
-- `limit`: عدد العناصر في الصفحة (افتراضي: 20)
+- التنسيق: `07[3-9]XXXXXXXX`
+- أمثلة صحيحة:
+  - `07701234567`
+  - `07801234567`
+  - `07901234567`
 
-### Response Format
-جميع الـ responses تتبع هذا الشكل:
+### أنواع المنشورات
 
-```json
-{
-  "success": true,
-  "message": "رسالة نجاح",
-  "data": {},
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 100,
-    "pages": 5
-  }
-}
-```
+- `text`: منشور نصي
+- `image`: منشور بصورة
+- `video`: منشور بفيديو
+- `link`: منشور برابط
 
-في حالة الخطأ:
+### أنواع الإشعارات
 
-```json
-{
-  "success": false,
-  "message": "رسالة الخطأ",
-  "errors": []
-}
-```
+- `like`: إعجاب بمنشور
+- `comment`: تعليق على منشور
+- `follow`: متابعة جديدة
+- `mention`: إشارة في تعليق
 
-## 🚀 الاستضافة
+## 🔒 Security
 
-### خيارات الاستضافة الموصى بها:
+- ✅ JWT Authentication
+- ✅ Password Hashing (bcrypt)
+- ✅ Input Validation
+- ✅ Rate Limiting
+- ✅ CORS Protection
+- ✅ Helmet Security Headers
+- ✅ SQL Injection Protection
 
-1. **DigitalOcean** - VPS
-2. **AWS EC2** - Cloud Server
-3. **Heroku** - Platform as a Service
-4. **Railway** - Modern Platform
+## 📞 Support
 
-### خطوات الاستضافة:
+للمساعدة أو الاستفسارات، يرجى فتح Issue في GitHub.
 
-1. رفع الكود على GitHub
-2. إنشاء سيرفر على المنصة المختارة
-3. تثبيت Node.js و MySQL
-4. استنساخ المشروع
-5. تثبيت المكتبات: `npm install`
-6. إعداد ملف `.env`
-7. تهيئة قاعدة البيانات: `npm run init-db`
-8. تشغيل السيرفر: `npm start`
+## 📄 License
 
-## 🐛 استكشاف الأخطاء
-
-### خطأ في الاتصال بقاعدة البيانات
-- تأكد من تشغيل MySQL
-- تحقق من بيانات الاتصال في `.env`
-- تأكد من وجود قاعدة البيانات
-
-### خطأ في JWT
-- تأكد من وجود `JWT_SECRET` في `.env`
-- تحقق من صلاحية الـ token
-
-### خطأ في Port
-- تأكد من أن المنفذ 3000 غير مستخدم
-- أو غير المنفذ في `.env`
-
-## 📞 الدعم
-
-للمساعدة أو الاستفسارات، يرجى فتح issue على GitHub.
-
-## 📄 الترخيص
-
-ISC License
+ISC
