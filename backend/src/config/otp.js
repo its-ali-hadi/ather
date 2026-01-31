@@ -6,6 +6,10 @@ const OTP_DEV_CLIENT_ID = process.env.OTP_DEV_CLIENT_ID;
 const OTP_DEV_CLIENT_SECRET = process.env.OTP_DEV_CLIENT_SECRET;
 const OTP_DEV_API_URL = process.env.OTP_DEV_API_URL || 'https://api.otp.dev/v1';
 
+// Test account configuration
+const TEST_PHONE_NUMBER = process.env.TEST_PHONE_NUMBER;
+const TEST_OTP_CODE = process.env.TEST_OTP_CODE;
+
 /**
  * إرسال OTP عبر SMS
  * @param {string} phone - رقم الهاتف بصيغة دولية (مثال: +9647XXXXXXXXX)
@@ -13,6 +17,20 @@ const OTP_DEV_API_URL = process.env.OTP_DEV_API_URL || 'https://api.otp.dev/v1';
  */
 const sendOTP = async (phone) => {
   try {
+    // تحويل الرقم الدولي إلى صيغة عراقية للمقارنة
+    const localPhone = phone.startsWith('+964') 
+      ? '0' + phone.substring(4) 
+      : phone;
+
+    // التحقق من الرقم التجريبي
+    if (TEST_PHONE_NUMBER && localPhone === TEST_PHONE_NUMBER) {
+      console.log('استخدام الرقم التجريبي:', localPhone);
+      return {
+        success: true,
+        orderId: 'test-order-id-' + Date.now(),
+      };
+    }
+
     const response = await axios.post(
       `${OTP_DEV_API_URL}/send`,
       {
@@ -59,6 +77,23 @@ const sendOTP = async (phone) => {
  */
 const verifyOTP = async (orderId, code) => {
   try {
+    // التحقق من الرقم التجريبي
+    if (orderId.startsWith('test-order-id-')) {
+      console.log('التحقق من OTP التجريبي');
+      if (code === TEST_OTP_CODE) {
+        return {
+          success: true,
+          verified: true,
+        };
+      } else {
+        return {
+          success: false,
+          verified: false,
+          error: 'رمز التحقق غير صحيح',
+        };
+      }
+    }
+
     const response = await axios.post(
       `${OTP_DEV_API_URL}/verify`,
       {

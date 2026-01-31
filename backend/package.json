@@ -7,7 +7,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "init-db": "node src/scripts/initDatabase.js",
-    "add-ban-fields": "node src/scripts/addBanFields.js"
+    "add-ban-fields": "node src/scripts/addBanFields.js",
+    "create-test-user": "node src/scripts/createTestUser.js"
   },
   "keywords": ["athar", "api", "backend"],
   "author": "",
