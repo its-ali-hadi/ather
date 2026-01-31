@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  ScrollView,
+  FlatList,
   StyleSheet,
   Text,
   TextInput,
@@ -10,29 +11,53 @@ import {
   View,
   Platform,
   Dimensions,
-  Image,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
-import seedData from '../constants/seed-data.json';
+import api from '../utils/api';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width } = Dimensions.get('window');
 const CARD_PADDING = 24;
 const CARD_GAP = 12;
-const CARD_WIDTH = (width - (CARD_PADDING * 2) - (CARD_GAP * 2)) / 3;
+const CARD_WIDTH = (width - CARD_PADDING * 2 - CARD_GAP * 2) / 3;
+
+interface Post {
+  id: number;
+  type: 'text' | 'image' | 'video' | 'link';
+  title: string;
+  content: string;
+  media_url?: string;
+  category: string;
+  user_name: string;
+  user_image?: string;
+  likes_count: number;
+  comments_count: number;
+  is_liked: boolean;
+  is_favorited: boolean;
+  created_at: string;
+}
 
 export default function ExploreScreen() {
   const colorScheme = useColorScheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const navigation = useNavigation<NavigationProp>();
+
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -52,6 +77,58 @@ export default function ExploreScreen() {
     { id: '6', name: 'أعمال', icon: 'briefcase', color: '#34495E' },
   ];
 
+  useEffect(() => {
+    loadPosts();
+  }, [selectedCategory]);
+
+  const loadPosts = async (pageNum = 1, refresh = false) => {
+    try {
+      if (refresh) {
+        setIsRefreshing(true);
+      } else if (pageNum === 1) {
+        setIsLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+
+      const params: any = {
+        page: pageNum,
+        limit: 10,
+      };
+
+      if (selectedCategory) {
+        params.category = selectedCategory;
+      }
+
+      const response = await api.getPosts(params);
+
+      if (refresh || pageNum === 1) {
+        setPosts(response.data);
+      } else {
+        setPosts((prev) => [...prev, ...response.data]);
+      }
+
+      setHasMore(response.pagination.hasMore);
+      setPage(pageNum);
+    } catch (error) {
+      console.error('Error loading posts:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+      setIsLoadingMore(false);
+    }
+  };
+
+  const handleRefresh = useCallback(() => {
+    loadPosts(1, true);
+  }, [selectedCategory]);
+
+  const handleLoadMore = useCallback(() => {
+    if (!isLoadingMore && hasMore) {
+      loadPosts(page + 1);
+    }
+  }, [isLoadingMore, hasMore, page]);
+
   const handleSearchFocus = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate('AdvancedSearch');
@@ -59,13 +136,12 @@ export default function ExploreScreen() {
 
   const handleCategoryPress = (categoryName: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Toggle category selection
     setSelectedCategory(selectedCategory === categoryName ? null : categoryName);
   };
 
-  const handlePostPress = (postId: string) => {
+  const handlePostPress = (postId: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('PostDetail', { postId });
+    navigation.navigate('PostDetail', { postId: postId.toString() });
   };
 
   const handleUserPress = (userId: string) => {
@@ -73,228 +149,298 @@ export default function ExploreScreen() {
     navigation.navigate('UserProfile', { userId });
   };
 
-  // Filter posts based on selected category
-  const filteredPosts = selectedCategory
-    ? seedData.posts.filter(post => post.category === selectedCategory)
-    : seedData.posts;
+  const handleLikePress = async (postId: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await api.toggleLike(postId.toString());
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                is_liked: !post.is_liked,
+                likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1,
+              }
+            : post
+        )
+      );
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
+  };
 
-  const getTimeAgo = (dateString: string) => {
+  const handleFavoritePress = async (postId: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await api.toggleFavorite(postId.toString());
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId ? { ...post, is_favorited: !post.is_favorited } : post
+        )
+      );
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInMs = now.getTime() - date.getTime();
     const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
     const diffInDays = Math.floor(diffInHours / 24);
 
-    if (diffInDays > 0) {
-      return `منذ ${diffInDays} ${diffInDays === 1 ? 'يوم' : 'أيام'}`;
-    } else if (diffInHours > 0) {
-      return `منذ ${diffInHours} ${diffInHours === 1 ? 'ساعة' : 'ساعات'}`;
-    } else {
+    if (diffInHours < 1) {
       return 'منذ قليل';
+    } else if (diffInHours < 24) {
+      return `منذ ${diffInHours} ساعة`;
+    } else if (diffInDays < 7) {
+      return `منذ ${diffInDays} يوم`;
+    } else {
+      return date.toLocaleDateString('ar-SA');
     }
   };
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
-      >
-        {/* Header */}
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
-          <Text style={[styles.title, { color: COLORS.text }]}>استكشف</Text>
-          <Text style={[styles.subtitle, { color: COLORS.textSecondary }]}>
-            اكتشف محتوى جديد ومثير
-          </Text>
-        </Animated.View>
+  const renderHeader = () => (
+    <>
+      {/* Header */}
+      <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
+        <Text style={[styles.title, { color: COLORS.text }]}>استكشف</Text>
+        <Text style={[styles.subtitle, { color: COLORS.textSecondary }]}>
+          اكتشف محتوى جديد ومثير
+        </Text>
+      </Animated.View>
 
-        {/* Search Bar */}
-        <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.searchContainer}>
-          <View style={[styles.searchBar, { backgroundColor: COLORS.cardBg }]}>
-            <Ionicons name="search" size={20} color={COLORS.textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: COLORS.text }]}
-              placeholder="ابحث عن صناديق أو منشورات..."
-              placeholderTextColor={COLORS.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onFocus={handleSearchFocus}
-            />
-          </View>
-        </Animated.View>
-
-        {/* Categories */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: COLORS.text }]}>التصنيفات</Text>
-          <View style={styles.categoriesGrid}>
-            {categories.map((category, index) => {
-              const isSelected = selectedCategory === category.name;
-              return (
-                <Animated.View
-                  key={category.id}
-                  entering={FadeInUp.delay(300 + index * 80).springify()}
-                  style={{ width: CARD_WIDTH }}
-                >
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => handleCategoryPress(category.name)}
-                    style={[
-                      styles.categoryCard, 
-                      { backgroundColor: COLORS.cardBg },
-                      isSelected && { 
-                        borderWidth: 3, 
-                        borderColor: category.color,
-                      }
-                    ]}
-                  >
-                    <LinearGradient
-                      colors={[category.color, category.color + 'CC']}
-                      style={[
-                        styles.categoryIcon,
-                        isSelected && { transform: [{ scale: 1.1 }] }
-                      ]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
-                      <Ionicons name={category.icon as any} size={28} color="#FFF" />
-                    </LinearGradient>
-                    <Text style={[styles.categoryName, { color: COLORS.text }]} numberOfLines={1}>
-                      {category.name}
-                    </Text>
-                  </TouchableOpacity>
-                </Animated.View>
-              );
-            })}
-          </View>
+      {/* Search Bar */}
+      <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.searchContainer}>
+        <View style={[styles.searchBar, { backgroundColor: COLORS.cardBg }]}>
+          <Ionicons name="search" size={20} color={COLORS.textSecondary} />
+          <TextInput
+            style={[styles.searchInput, { color: COLORS.text }]}
+            placeholder="ابحث عن صناديق أو منشورات..."
+            placeholderTextColor={COLORS.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onFocus={handleSearchFocus}
+          />
         </View>
+      </Animated.View>
 
-        {/* All Posts Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-              <Text style={[styles.sectionTitle, { color: COLORS.text }]}>
-                {selectedCategory ? `منشورات ${selectedCategory}` : 'جميع المنشورات'}
-              </Text>
-              {selectedCategory && (
-                <TouchableOpacity 
-                  onPress={() => setSelectedCategory(null)}
-                  style={[styles.clearFilterButton, { backgroundColor: COLORS.accent + '20' }]}
+      {/* Categories */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: COLORS.text }]}>التصنيفات</Text>
+        <View style={styles.categoriesGrid}>
+          {categories.map((category, index) => {
+            const isSelected = selectedCategory === category.name;
+            return (
+              <Animated.View
+                key={category.id}
+                entering={FadeInUp.delay(300 + index * 80).springify()}
+                style={{ width: CARD_WIDTH }}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => handleCategoryPress(category.name)}
+                  style={[
+                    styles.categoryCard,
+                    { backgroundColor: COLORS.cardBg },
+                    isSelected && {
+                      borderWidth: 3,
+                      borderColor: category.color,
+                    },
+                  ]}
                 >
-                  <Text style={[styles.clearFilterText, { color: COLORS.accent }]}>
-                    إلغاء الفلتر
-                  </Text>
-                  <Ionicons name="close-circle" size={16} color={COLORS.accent} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <Ionicons name="grid" size={24} color={COLORS.accent} />
-          </View>
-          
-          <View style={styles.postsContainer}>
-            {filteredPosts.length > 0 ? (
-              filteredPosts.map((post, index) => (
-                <Animated.View
-                  key={post.id}
-                  entering={FadeInUp.delay(400 + index * 50).springify()}
-                >
-                  <TouchableOpacity
-                    activeOpacity={0.9}
-                    onPress={() => handlePostPress(post.id)}
-                    style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}
+                  <LinearGradient
+                    colors={[category.color, category.color + 'CC']}
+                    style={[
+                      styles.categoryIcon,
+                      isSelected && { transform: [{ scale: 1.1 }] },
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                   >
-                    {/* Post Header */}
-                    <View style={styles.postHeader}>
-                      <TouchableOpacity 
-                        style={styles.postUserInfo}
-                        onPress={() => handleUserPress(post.userId)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={styles.postUserDetails}>
-                          <Text style={[styles.postUserName, { color: COLORS.text }]}>
-                            {post.userName}
-                          </Text>
-                          <Text style={[styles.postTime, { color: COLORS.textSecondary }]}>
-                            {getTimeAgo(post.createdAt)}
-                          </Text>
-                        </View>
-                        {post.userAvatar ? (
-                          <Image source={{ uri: post.userAvatar }} style={styles.postAvatar} />
-                        ) : (
-                          <View style={[styles.postAvatarPlaceholder, { backgroundColor: COLORS.accent }]}>
-                            <Ionicons name="person" size={20} color="#FFF" />
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                      <View style={[styles.categoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
-                        <Text style={[styles.categoryBadgeText, { color: COLORS.accent }]}>
-                          {post.category}
-                        </Text>
-                      </View>
-                    </View>
+                    <Ionicons name={category.icon as any} size={28} color="#FFF" />
+                  </LinearGradient>
+                  <Text style={[styles.categoryName, { color: COLORS.text }]} numberOfLines={1}>
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
+        </View>
+      </View>
 
-                    {/* Post Content */}
-                    <View style={styles.postContent}>
-                      <Text style={[styles.postTitle, { color: COLORS.text }]} numberOfLines={2}>
-                        {post.title}
-                      </Text>
-                      <Text style={[styles.postText, { color: COLORS.textSecondary }]} numberOfLines={3}>
-                        {post.content}
-                      </Text>
-                    </View>
+      {/* Section Header */}
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionTitleContainer}>
+          <Text style={[styles.sectionTitle, { color: COLORS.text }]}>
+            {selectedCategory ? `منشورات ${selectedCategory}` : 'جميع المنشورات'}
+          </Text>
+          {selectedCategory && (
+            <TouchableOpacity
+              onPress={() => setSelectedCategory(null)}
+              style={[styles.clearFilterButton, { backgroundColor: COLORS.accent + '20' }]}
+            >
+              <Text style={[styles.clearFilterText, { color: COLORS.accent }]}>إلغاء الفلتر</Text>
+              <Ionicons name="close-circle" size={16} color={COLORS.accent} />
+            </TouchableOpacity>
+          )}
+        </View>
+        <Ionicons name="grid" size={24} color={COLORS.accent} />
+      </View>
+    </>
+  );
 
-                    {/* Post Image */}
-                    {post.image && (
-                      <Image source={{ uri: post.image }} style={styles.postImage} />
-                    )}
-
-                    {/* Post Footer */}
-                    <View style={styles.postFooter}>
-                      <View style={styles.postStats}>
-                        <View style={styles.postStat}>
-                          <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
-                            {post.likes}
-                          </Text>
-                          <Ionicons 
-                            name={post.isLiked ? 'heart' : 'heart-outline'} 
-                            size={18} 
-                            color={post.isLiked ? '#E94B3C' : COLORS.textSecondary} 
-                          />
-                        </View>
-                        <View style={styles.postStat}>
-                          <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
-                            {post.comments}
-                          </Text>
-                          <Ionicons name="chatbubble-outline" size={18} color={COLORS.textSecondary} />
-                        </View>
-                        <View style={styles.postStat}>
-                          <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
-                            {post.shares}
-                          </Text>
-                          <Ionicons name="share-outline" size={18} color={COLORS.textSecondary} />
-                        </View>
-                      </View>
-                      <Ionicons 
-                        name={post.isFavorite ? 'bookmark' : 'bookmark-outline'} 
-                        size={20} 
-                        color={post.isFavorite ? COLORS.accent : COLORS.textSecondary} 
-                      />
-                    </View>
-                  </TouchableOpacity>
-                </Animated.View>
-              ))
+  const renderPost = ({ item, index }: { item: Post; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 50).springify()}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => handlePostPress(item.id)}
+        style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}
+      >
+        {/* Post Header */}
+        <View style={styles.postHeader}>
+          <TouchableOpacity
+            style={styles.postUserInfo}
+            onPress={() => handleUserPress(item.id.toString())}
+            activeOpacity={0.7}
+          >
+            <View style={styles.postUserDetails}>
+              <Text style={[styles.postUserName, { color: COLORS.text }]}>{item.user_name}</Text>
+              <Text style={[styles.postTime, { color: COLORS.textSecondary }]}>
+                {formatDate(item.created_at)}
+              </Text>
+            </View>
+            {item.user_image ? (
+              <ExpoImage source={{ uri: item.user_image }} style={styles.postAvatar} />
             ) : (
-              <View style={[styles.emptyState, { backgroundColor: COLORS.cardBg }]}>
-                <Ionicons name="folder-open-outline" size={64} color={COLORS.textSecondary} />
-                <Text style={[styles.emptyStateText, { color: COLORS.textSecondary }]}>
-                  لا توجد منشورات في هذا التصنيف
-                </Text>
+              <View style={[styles.postAvatarPlaceholder, { backgroundColor: COLORS.accent }]}>
+                <Ionicons name="person" size={20} color="#FFF" />
               </View>
             )}
+          </TouchableOpacity>
+          <View style={[styles.categoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
+            <Text style={[styles.categoryBadgeText, { color: COLORS.accent }]}>
+              {item.category}
+            </Text>
           </View>
         </View>
 
-        <View style={{ height: 20 }} />
-      </ScrollView>
+        {/* Post Content */}
+        <View style={styles.postContent}>
+          {item.title && (
+            <Text style={[styles.postTitle, { color: COLORS.text }]} numberOfLines={2}>
+              {item.title}
+            </Text>
+          )}
+          <Text style={[styles.postText, { color: COLORS.textSecondary }]} numberOfLines={3}>
+            {item.content}
+          </Text>
+        </View>
+
+        {/* Post Image */}
+        {item.media_url && item.type === 'image' && (
+          <ExpoImage source={{ uri: item.media_url }} style={styles.postImage} contentFit="cover" />
+        )}
+
+        {/* Post Footer */}
+        <View style={styles.postFooter}>
+          <View style={styles.postStats}>
+            <TouchableOpacity onPress={() => handleLikePress(item.id)} style={styles.postStat}>
+              <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
+                {item.likes_count}
+              </Text>
+              <Ionicons
+                name={item.is_liked ? 'heart' : 'heart-outline'}
+                size={18}
+                color={item.is_liked ? '#E94B3C' : COLORS.textSecondary}
+              />
+            </TouchableOpacity>
+            <View style={styles.postStat}>
+              <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
+                {item.comments_count}
+              </Text>
+              <Ionicons name="chatbubble-outline" size={18} color={COLORS.textSecondary} />
+            </View>
+          </View>
+          <TouchableOpacity onPress={() => handleFavoritePress(item.id)}>
+            <Ionicons
+              name={item.is_favorited ? 'bookmark' : 'bookmark-outline'}
+              size={20}
+              color={item.is_favorited ? COLORS.accent : COLORS.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+
+  const renderFooter = () => {
+    if (!isLoadingMore) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={COLORS.primary} />
+        <Text style={[styles.footerLoaderText, { color: COLORS.textSecondary }]}>
+          جاري التحميل...
+        </Text>
+      </View>
+    );
+  };
+
+  const renderEmpty = () => {
+    if (isLoading) return null;
+    return (
+      <View style={[styles.emptyState, { backgroundColor: COLORS.cardBg }]}>
+        <Ionicons name="folder-open-outline" size={64} color={COLORS.textSecondary} />
+        <Text style={[styles.emptyStateText, { color: COLORS.textSecondary }]}>
+          لا توجد منشورات في هذا التصنيف
+        </Text>
+      </View>
+    );
+  };
+
+  if (isLoading && page === 1) {
+    return (
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: COLORS.background }]}
+        edges={['top']}
+      >
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={[styles.loadingText, { color: COLORS.textSecondary }]}>
+            جاري التحميل...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: COLORS.background }]}
+      edges={['top']}
+    >
+      <FlatList
+        data={posts}
+        renderItem={renderPost}
+        keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderFooter}
+        ListEmptyComponent={renderEmpty}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+      />
     </SafeAreaView>
   );
 }
@@ -302,6 +448,19 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'Tajawal_400Regular',
+  },
+  listContent: {
+    paddingBottom: Platform.OS === 'ios' ? 100 : 80,
   },
   header: {
     paddingHorizontal: 24,
@@ -357,6 +516,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
     marginBottom: 16,
+    paddingHorizontal: 24,
   },
   sectionTitleContainer: {
     flex: 1,
@@ -366,7 +526,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
-    marginBottom: 0,
+    marginBottom: 16,
   },
   clearFilterButton: {
     flexDirection: 'row-reverse',
@@ -419,13 +579,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Cairo_700Bold',
     textAlign: 'center',
   },
-  postsContainer: {
-    gap: 16,
-  },
   postCard: {
     borderRadius: 20,
     padding: 16,
     gap: 12,
+    marginHorizontal: 24,
+    marginBottom: 16,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -527,11 +686,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Tajawal_500Medium',
   },
+  footerLoader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 20,
+  },
+  footerLoaderText: {
+    fontSize: 14,
+    fontFamily: 'Tajawal_400Regular',
+  },
   emptyState: {
     padding: 48,
     borderRadius: 20,
     alignItems: 'center',
     gap: 16,
+    marginHorizontal: 24,
+    marginTop: 20,
     ...Platform.select({
       ios: {
         shadowColor: '#000',

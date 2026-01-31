@@ -144,12 +144,14 @@ const api = {
     limit?: number;
     category?: string;
     type?: string;
+    boxId?: number;
   } = {}) {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.limit) queryParams.append('limit', params.limit.toString());
     if (params.category) queryParams.append('category', params.category);
     if (params.type) queryParams.append('type', params.type);
+    if (params.boxId) queryParams.append('boxId', params.boxId.toString());
 
     return this.request(`/posts?${queryParams.toString()}`);
   },

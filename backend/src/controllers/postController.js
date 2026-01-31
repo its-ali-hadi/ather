@@ -35,10 +35,11 @@ exports.createPost = async (req, res, next) => {
 exports.getPosts = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     const category = req.query.category;
     const type = req.query.type;
+    const boxId = req.query.boxId;
     const userId = req.user?.id;
 
     let query = `
@@ -65,6 +66,14 @@ exports.getPosts = async (req, res, next) => {
 
     const params = userId ? [userId, userId] : [];
 
+    // Filter by box (get all categories in that box)
+    if (boxId) {
+      query += ` AND p.category IN (
+        SELECT name FROM categories WHERE box_id = ? AND is_active = TRUE
+      )`;
+      params.push(boxId);
+    }
+
     if (category) {
       query += ' AND p.category = ?';
       params.push(category);
@@ -83,6 +92,13 @@ exports.getPosts = async (req, res, next) => {
     // Get total count
     let countQuery = 'SELECT COUNT(*) as count FROM posts WHERE is_archived = FALSE AND is_private = FALSE';
     const countParams = [];
+
+    if (boxId) {
+      countQuery += ` AND category IN (
+        SELECT name FROM categories WHERE box_id = ? AND is_active = TRUE
+      )`;
+      countParams.push(boxId);
+    }
 
     if (category) {
       countQuery += ' AND category = ?';
@@ -103,7 +119,8 @@ exports.getPosts = async (req, res, next) => {
         page,
         limit,
         total: total[0].count,
-        pages: Math.ceil(total[0].count / limit)
+        pages: Math.ceil(total[0].count / limit),
+        hasMore: page < Math.ceil(total[0].count / limit)
       }
     });
   } catch (error) {

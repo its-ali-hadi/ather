@@ -49,8 +49,31 @@ import CreateLinkPostScreen from './screens/CreateLinkPostScreen';
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
 import GuestProfileScreen from './screens/GuestProfileScreen';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
+
+export type RootStackParamList = {
+  Auth: undefined;
+  Main: undefined;
+  PostDetail: { postId: string };
+  UserProfile: { userId: string };
+  EditProfile: undefined;
+  Settings: undefined;
+  Favorites: undefined;
+  Archive: undefined;
+  MyPosts: undefined;
+  Private: undefined;
+  HelpSupport: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
+  AdvancedSearch: undefined;
+  BoxDetail: { boxId: string };
+  PostsList: { boxId?: number; category?: string };
+  CreateTextPost: undefined;
+  CreateImagePost: undefined;
+  CreateVideoPost: undefined;
+  CreateLinkPost: undefined;
+};
 
 function TabNavigator() {
   const colorScheme = useColorScheme();
