@@ -212,6 +212,16 @@ const api = {
     return this.request(`/posts/archived?page=${page}&limit=${limit}`);
   },
 
+  async getPrivatePosts(page = 1, limit = 20) {
+    return this.request(`/posts/my/private?page=${page}&limit=${limit}`);
+  },
+
+  async publishPost(postId: string) {
+    return this.request(`/posts/${postId}/publish`, {
+      method: 'POST',
+    });
+  },
+
   // Comments endpoints
   async getComments(postId: string, page = 1, limit = 20) {
     return this.request(`/comments/post/${postId}?page=${page}&limit=${limit}`);

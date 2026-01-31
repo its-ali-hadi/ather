@@ -469,3 +469,65 @@ exports.getPrivatePosts = async (req, res, next) => {
     next(error);
   }
 };
+
+// Publish private post (convert to public)
+exports.publishPost = async (req, res, next) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.user.id;
+
+    // Check if post exists and belongs to user
+    const [posts] = await pool.query(
+      'SELECT user_id, is_private FROM posts WHERE id = ?',
+      [postId]
+    );
+
+    if (posts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'المنشور غير موجود'
+      });
+    }
+
+    if (posts[0].user_id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'غير مصرح لك بنشر هذا المنشور'
+      });
+    }
+
+    if (!posts[0].is_private) {
+      return res.status(400).json({
+        success: false,
+        message: 'المنشور منشور بالفعل'
+      });
+    }
+
+    // Convert to public
+    await pool.query(
+      'UPDATE posts SET is_private = FALSE WHERE id = ?',
+      [postId]
+    );
+
+    // Get updated post
+    const [updatedPosts] = await pool.query(
+      `SELECT p.*, u.name as user_name, u.profile_image as user_image, u.is_verified as user_verified,
+              (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
+              (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count,
+              (SELECT COUNT(*) > 0 FROM likes WHERE post_id = p.id AND user_id = ?) as is_liked,
+              (SELECT COUNT(*) > 0 FROM favorites WHERE post_id = p.id AND user_id = ?) as is_favorited
+       FROM posts p
+       JOIN users u ON p.user_id = u.id
+       WHERE p.id = ?`,
+      [userId, userId, postId]
+    );
+
+    res.json({
+      success: true,
+      message: 'تم نشر المنشور بنجاح! أصبح الآن عاماً ويمكن للجميع رؤيته',
+      data: updatedPosts[0]
+    });
+  } catch (error) {
+    next(error);
+  }
+};

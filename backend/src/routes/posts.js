@@ -19,5 +19,6 @@ router.get('/my/archived', postController.getArchivedPosts);
 router.put('/:id', validatePost, postController.updatePost);
 router.delete('/:id', postController.deletePost);
 router.post('/:id/archive', postController.archivePost);
+router.post('/:id/publish', postController.publishPost);
 
 module.exports = router;

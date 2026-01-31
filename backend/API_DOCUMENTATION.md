@@ -665,6 +665,48 @@ Authorization: Bearer {token}
 
 ---
 
+## 🔒 المنشورات الخاصة
+
+### الحصول على المنشورات الخاصة
+
+**Endpoint:** `GET /api/posts/private`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Query Parameters:**
+- `page` (optional): رقم الصفحة (default: 1)
+- `limit` (optional): عدد المنشورات (default: 20)
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "type": "text",
+      "title": "محتوى خاص",
+      "content": "محتوى المنشور الخاص",
+      "is_private": true,
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 5,
+    "pages": 1
+  }
+}
+```
+
+---
+
 ## 💬 Comments
 
 ### الحصول على تعليقات منشور

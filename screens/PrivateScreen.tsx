@@ -11,43 +11,42 @@ import {
   View,
   Platform,
   Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
+import api from '../utils/api';
 
-// Mock drafts data
-const mockDrafts = [
-  {
-    id: 'draft-1',
-    type: 'text',
-    title: 'أفكار حول تطوير التطبيقات',
-    content: 'بدأت أفكر في كيفية تحسين تجربة المستخدم في التطبيقات...',
-    createdAt: '2024-01-15T10:30:00Z',
-    updatedAt: '2024-01-15T14:20:00Z',
-  },
-  {
-    id: 'draft-2',
-    type: 'image',
-    title: 'لوحة جديدة',
-    content: 'لوحة لم أكملها بعد، أحتاج لإضافة بعض التفاصيل',
-    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800&q=80',
-    createdAt: '2024-01-14T09:15:00Z',
-    updatedAt: '2024-01-14T16:30:00Z',
-  },
-  {
-    id: 'draft-3',
-    type: 'text',
-    title: 'قصة قصيرة - مسودة',
-    content: 'كان الليل هادئاً، والنجوم تتلألأ في السماء...',
-    createdAt: '2024-01-13T20:00:00Z',
-    updatedAt: '2024-01-13T22:45:00Z',
-  },
-];
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+interface Post {
+  id: number;
+  type: 'text' | 'image' | 'video' | 'link';
+  title: string;
+  content: string;
+  media_url?: string;
+  link_url?: string;
+  category: string;
+  is_private: boolean;
+  created_at: string;
+  updated_at: string;
+  user_name: string;
+  user_image?: string;
+  likes_count: number;
+  comments_count: number;
+}
 
 export default function PrivateScreen() {
   const colorScheme = useColorScheme();
-  const [drafts, setDrafts] = useState(mockDrafts);
+  const navigation = useNavigation<NavigationProp>();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -59,42 +58,79 @@ export default function PrivateScreen() {
     border: colorScheme === 'dark' ? '#3A3430' : '#E8E8E8',
   };
 
-  const handleEditDraft = (draftId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Navigate to edit screen
-    Alert.alert('تعديل المسودة', 'سيتم فتح المسودة للتعديل');
+  useEffect(() => {
+    loadPrivatePosts();
+  }, []);
+
+  const loadPrivatePosts = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.getPrivatePosts();
+      setPosts(response.data || []);
+    } catch (error) {
+      console.error('Error loading private posts:', error);
+      Alert.alert('خطأ', 'فشل تحميل المنشورات الخاصة');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteDraft = (draftId: string) => {
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadPrivatePosts();
+    setIsRefreshing(false);
+  };
+
+  const handleEditPost = (postId: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('PostDetail', { postId: postId.toString() });
+  };
+
+  const handleDeletePost = (postId: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
-      'حذف المسودة',
-      'هل أنت متأكد من حذف هذه المسودة؟',
+      'حذف المنشور',
+      'هل أنت متأكد من حذف هذا المنشور؟',
       [
         { text: 'إلغاء', style: 'cancel' },
         {
           text: 'حذف',
           style: 'destructive',
-          onPress: () => {
-            setDrafts(drafts.filter((d) => d.id !== draftId));
-            Alert.alert('تم الحذف', 'تم حذف المسودة بنجاح');
+          onPress: async () => {
+            try {
+              await api.deletePost(postId.toString());
+              setPosts(posts.filter((p) => p.id !== postId));
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              Alert.alert('تم الحذف', 'تم حذف المنشور بنجاح');
+            } catch (error) {
+              console.error('Error deleting post:', error);
+              Alert.alert('خطأ', 'فشل حذف المنشور');
+            }
           },
         },
       ]
     );
   };
 
-  const handlePublishDraft = (draftId: string) => {
+  const handlePublishPost = (postId: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
-      'نشر المسودة',
-      'هل تريد نشر هذه المسودة؟',
+      'نشر المنشور',
+      'هل تريد نشر هذا المنشور؟ سيصبح عاماً ويمكن للجميع رؤيته.',
       [
         { text: 'إلغاء', style: 'cancel' },
         {
           text: 'نشر',
-          onPress: () => {
-            Alert.alert('تم النشر', 'تم نشر المسودة بنجاح');
+          onPress: async () => {
+            try {
+              const response = await api.publishPost(postId.toString());
+              setPosts(posts.filter((p) => p.id !== postId));
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              Alert.alert('تم النشر! 🎉', response.message || 'تم نشر المنشور بنجاح');
+            } catch (error: any) {
+              console.error('Error publishing post:', error);
+              Alert.alert('خطأ', error.message || 'فشل نشر المنشور');
+            }
           },
         },
       ]
@@ -116,11 +152,50 @@ export default function PrivateScreen() {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInHours < 1) {
+      return 'منذ قليل';
+    } else if (diffInHours < 24) {
+      return `منذ ${diffInHours} ساعة`;
+    } else if (diffInDays < 7) {
+      return `منذ ${diffInDays} يوم`;
+    } else {
+      return date.toLocaleDateString('ar-SA');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={[styles.loadingText, { color: COLORS.textSecondary }]}>
+            جاري التحميل...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
       >
         {/* Header */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
@@ -130,74 +205,101 @@ export default function PrivateScreen() {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Ionicons name="document-text" size={40} color="#FFF" />
+            <Ionicons name="lock-closed" size={40} color="#FFF" />
           </LinearGradient>
-          <Text style={[styles.title, { color: COLORS.text }]}>المسودات</Text>
+          <Text style={[styles.title, { color: COLORS.text }]}>المنشورات الخاصة</Text>
           <Text style={[styles.subtitle, { color: COLORS.textSecondary }]}>
-            منشوراتك غير المنشورة ({drafts.length})
+            منشوراتك الخاصة ({posts.length})
           </Text>
         </Animated.View>
 
-        {/* Drafts List */}
-        {drafts.length > 0 ? (
-          <View style={styles.draftsContainer}>
-            {drafts.map((draft, index) => (
+        {/* Posts List */}
+        {posts.length > 0 ? (
+          <View style={styles.postsContainer}>
+            {posts.map((post, index) => (
               <Animated.View
-                key={draft.id}
+                key={post.id}
                 entering={FadeInUp.delay(200 + index * 80).springify()}
               >
-                <View style={[styles.draftCard, { backgroundColor: COLORS.cardBg }]}>
-                  {/* Draft Header */}
-                  <View style={styles.draftHeader}>
-                    <View style={styles.draftTypeContainer}>
+                <View style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}>
+                  {/* Post Header */}
+                  <View style={styles.postHeader}>
+                    <View style={styles.postTypeContainer}>
                       <View style={[styles.typeIcon, { backgroundColor: COLORS.accent + '20' }]}>
-                        <Ionicons name={getTypeIcon(draft.type) as any} size={20} color={COLORS.accent} />
+                        <Ionicons name={getTypeIcon(post.type) as any} size={20} color={COLORS.accent} />
                       </View>
-                      <View style={styles.draftInfo}>
-                        <Text style={[styles.draftTitle, { color: COLORS.text }]} numberOfLines={1}>
-                          {draft.title}
+                      <View style={styles.postInfo}>
+                        <Text style={[styles.postTitle, { color: COLORS.text }]} numberOfLines={1}>
+                          {post.title}
                         </Text>
-                        <Text style={[styles.draftDate, { color: COLORS.textSecondary }]}>
-                          آخر تعديل: {new Date(draft.updatedAt).toLocaleDateString('ar-SA')}
+                        <Text style={[styles.postDate, { color: COLORS.textSecondary }]}>
+                          {formatDate(post.updated_at)}
                         </Text>
                       </View>
                     </View>
+                    <View style={[styles.privateBadge, { backgroundColor: '#9B59B6' + '20' }]}>
+                      <Ionicons name="lock-closed" size={14} color="#9B59B6" />
+                      <Text style={[styles.privateBadgeText, { color: '#9B59B6' }]}>خاص</Text>
+                    </View>
                   </View>
 
-                  {/* Draft Content */}
-                  <Text style={[styles.draftContent, { color: COLORS.textSecondary }]} numberOfLines={2}>
-                    {draft.content}
+                  {/* Post Content */}
+                  <Text style={[styles.postContent, { color: COLORS.textSecondary }]} numberOfLines={2}>
+                    {post.content}
                   </Text>
 
-                  {/* Draft Image */}
-                  {draft.image && (
+                  {/* Post Image */}
+                  {post.media_url && post.type === 'image' && (
                     <ExpoImage
-                      source={{ uri: draft.image }}
-                      style={styles.draftImage}
+                      source={{ uri: post.media_url }}
+                      style={styles.postImage}
                       contentFit="cover"
                     />
                   )}
 
-                  {/* Draft Actions */}
-                  <View style={[styles.draftActions, { borderTopColor: COLORS.border }]}>
+                  {/* Post Stats */}
+                  <View style={styles.postStats}>
+                    <View style={styles.statItem}>
+                      <Ionicons name="heart-outline" size={18} color={COLORS.textSecondary} />
+                      <Text style={[styles.statText, { color: COLORS.textSecondary }]}>
+                        {post.likes_count}
+                      </Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Ionicons name="chatbubble-outline" size={18} color={COLORS.textSecondary} />
+                      <Text style={[styles.statText, { color: COLORS.textSecondary }]}>
+                        {post.comments_count}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Post Actions */}
+                  <View style={[styles.postActions, { borderTopColor: COLORS.border }]}>
                     <TouchableOpacity
-                      onPress={() => handleEditDraft(draft.id)}
+                      onPress={() => handleEditPost(post.id)}
                       style={styles.actionButton}
                     >
-                      <Ionicons name="create-outline" size={20} color={COLORS.accent} />
-                      <Text style={[styles.actionText, { color: COLORS.accent }]}>تعديل</Text>
+                      <Ionicons name="eye-outline" size={20} color={COLORS.accent} />
+                      <Text style={[styles.actionText, { color: COLORS.accent }]}>عرض</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      onPress={() => handlePublishDraft(draft.id)}
-                      style={styles.actionButton}
+                      onPress={() => handlePublishPost(post.id)}
+                      style={[styles.actionButton, styles.publishButton]}
                     >
-                      <Ionicons name="send-outline" size={20} color="#4CAF50" />
-                      <Text style={[styles.actionText, { color: '#4CAF50' }]}>نشر</Text>
+                      <LinearGradient
+                        colors={['#4CAF50', '#45A049']}
+                        style={styles.publishGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <Ionicons name="globe-outline" size={20} color="#FFF" />
+                        <Text style={[styles.actionText, { color: '#FFF' }]}>نشر</Text>
+                      </LinearGradient>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      onPress={() => handleDeleteDraft(draft.id)}
+                      onPress={() => handleDeletePost(post.id)}
                       style={styles.actionButton}
                     >
                       <Ionicons name="trash-outline" size={20} color="#E94B3C" />
@@ -215,13 +317,13 @@ export default function PrivateScreen() {
                 colors={[COLORS.primary + '20', COLORS.accent + '10']}
                 style={styles.emptyIconBg}
               >
-                <Ionicons name="document-text-outline" size={64} color={COLORS.textSecondary} />
+                <Ionicons name="lock-closed-outline" size={64} color={COLORS.textSecondary} />
               </LinearGradient>
               <Text style={[styles.emptyTitle, { color: COLORS.text }]}>
-                لا توجد مسودات بعد
+                لا توجد منشورات خاصة
               </Text>
               <Text style={[styles.emptyText, { color: COLORS.textSecondary }]}>
-                المنشورات التي تحفظها كمسودات ستظهر هنا
+                المنشورات التي تنشئها كمنشورات خاصة ستظهر هنا
               </Text>
             </View>
           </Animated.View>
@@ -233,12 +335,13 @@ export default function PrivateScreen() {
             <View style={styles.infoHeader}>
               <Ionicons name="information-circle" size={24} color={COLORS.accent} />
               <Text style={[styles.infoTitle, { color: COLORS.text }]}>
-                عن المسودات
+                عن المنشورات الخاصة
               </Text>
             </View>
             <Text style={[styles.infoText, { color: COLORS.textSecondary }]}>
-              المسودات هي منشورات لم تنشرها بعد. يمكنك حفظ أفكارك ومنشوراتك كمسودات
-              والعودة لتعديلها ونشرها لاحقاً. المسودات خاصة بك فقط ولا يمكن لأحد رؤيتها.
+              المنشورات الخاصة هي منشورات لا يمكن لأحد رؤيتها سواك. يمكنك استخدامها
+              لحفظ أفكارك ومنشوراتك قبل نشرها للعامة. عندما تكون جاهزاً، اضغط على زر
+              "نشر" لتحويل المنشور إلى عام.
             </Text>
           </View>
         </Animated.View>
@@ -252,6 +355,16 @@ export default function PrivateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'Tajawal_400Regular',
   },
   header: {
     paddingHorizontal: 24,
@@ -289,11 +402,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal_400Regular',
     textAlign: 'center',
   },
-  draftsContainer: {
+  postsContainer: {
     paddingHorizontal: 24,
     gap: 16,
   },
-  draftCard: {
+  postCard: {
     borderRadius: 20,
     overflow: 'hidden',
     ...Platform.select({
@@ -308,14 +421,18 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  draftHeader: {
+  postHeader: {
     padding: 16,
     paddingBottom: 12,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  draftTypeContainer: {
+  postTypeContainer: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
   typeIcon: {
     width: 44,
@@ -324,22 +441,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  draftInfo: {
+  postInfo: {
     flex: 1,
     gap: 4,
   },
-  draftTitle: {
+  postTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
     textAlign: 'right',
   },
-  draftDate: {
+  postDate: {
     fontSize: 13,
     fontFamily: 'Tajawal_400Regular',
     textAlign: 'right',
   },
-  draftContent: {
+  privateBadge: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  privateBadgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+  },
+  postContent: {
     paddingHorizontal: 16,
     paddingBottom: 12,
     fontSize: 15,
@@ -347,12 +477,28 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     lineHeight: 24,
   },
-  draftImage: {
+  postImage: {
     width: '100%',
     height: 180,
     marginBottom: 12,
   },
-  draftActions: {
+  postStats: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  statItem: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statText: {
+    fontSize: 14,
+    fontFamily: 'Tajawal_500Medium',
+  },
+  postActions: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -365,6 +511,18 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  publishButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  publishGradient: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
   },
   actionText: {
     fontSize: 14,
