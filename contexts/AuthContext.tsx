@@ -13,6 +13,7 @@ interface User {
   is_verified: boolean;
   role: string;
   created_at: string;
+  isGuest?: boolean;
 }
 
 interface AuthContextType {
@@ -20,7 +21,9 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isGuest: boolean;
   login: (token: string, userData: User) => Promise<void>;
+  loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
   refreshUser: () => Promise<void>;
@@ -30,11 +33,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_KEY = '@athar_auth_token';
 const USER_KEY = '@athar_user_data';
+const GUEST_KEY = '@athar_guest_mode';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
   // Load saved auth data on mount
   useEffect(() => {
@@ -43,13 +48,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Setup notifications when user logs in
   useEffect(() => {
-    if (user && token) {
+    if (user && token && !isGuest) {
       setupNotifications();
     }
-  }, [user, token]);
+  }, [user, token, isGuest]);
 
   const loadAuthData = async () => {
     try {
+      const guestMode = await AsyncStorage.getItem(GUEST_KEY);
+      
+      if (guestMode === 'true') {
+        // User is in guest mode
+        setIsGuest(true);
+        setUser({
+          id: 0,
+          phone: '',
+          name: 'ضيف',
+          is_verified: false,
+          role: 'guest',
+          created_at: new Date().toISOString(),
+          isGuest: true,
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const savedToken = await AsyncStorage.getItem(TOKEN_KEY);
       const savedUser = await AsyncStorage.getItem(USER_KEY);
 
@@ -96,6 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (authToken: string, userData: User) => {
     try {
+      // Clear guest mode
+      await AsyncStorage.removeItem(GUEST_KEY);
+      setIsGuest(false);
+
       // Save to state
       setToken(authToken);
       setUser(userData);
@@ -112,6 +139,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginAsGuest = async () => {
+    try {
+      // Set guest mode
+      await AsyncStorage.setItem(GUEST_KEY, 'true');
+      setIsGuest(true);
+      setUser({
+        id: 0,
+        phone: '',
+        name: 'ضيف',
+        is_verified: false,
+        role: 'guest',
+        created_at: new Date().toISOString(),
+        isGuest: true,
+      });
+    } catch (error) {
+      console.error('Error setting guest mode:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await clearAuthData();
@@ -124,13 +171,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearAuthData = async () => {
     setToken(null);
     setUser(null);
+    setIsGuest(false);
     await AsyncStorage.removeItem(TOKEN_KEY);
     await AsyncStorage.removeItem(USER_KEY);
+    await AsyncStorage.removeItem(GUEST_KEY);
     api.setAuthToken(null);
   };
 
   const updateUser = (userData: Partial<User>) => {
-    if (user) {
+    if (user && !isGuest) {
       const updatedUser = { ...user, ...userData };
       setUser(updatedUser);
       AsyncStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
@@ -138,6 +187,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshUser = async () => {
+    if (isGuest) return;
+    
     try {
       const response = await api.getCurrentUser();
       if (response.success) {
@@ -153,8 +204,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     token,
     isLoading,
-    isAuthenticated: !!user && !!token,
+    isAuthenticated: (!!user && !!token) || isGuest,
+    isGuest,
     login,
+    loginAsGuest,
     logout,
     updateUser,
     refreshUser,

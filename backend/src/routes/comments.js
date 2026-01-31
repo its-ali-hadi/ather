@@ -1,7 +1,8 @@
 const express = require('express');
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const { validate } = require('../middleware/validation');
-const { auth } = require('../middleware/auth');
+const { auth, optionalAuth } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/guestCheck');
 const commentController = require('../controllers/commentController');
 
 const router = express.Router();
@@ -28,11 +29,12 @@ const updateCommentValidation = [
     .withMessage('التعليق يجب أن يكون بين 1 و 1000 حرف')
 ];
 
-// Routes
-router.get('/post/:postId', commentController.getPostComments);
-router.get('/:commentId/replies', commentController.getCommentReplies);
-router.post('/', auth, createCommentValidation, validate, commentController.createComment);
-router.put('/:id', auth, updateCommentValidation, validate, commentController.updateComment);
-router.delete('/:id', auth, commentController.deleteComment);
+// Guests can view comments
+router.get('/post/:postId', optionalAuth, param('postId').isInt(), validate, commentController.getCommentsByPost);
+
+// Require authentication for creating/updating/deleting
+router.post('/', auth, requireAuth, createCommentValidation, validate, commentController.createComment);
+router.put('/:id', auth, requireAuth, param('id').isInt(), updateCommentValidation, validate, commentController.updateComment);
+router.delete('/:id', auth, requireAuth, param('id').isInt(), validate, commentController.deleteComment);
 
 module.exports = router;

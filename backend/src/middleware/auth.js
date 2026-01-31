@@ -1,53 +1,54 @@
 const jwt = require('jsonwebtoken');
-const db = require('../config/database');
 
-exports.authenticate = async (req, res, next) => {
+// Required authentication
+const auth = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: 'غير مصرح',
+        message: 'الرجاء تسجيل الدخول'
       });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const [users] = await db.query('SELECT * FROM users WHERE id = ?', [decoded.userId]);
-
-    if (users.length === 0) {
-      return res.status(401).json({
-        success: false,
-        message: 'المستخدم غير موجود',
-      });
-    }
-
-    const user = users[0];
-
-    if (user.is_banned) {
-      return res.status(403).json({
-        success: false,
-        message: 'تم حظر حسابك',
-      });
-    }
-
-    req.user = user;
+    req.user = decoded;
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
     res.status(401).json({
       success: false,
-      message: 'غير مصرح',
+      message: 'الرجاء تسجيل الدخول'
     });
   }
 };
 
-exports.isAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
+// Optional authentication (for guests)
+const optionalAuth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = decoded;
+    }
+    // If no token, continue without user
+    next();
+  } catch (error) {
+    // If token is invalid, continue without user
+    next();
+  }
+};
+
+// Admin only
+const adminOnly = async (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({
       success: false,
-      message: 'غير مصرح لك بالوصول',
+      message: 'غير مصرح لك بالوصول'
     });
   }
   next();
 };
+
+module.exports = { auth, optionalAuth, adminOnly };

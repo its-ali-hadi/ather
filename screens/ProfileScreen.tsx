@@ -15,12 +15,20 @@ import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
+import { useAuth } from '../contexts/AuthContext';
+import GuestProfileScreen from './GuestProfileScreen';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const navigation = useNavigation<NavigationProp>();
+  const { user, isGuest, logout } = useAuth();
+
+  // Show guest screen if user is a guest
+  if (isGuest) {
+    return <GuestProfileScreen />;
+  }
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',

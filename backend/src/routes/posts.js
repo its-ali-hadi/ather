@@ -1,7 +1,8 @@
 const express = require('express');
-const { body } = require('express-validator');
+const { body, param, query } = require('express-validator');
 const { validate } = require('../middleware/validation');
 const { auth, optionalAuth } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/guestCheck');
 const postController = require('../controllers/postController');
 
 const router = express.Router();
@@ -45,14 +46,14 @@ const updatePostValidation = [
     .withMessage('الفئة يجب أن تكون أقل من 50 حرف')
 ];
 
-// Routes
-router.get('/', optionalAuth, postController.getPosts);
+// Public routes (guests can view)
+router.get('/', optionalAuth, postController.getAllPosts);
 router.get('/search', optionalAuth, postController.searchPosts);
-router.get('/:id', optionalAuth, postController.getPost);
-router.get('/user/:userId', optionalAuth, postController.getUserPosts);
-router.post('/', auth, createPostValidation, validate, postController.createPost);
-router.put('/:id', auth, updatePostValidation, validate, postController.updatePost);
-router.delete('/:id', auth, postController.deletePost);
-router.post('/:id/archive', auth, postController.archivePost);
+router.get('/:id', optionalAuth, postController.getPostById);
+
+// Protected routes (require authentication)
+router.post('/', auth, requireAuth, createPostValidation, validate, postController.createPost);
+router.put('/:id', auth, requireAuth, param('id').isInt(), updatePostValidation, validate, postController.updatePost);
+router.delete('/:id', auth, requireAuth, param('id').isInt(), validate, postController.deletePost);
 
 module.exports = router;

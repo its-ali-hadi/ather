@@ -46,6 +46,7 @@ import CreateImagePostScreen from './screens/CreateImagePostScreen';
 import CreateVideoPostScreen from './screens/CreateVideoPostScreen';
 import CreateLinkPostScreen from './screens/CreateLinkPostScreen';
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
+import GuestProfileScreen from './screens/GuestProfileScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();

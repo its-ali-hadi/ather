@@ -17,15 +17,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useState } from 'react';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
 
 export default function AuthScreen() {
   const colorScheme = useColorScheme();
-  const navigation = useNavigation();
-  const { login } = useAuth();
+  const { login, loginAsGuest } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -144,6 +141,20 @@ export default function AuthScreen() {
       }
     } catch (error: any) {
       Alert.alert('خطأ', error.message || 'حدث خطأ أثناء التحقق');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsLoading(true);
+    
+    try {
+      await loginAsGuest();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error: any) {
+      Alert.alert('خطأ', 'حدث خطأ أثناء الدخول كضيف');
     } finally {
       setIsLoading(false);
     }
@@ -407,6 +418,27 @@ export default function AuthScreen() {
             </LinearGradient>
           </Animated.View>
 
+          {/* Guest Login Button */}
+          <Animated.View entering={FadeInUp.delay(350).springify()} style={styles.guestContainer}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={handleGuestLogin}
+              disabled={isLoading}
+              style={[styles.guestButton, { 
+                backgroundColor: COLORS.cardBg,
+                borderColor: COLORS.border,
+              }]}
+            >
+              <Ionicons name="eye-outline" size={24} color={COLORS.primary} />
+              <Text style={[styles.guestButtonText, { color: COLORS.text }]}>
+                تصفح كضيف
+              </Text>
+            </TouchableOpacity>
+            <Text style={[styles.guestHint, { color: COLORS.textSecondary }]}>
+              يمكنك التصفح بدون تسجيل، لكن لن تتمكن من التفاعل مع المنشورات
+            </Text>
+          </Animated.View>
+
           {/* Privacy Notice */}
           <Animated.View entering={FadeInUp.delay(400).springify()} style={styles.privacyNotice}>
             <Text style={[styles.privacyText, { color: COLORS.textSecondary }]}>
@@ -600,6 +632,42 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
+  },
+  guestContainer: {
+    marginTop: 24,
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  guestButton: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  guestButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+  },
+  guestHint: {
+    fontSize: 13,
+    fontFamily: 'Tajawal_400Regular',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   privacyNotice: {
     marginTop: 24,
