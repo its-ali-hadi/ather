@@ -69,6 +69,9 @@ import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -135,6 +138,9 @@ const Tab = createBottomTabNavigator<TabParamList>();
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -164,6 +170,7 @@ function TabNavigator() {
     inactive: colorScheme === 'dark' ? '#7A6F65' : '#B8B0A8',
   };
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -325,6 +332,9 @@ function AppNavigator() {
 =======
   return (
 >>>>>>> Stashed changes
+=======
+  return (
+>>>>>>> Stashed changes
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
@@ -416,6 +426,9 @@ function AppNavigator() {
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -566,6 +579,9 @@ const useAuth = () => {
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
