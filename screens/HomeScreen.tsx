@@ -676,4 +676,468 @@ export default function HomeScreen({ navigation }: Props) {
   );
 }
 
-// ... rest of styles remain the same ...
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+
+  // Hero Section
+  heroSection: {
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+  },
+  heroContent: {
+    alignItems: 'center',
+  },
+  heroIconContainer: {
+    marginBottom: 20,
+  },
+  heroIconGradient: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#E8B86D',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  },
+  heroTitle: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+    fontFamily: 'Cairo_700Bold',
+    letterSpacing: 2,
+  },
+  heroSubtitle: {
+    fontSize: 17,
+    textAlign: 'center',
+    fontFamily: 'Tajawal_400Regular',
+  },
+
+  // Section
+  section: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
+  },
+  sectionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+  },
+  seeAll: {
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: 'Tajawal_500Medium',
+  },
+  countBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  countText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+  },
+
+  // Banners
+  bannersContainer: {
+    paddingHorizontal: 24,
+    gap: 20,
+  },
+  bannerCard: {
+    height: BANNER_HEIGHT,
+    borderRadius: 28,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  bannerGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '70%',
+  },
+  bannerBadge: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  badgeGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+  },
+  bannerContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 24,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 16,
+    overflow: 'hidden',
+  },
+  bannerIconWrapper: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  bannerIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(232, 184, 109, 0.3)',
+  },
+  bannerTitle: {
+    flex: 1,
+    fontSize: 21,
+    fontWeight: 'bold',
+    color: '#FFF',
+    textAlign: 'right',
+    fontFamily: 'Cairo_700Bold',
+  },
+  bannerArrow: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(232, 184, 109, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // About Card
+  aboutCard: {
+    marginHorizontal: 24,
+    borderRadius: 28,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#B8956A',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  aboutGradient: {
+    padding: 28,
+  },
+  decorativeTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 24,
+  },
+  decorativeLine: {
+    width: 40,
+    height: 2,
+    borderRadius: 1,
+  },
+  aboutHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 16,
+  },
+  aboutIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aboutTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'right',
+    fontFamily: 'Cairo_700Bold',
+  },
+  aboutDescription: {
+    fontSize: 16,
+    lineHeight: 28,
+    textAlign: 'right',
+    marginBottom: 24,
+    fontFamily: 'Tajawal_400Regular',
+  },
+  featuresList: {
+    gap: 12,
+    marginBottom: 28,
+  },
+  featureItem: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 14,
+    padding: 16,
+    borderRadius: 20,
+  },
+  featureIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'right',
+    fontFamily: 'Tajawal_500Medium',
+  },
+  ctaButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#B8956A',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  ctaGradient: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+  },
+  ctaText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+  },
+  ctaIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Premium Cards
+  cardsGrid: {
+    paddingHorizontal: 24,
+    gap: 20,
+  },
+  cardWrapper: {
+    marginBottom: 4,
+  },
+  premiumCard: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  cardImageWrapper: {
+    width: '100%',
+    height: 220,
+    position: 'relative',
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  cardImageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+  },
+  premiumBadge: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  premiumBadgeGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  premiumBadgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  favoriteBlur: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  cardContentWrapper: {
+    padding: 20,
+  },
+  cardHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  cardTitle: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'right',
+    fontFamily: 'Cairo_700Bold',
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  ratingText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+  },
+  cardDescription: {
+    fontSize: 15,
+    lineHeight: 24,
+    textAlign: 'right',
+    marginBottom: 16,
+    fontFamily: 'Tajawal_400Regular',
+  },
+  cardFooter: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  categoryTag: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  categoryText: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'Tajawal_700Bold',
+  },
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stickyNotificationButton: {
+    position: 'absolute',
+    left: 24,
+    top: 60,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#E8B86D',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+});
