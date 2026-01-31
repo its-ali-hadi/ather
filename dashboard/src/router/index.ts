@@ -10,6 +10,7 @@ import NotificationsView from '@/views/NotificationsView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import BoxesView from '@/views/BoxesView.vue'
 import CategoriesView from '@/views/CategoriesView.vue'
+import MessagesView from '@/views/MessagesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -54,6 +55,11 @@ const router = createRouter({
           path: 'categories',
           name: 'categories',
           component: CategoriesView,
+        },
+        {
+          path: 'messages',
+          name: 'messages',
+          component: MessagesView,
         },
         {
           path: 'notifications',

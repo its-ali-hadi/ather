@@ -202,6 +202,31 @@ const initDatabase = async () => {
     `);
     console.log('✅ Notifications table created');
 
+    // Create contact_messages table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT,
+        name VARCHAR(100),
+        email VARCHAR(255),
+        phone VARCHAR(20),
+        subject VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        status ENUM('pending', 'read', 'replied', 'closed') DEFAULT 'pending',
+        admin_reply TEXT,
+        replied_by INT,
+        replied_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (replied_by) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_user_id (user_id),
+        INDEX idx_status (status),
+        INDEX idx_created_at (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✅ Contact messages table created');
+
     // Insert default boxes
     await connection.query(`
       INSERT IGNORE INTO boxes (id, name, description, icon, color, order_index) VALUES
@@ -253,6 +278,7 @@ const initDatabase = async () => {
     console.log('   - favorites');
     console.log('   - follows');
     console.log('   - notifications');
+    console.log('   - contact_messages (رسائل التواصل)');
     console.log('');
     console.log('   📦 Default data inserted:');
     console.log('   - 6 boxes (صناديق)');

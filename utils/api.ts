@@ -291,6 +291,18 @@ const api = {
   async getUnreadNotificationsCount() {
     return this.request('/notifications/unread-count');
   },
+
+  // Contact endpoints
+  async createContactMessage(data: { subject: string; message: string }) {
+    return this.request('/contact', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getUserContactMessages(page = 1, limit = 20) {
+    return this.request(`/contact/my?page=${page}&limit=${limit}`);
+  },
 };
 
 export default api;

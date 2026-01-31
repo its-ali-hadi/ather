@@ -19,15 +19,19 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
+import api from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HelpSupportScreen() {
   const colorScheme = useColorScheme();
   const navigation = useNavigation<NavigationProp>();
+  const { isAuthenticated } = useAuth();
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -89,22 +93,40 @@ export default function HelpSupportScreen() {
     },
   ];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!subject.trim() || !description.trim()) {
       Alert.alert('خطأ', 'الرجاء ملء جميع الحقول المطلوبة');
       return;
     }
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert('تم الإرسال', 'شكراً لتواصلك معنا! سنرد عليك في أقرب وقت ممكن.', [
-      { 
-        text: 'حسناً', 
-        onPress: () => {
-          setSubject('');
-          setDescription('');
-        }
-      }
-    ]);
+    if (!isAuthenticated) {
+      Alert.alert('تنبيه', 'يجب تسجيل الدخول لإرسال رسالة');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await api.createContactMessage({
+        subject: subject.trim(),
+        message: description.trim(),
+      });
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('تم الإرسال! ✅', 'شكراً لتواصلك معنا! سنرد عليك في أقرب وقت ممكن.', [
+        {
+          text: 'حسناً',
+          onPress: () => {
+            setSubject('');
+            setDescription('');
+          },
+        },
+      ]);
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      Alert.alert('خطأ', error.message || 'فشل إرسال الرسالة. حاول مرة أخرى.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const toggleFaq = (id: number) => {
@@ -201,6 +223,7 @@ export default function HelpSupportScreen() {
               onPress={handleSubmit}
               activeOpacity={0.8}
               style={styles.submitButton}
+              disabled={isSubmitting}
             >
               <LinearGradient
                 colors={['#E8B86D', '#D4A574']}
@@ -208,8 +231,14 @@ export default function HelpSupportScreen() {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Ionicons name="send" size={20} color="#FFF" />
-                <Text style={styles.submitText}>إرسال الرسالة</Text>
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <>
+                    <Ionicons name="send" size={20} color="#FFF" />
+                    <Text style={styles.submitText}>إرسال الرسالة</Text>
+                  </>
+                )}
               </LinearGradient>
             </TouchableOpacity>
           </View>
