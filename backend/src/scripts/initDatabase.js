@@ -56,6 +56,7 @@ const initDatabase = async () => {
         link_url VARCHAR(500),
         category VARCHAR(50),
         is_archived BOOLEAN DEFAULT FALSE,
+        is_private BOOLEAN DEFAULT FALSE,
         views_count INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -63,6 +64,7 @@ const initDatabase = async () => {
         INDEX idx_user_id (user_id),
         INDEX idx_type (type),
         INDEX idx_category (category),
+        INDEX idx_is_private (is_private),
         INDEX idx_created_at (created_at),
         FULLTEXT INDEX idx_content (title, content)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

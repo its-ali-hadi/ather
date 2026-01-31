@@ -10,6 +10,7 @@ import {
   View,
   Platform,
   Alert,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
@@ -17,6 +18,7 @@ import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import seedData from '../constants/seed-data.json';
+import api from '../utils/api';
 
 export default function CreateLinkPostScreen() {
   const colorScheme = useColorScheme();
@@ -26,6 +28,7 @@ export default function CreateLinkPostScreen() {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -40,30 +43,48 @@ export default function CreateLinkPostScreen() {
   const boxes = seedData.cards;
   const categories = ['تقنية', 'فن', 'أدب', 'رياضة', 'سفر', 'أعمال'];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedBox || !selectedCategory || !title || !url) {
       Alert.alert('خطأ', 'الرجاء ملء جميع الحقول المطلوبة');
       return;
     }
 
     // Basic URL validation
-    const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+    const urlPattern = /^(https?:\/\/)?([a-z\d\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
     if (!urlPattern.test(url)) {
       Alert.alert('خطأ', 'الرجاء إدخال رابط صحيح');
       return;
     }
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert('نجح', 'تم إنشاء المنشور بنجاح!', [
-      { text: 'حسناً', onPress: () => navigation.goBack() }
-    ]);
+    try {
+      const response = await api.createPost({
+        type: 'link',
+        title,
+        content: description || title,
+        link_url: url,
+        category: selectedCategory,
+        is_private: isPrivate,
+      });
+
+      if (response.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert('نجح', `تم إنشاء المنشور ${isPrivate ? 'الخاص' : 'العام'} بنجاح!`, [
+          { text: 'حسناً', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        Alert.alert('خطأ', response.message || 'فشل إنشاء المنشور');
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      Alert.alert('خطأ', 'حدث خطأ أثناء إنشاء المنشور');
+    }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top', 'bottom']}>
       <ScrollView 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -88,6 +109,38 @@ export default function CreateLinkPostScreen() {
 
         {/* Form */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.form}>
+          {/* Privacy Toggle */}
+          <View style={[styles.privacyContainer, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}>
+            <View style={styles.privacyContent}>
+              <View style={styles.privacyInfo}>
+                <Ionicons 
+                  name={isPrivate ? "lock-closed" : "globe-outline"} 
+                  size={24} 
+                  color={isPrivate ? '#E94B3C' : '#50C878'} 
+                />
+                <View style={styles.privacyTextContainer}>
+                  <Text style={[styles.privacyTitle, { color: COLORS.text }]}>
+                    {isPrivate ? 'منشور خاص' : 'منشور عام'}
+                  </Text>
+                  <Text style={[styles.privacyDescription, { color: COLORS.textSecondary }]}>
+                    {isPrivate 
+                      ? 'سيظهر فقط في قسم المنشورات الخاصة' 
+                      : 'سيظهر للجميع في الصفحة الرئيسية'}
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={isPrivate}
+                onValueChange={(value) => {
+                  setIsPrivate(value);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                trackColor={{ false: '#50C878', true: '#E94B3C' }}
+                thumbColor="#FFF"
+              />
+            </View>
+          </View>
+
           {/* Box Selection */}
           <View style={styles.fieldContainer}>
             <Text style={[styles.label, { color: COLORS.text }]}>
@@ -290,6 +343,48 @@ const styles = StyleSheet.create({
   form: {
     paddingHorizontal: 24,
     gap: 24,
+  },
+  privacyContainer: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  privacyContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  privacyInfo: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  privacyTextContainer: {
+    flex: 1,
+  },
+  privacyTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+    textAlign: 'right',
+    marginBottom: 4,
+  },
+  privacyDescription: {
+    fontSize: 13,
+    fontFamily: 'Tajawal_400Regular',
+    textAlign: 'right',
   },
   fieldContainer: {
     gap: 12,

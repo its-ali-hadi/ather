@@ -11,6 +11,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
@@ -32,6 +33,7 @@ export default function CreateVideoPostScreen() {
   const [videoUri, setVideoUri] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isPrivate, setIsPrivate] = useState(false);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -103,11 +105,12 @@ export default function CreateVideoPostScreen() {
         content: description,
         media_url: uploadResult.url,
         category: selectedCategory,
+        is_private: isPrivate,
       });
 
       if (response.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('نجح', 'تم نشر المنشور بنجاح!', [
+        Alert.alert('نجح', `تم نشر المنشور ${isPrivate ? 'الخاص' : 'العام'} بنجاح!`, [
           { text: 'حسناً', onPress: () => navigation.goBack() }
         ]);
       } else {
@@ -123,10 +126,10 @@ export default function CreateVideoPostScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top', 'bottom']}>
       <ScrollView 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -152,6 +155,39 @@ export default function CreateVideoPostScreen() {
 
         {/* Form */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.form}>
+          {/* Privacy Toggle */}
+          <View style={[styles.privacyContainer, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}>
+            <View style={styles.privacyContent}>
+              <View style={styles.privacyInfo}>
+                <Ionicons 
+                  name={isPrivate ? "lock-closed" : "globe-outline"} 
+                  size={24} 
+                  color={isPrivate ? '#E94B3C' : '#50C878'} 
+                />
+                <View style={styles.privacyTextContainer}>
+                  <Text style={[styles.privacyTitle, { color: COLORS.text }]}>
+                    {isPrivate ? 'منشور خاص' : 'منشور عام'}
+                  </Text>
+                  <Text style={[styles.privacyDescription, { color: COLORS.textSecondary }]}>
+                    {isPrivate 
+                      ? 'سيظهر فقط في قسم المنشورات الخاصة' 
+                      : 'سيظهر للجميع في الصفحة الرئيسية'}
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={isPrivate}
+                onValueChange={(value) => {
+                  setIsPrivate(value);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                trackColor={{ false: '#50C878', true: '#E94B3C' }}
+                thumbColor="#FFF"
+                disabled={uploading}
+              />
+            </View>
+          </View>
+
           {/* Video Picker */}
           <View style={styles.fieldContainer}>
             <Text style={[styles.label, { color: COLORS.text }]}>
@@ -395,6 +431,48 @@ const styles = StyleSheet.create({
   form: {
     paddingHorizontal: 24,
     gap: 24,
+  },
+  privacyContainer: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  privacyContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  privacyInfo: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  privacyTextContainer: {
+    flex: 1,
+  },
+  privacyTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+    textAlign: 'right',
+    marginBottom: 4,
+  },
+  privacyDescription: {
+    fontSize: 13,
+    fontFamily: 'Tajawal_400Regular',
+    textAlign: 'right',
   },
   fieldContainer: {
     gap: 12,
