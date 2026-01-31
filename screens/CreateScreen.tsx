@@ -8,6 +8,7 @@ import {
   useColorScheme,
   View,
   Platform,
+  Alert,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,12 +16,39 @@ import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
+import { useAuth } from '../contexts/AuthContext';
+import { useEffect } from 'react';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function CreateScreen() {
   const colorScheme = useColorScheme();
   const navigation = useNavigation<NavigationProp>();
+  const { isGuest, logout } = useAuth();
+
+  // Check if user is guest when screen loads
+  useEffect(() => {
+    if (isGuest) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Alert.alert(
+        'تسجيل الدخول مطلوب',
+        'يجب عليك تسجيل الدخول لإنشاء منشور',
+        [
+          { 
+            text: 'إلغاء', 
+            style: 'cancel',
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: 'تسجيل الدخول',
+            onPress: async () => {
+              await logout();
+            },
+          },
+        ]
+      );
+    }
+  }, [isGuest]);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -67,6 +95,24 @@ export default function CreateScreen() {
   ];
 
   const handlePress = (screen: keyof RootStackParamList) => {
+    if (isGuest) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Alert.alert(
+        'تسجيل الدخول مطلوب',
+        'يجب عليك تسجيل الدخول لإنشاء منشور',
+        [
+          { text: 'إلغاء', style: 'cancel' },
+          {
+            text: 'تسجيل الدخول',
+            onPress: async () => {
+              await logout();
+            },
+          },
+        ]
+      );
+      return;
+    }
+    
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate(screen);
   };

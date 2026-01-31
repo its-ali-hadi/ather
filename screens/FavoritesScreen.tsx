@@ -9,17 +9,45 @@ import {
   useColorScheme,
   View,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useAuth } from '../contexts/AuthContext';
+import { useEffect } from 'react';
 
 import SeedData from '../constants/seed-data.json';
 
 export default function FavoritesScreen() {
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
+  const { isGuest, logout } = useAuth();
+
+  // Check if user is guest when screen loads
+  useEffect(() => {
+    if (isGuest) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Alert.alert(
+        'تسجيل الدخول مطلوب',
+        'يجب عليك تسجيل الدخول لعرض المفضلات',
+        [
+          { 
+            text: 'إلغاء', 
+            style: 'cancel',
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: 'تسجيل الدخول',
+            onPress: async () => {
+              await logout();
+            },
+          },
+        ]
+      );
+    }
+  }, [isGuest]);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',

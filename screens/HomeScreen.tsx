@@ -3,7 +3,17 @@ import { Image as ExpoImage } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, useColorScheme, View, Platform } from 'react-native';
+import { 
+  Dimensions, 
+  ScrollView, 
+  StyleSheet, 
+  Text, 
+  TouchableOpacity, 
+  useColorScheme, 
+  View, 
+  Platform,
+  Alert,
+} from 'react-native';
 import Animated, { 
   FadeInDown, 
   FadeInRight, 
@@ -23,6 +33,7 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList, TabParamList } from '../App';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../contexts/AuthContext';
 
 import SeedData from '../constants/seed-data.json';
 import OnboardingOverlay, { OnboardingStep } from '../components/OnboardingOverlay';
@@ -40,6 +51,7 @@ export default function HomeScreen({ navigation }: Props) {
   const { banners, about, cards, isLogged } = SeedData;
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
+  const { isGuest, logout } = useAuth();
 
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -229,6 +241,23 @@ export default function HomeScreen({ navigation }: Props) {
     };
   });
 
+  const handleGuestAction = async (actionName: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      'تسجيل الدخول مطلوب',
+      `يجب عليك تسجيل الدخول لـ${actionName}`,
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'تسجيل الدخول',
+          onPress: async () => {
+            await logout();
+          },
+        },
+      ]
+    );
+  };
+
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
@@ -243,6 +272,10 @@ export default function HomeScreen({ navigation }: Props) {
     
     switch (featureText) {
       case 'انشر أفكارك بحرية':
+        if (isGuest) {
+          handleGuestAction('إنشاء منشور');
+          return;
+        }
         navigation.navigate('Create' as any);
         break;
       case 'تواصل مع المبدعين':
@@ -252,6 +285,10 @@ export default function HomeScreen({ navigation }: Props) {
         navigation.navigate('Explore' as any);
         break;
       case 'احفظ ما يهمك':
+        if (isGuest) {
+          handleGuestAction('حفظ المنشورات');
+          return;
+        }
         navigation.navigate('Favorites');
         break;
       default:

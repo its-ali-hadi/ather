@@ -20,6 +20,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
 import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 import SeedData from '../constants/seed-data.json';
 
@@ -78,6 +79,7 @@ export default function PostDetailScreen({ route }: Props) {
   const { postId } = route.params;
   const colorScheme = useColorScheme();
   const navigation = useNavigation<NavigationProp>();
+  const { isGuest, logout } = useAuth();
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState(mockComments);
 
@@ -108,12 +110,37 @@ export default function PostDetailScreen({ route }: Props) {
     navigation.navigate('UserProfile', { userId });
   };
 
+  const handleGuestAction = async (actionName: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      'تسجيل الدخول مطلوب',
+      `يجب عليك تسجيل الدخول لـ${actionName}`,
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'تسجيل الدخول',
+          onPress: async () => {
+            await logout();
+          },
+        },
+      ]
+    );
+  };
+
   const handleLike = () => {
+    if (isGuest) {
+      handleGuestAction('إضافة إعجاب');
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // TODO: Implement like functionality
   };
 
   const handleFavorite = () => {
+    if (isGuest) {
+      handleGuestAction('حفظ المنشور');
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // TODO: Implement favorite functionality
   };
@@ -147,6 +174,11 @@ export default function PostDetailScreen({ route }: Props) {
   };
 
   const handleAddComment = () => {
+    if (isGuest) {
+      handleGuestAction('إضافة تعليق');
+      return;
+    }
+    
     if (!comment.trim()) return;
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -168,6 +200,10 @@ export default function PostDetailScreen({ route }: Props) {
   };
 
   const handleCommentLike = (commentId: string) => {
+    if (isGuest) {
+      handleGuestAction('إضافة إعجاب على التعليق');
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // TODO: Implement comment like functionality
   };
