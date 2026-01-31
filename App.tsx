@@ -61,6 +61,9 @@ import UserProfileScreen from './screens/UserProfileScreen';
 import ArchiveScreen from './screens/ArchiveScreen';
 import TermsOfServiceScreen from './screens/TermsOfServiceScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
 
@@ -103,6 +106,9 @@ export type TabParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 function TabNavigator() {
   const colorScheme = useColorScheme();
@@ -116,6 +122,7 @@ function TabNavigator() {
     inactive: colorScheme === 'dark' ? '#7A6F65' : '#B8B0A8',
   };
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
   return (
     <Tab.Navigator
@@ -245,6 +252,9 @@ function AppNavigator() {
     </Stack.Navigator>
 =======
   return (
+=======
+  return (
+>>>>>>> Stashed changes
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
@@ -328,6 +338,9 @@ function AppNavigator() {
         />
       )}
     </Tab.Navigator>
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   );
 }
@@ -454,4 +467,7 @@ const useAuth = () => {
     user: null,
   };
 };
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
