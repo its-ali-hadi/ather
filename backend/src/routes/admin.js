@@ -1,36 +1,33 @@
 const express = require('express');
-const { auth, adminAuth } = require('../middleware/auth');
-const adminController = require('../controllers/adminController');
-
 const router = express.Router();
+const adminController = require('../controllers/adminController');
+const { authenticate, isAdmin } = require('../middleware/auth');
 
-// All admin routes require authentication and admin role
-router.use(auth);
-router.use(adminAuth);
+// Apply authentication and admin check to all routes
+router.use(authenticate);
+router.use(isAdmin);
 
-// Dashboard
-router.get('/dashboard', adminController.getDashboardStats);
+// Stats
+router.get('/stats', adminController.getStats);
 
-// User Management
-router.get('/users', adminController.getAllUsers);
+// Users
+router.get('/users', adminController.getUsers);
+router.get('/users/recent', adminController.getRecentUsers);
 router.get('/users/:id', adminController.getUserDetails);
-router.put('/users/:id/verify', adminController.verifyUser);
-router.put('/users/:id/role', adminController.updateUserRole);
-router.delete('/users/:id', adminController.deleteUser);
 router.put('/users/:id/ban', adminController.banUser);
 router.put('/users/:id/unban', adminController.unbanUser);
+router.delete('/users/:id', adminController.deleteUser);
 
-// Post Management
-router.get('/posts', adminController.getAllPosts);
+// Posts
+router.get('/posts', adminController.getPosts);
+router.get('/posts/recent', adminController.getRecentPosts);
 router.delete('/posts/:id', adminController.deletePost);
-router.put('/posts/:id/feature', adminController.featurePost);
 
-// Reports Management
-router.get('/reports', adminController.getAllReports);
-router.put('/reports/:id/resolve', adminController.resolveReport);
+// Comments
+router.get('/comments', adminController.getComments);
+router.delete('/comments/:id', adminController.deleteComment);
 
-// System Settings
-router.get('/settings', adminController.getSettings);
-router.put('/settings', adminController.updateSettings);
+// Notifications
+router.post('/notifications/send', adminController.sendNotification);
 
 module.exports = router;
