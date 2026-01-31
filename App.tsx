@@ -45,11 +45,65 @@ import CreateTextPostScreen from './screens/CreateTextPostScreen';
 import CreateImagePostScreen from './screens/CreateImagePostScreen';
 import CreateVideoPostScreen from './screens/CreateVideoPostScreen';
 import CreateLinkPostScreen from './screens/CreateLinkPostScreen';
+<<<<<<< Updated upstream
+=======
+import EditProfileScreen from './screens/EditProfileScreen';
+import HelpSupportScreen from './screens/HelpSupportScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import PostsListScreen from './screens/PostsListScreen';
+import FavoritesScreen from './screens/FavoritesScreen';
+import MyPostsScreen from './screens/MyPostsScreen';
+import AuthScreen from './screens/AuthScreen';
+import PostDetailScreen from './screens/PostDetailScreen';
+import NotificationsScreen from './screens/NotificationsScreen';
+import AdvancedSearchScreen from './screens/AdvancedSearchScreen';
+import UserProfileScreen from './screens/UserProfileScreen';
+import ArchiveScreen from './screens/ArchiveScreen';
+import TermsOfServiceScreen from './screens/TermsOfServiceScreen';
+import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
+>>>>>>> Stashed changes
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+<<<<<<< Updated upstream
+=======
+export type RootStackParamList = {
+  MainTabs: undefined;
+  BoxDetail: { boxId: string };
+  CreateTextPost: undefined;
+  CreateImagePost: undefined;
+  CreateVideoPost: undefined;
+  CreateLinkPost: undefined;
+  EditProfile: undefined;
+  HelpSupport: undefined;
+  Settings: undefined;
+  PostsList: { boxId: string };
+  Favorites: undefined;
+  MyPosts: undefined;
+  Auth: undefined;
+  PostDetail: { postId: string };
+  Notifications: undefined;
+  AdvancedSearch: undefined;
+  UserProfile: { userId: string };
+  Archive: undefined;
+  TermsOfService: undefined;
+  PrivacyPolicy: undefined;
+};
+
+export type TabParamList = {
+  Home: undefined;
+  Explore: undefined;
+  Create: undefined;
+  Private: undefined;
+  Profile: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
+
+>>>>>>> Stashed changes
 function TabNavigator() {
   const colorScheme = useColorScheme();
   const { user } = useAuth();
@@ -62,6 +116,7 @@ function TabNavigator() {
     inactive: colorScheme === 'dark' ? '#7A6F65' : '#B8B0A8',
   };
 
+<<<<<<< Updated upstream
   return (
     <Tab.Navigator
       screenOptions={{
@@ -188,6 +243,92 @@ function AppNavigator() {
         </>
       )}
     </Stack.Navigator>
+=======
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: COLORS.tabBar,
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.inactive,
+        tabBarLabelStyle: {
+          fontFamily: 'Cairo_600SemiBold',
+          fontSize: 11,
+        },
+      }}
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          tabBarLabel: 'الرئيسية',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Explore"
+        component={ExploreScreen}
+        options={{
+          tabBarLabel: 'استكشف',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="compass" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Create"
+        component={CreateScreen}
+        options={{
+          tabBarLabel: 'إنشاء',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{
+          tabBarLabel: 'الإشعارات',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="notifications" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: 'الملف الشخصي',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={size} color={color} />
+          ),
+        }}
+      />
+      {user?.role === 'admin' && (
+        <Tab.Screen
+          name="AdminDashboard"
+          component={AdminDashboardScreen}
+          options={{
+            tabBarLabel: 'لوحة التحكم',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="shield-checkmark" size={size} color={color} />
+            ),
+          }}
+        />
+      )}
+    </Tab.Navigator>
+>>>>>>> Stashed changes
   );
 }
 
@@ -211,6 +352,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
+<<<<<<< Updated upstream
       <AuthProvider>
         <NavigationContainer>
           <AppNavigator />
@@ -220,3 +362,96 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+=======
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        >
+          <Stack.Screen name="MainTabs" component={TabNavigator} />
+          <Stack.Screen name="BoxDetail" component={BoxDetailScreen} />
+          <Stack.Screen name="CreateTextPost" component={CreateTextPostScreen} />
+          <Stack.Screen name="CreateImagePost" component={CreateImagePostScreen} />
+          <Stack.Screen name="CreateVideoPost" component={CreateVideoPostScreen} />
+          <Stack.Screen name="CreateLinkPost" component={CreateLinkPostScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+          <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="PostsList" component={PostsListScreen} />
+          <Stack.Screen name="Favorites" component={FavoritesScreen} />
+          <Stack.Screen name="MyPosts" component={MyPostsScreen} />
+          <Stack.Screen name="Auth" component={AuthScreen} />
+          <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
+          <Stack.Screen name="AdvancedSearch" component={AdvancedSearchScreen} />
+          <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+          <Stack.Screen name="Archive" component={ArchiveScreen} />
+          <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <StatusBar style="auto" />
+    </SafeAreaProvider>
+  );
+}
+
+const splashStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  gradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    alignItems: 'center',
+    gap: 24,
+  },
+  iconContainer: {
+    marginBottom: 16,
+  },
+  iconGradient: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#E8B86D',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.4,
+        shadowRadius: 24,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  },
+  title: {
+    fontSize: 56,
+    fontWeight: 'bold',
+    fontFamily: 'Cairo_700Bold',
+    color: '#4A3F35',
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 20,
+    fontFamily: 'Tajawal_400Regular',
+    color: '#7A6F65',
+    textAlign: 'center',
+  },
+});
+
+// Add missing useAuth hook
+const useAuth = () => {
+  // This is a placeholder for the actual auth hook
+  // In a real app, this would be implemented with Firebase or similar
+  return {
+    user: null,
+  };
+};
+>>>>>>> Stashed changes
