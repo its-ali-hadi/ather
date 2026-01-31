@@ -9,6 +9,7 @@
     "init-db": "node src/scripts/initDatabase.js",
     "seed": "node src/scripts/seedData.js",
     "add-ban-fields": "node src/scripts/addBanFields.js",
+    "add-private-field": "node src/scripts/addPrivateField.js",
     "create-test-user": "node src/scripts/createTestUser.js"
   },
   "keywords": ["athar", "api", "backend"],

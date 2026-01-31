@@ -3,12 +3,12 @@ const { pool } = require('../config/database');
 // Create post
 exports.createPost = async (req, res, next) => {
   try {
-    const { type, title, content, media_url, link_url, category } = req.body;
+    const { type, title, content, media_url, link_url, category, is_private } = req.body;
     const userId = req.user.id;
 
     const [result] = await pool.query(
-      'INSERT INTO posts (user_id, type, title, content, media_url, link_url, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [userId, type, title, content, media_url, link_url, category]
+      'INSERT INTO posts (user_id, type, title, content, media_url, link_url, category, is_private) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [userId, type, title, content, media_url, link_url, category, is_private || false]
     );
 
     // Get created post with user info
@@ -23,7 +23,7 @@ exports.createPost = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'تم نشر المنشور بنجاح',
+      message: `تم نشر المنشور ${is_private ? 'الخاص' : 'العام'} بنجاح`,
       data: posts[0]
     });
   } catch (error) {
@@ -31,7 +31,7 @@ exports.createPost = async (req, res, next) => {
   }
 };
 
-// Get all posts (feed)
+// Get all posts (feed) - only public posts
 exports.getPosts = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -60,7 +60,7 @@ exports.getPosts = async (req, res, next) => {
     query += `
       FROM posts p
       JOIN users u ON p.user_id = u.id
-      WHERE p.is_archived = FALSE
+      WHERE p.is_archived = FALSE AND p.is_private = FALSE
     `;
 
     const params = userId ? [userId, userId] : [];
@@ -81,7 +81,7 @@ exports.getPosts = async (req, res, next) => {
     const [posts] = await pool.query(query, params);
 
     // Get total count
-    let countQuery = 'SELECT COUNT(*) as count FROM posts WHERE is_archived = FALSE';
+    let countQuery = 'SELECT COUNT(*) as count FROM posts WHERE is_archived = FALSE AND is_private = FALSE';
     const countParams = [];
 
     if (category) {
@@ -409,6 +409,50 @@ exports.searchPosts = async (req, res, next) => {
     const [total] = await pool.query(
       'SELECT COUNT(*) as count FROM posts WHERE is_archived = FALSE AND (title LIKE ? OR content LIKE ?)',
       [searchTerm, searchTerm]
+    );
+
+    res.json({
+      success: true,
+      data: posts,
+      pagination: {
+        page,
+        limit,
+        total: total[0].count,
+        pages: Math.ceil(total[0].count / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get private posts (only for authenticated user)
+exports.getPrivatePosts = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const query = `
+      SELECT p.*, 
+             u.name as user_name, u.profile_image as user_image, u.is_verified as user_verified,
+             (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
+             (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count,
+             (SELECT COUNT(*) > 0 FROM likes WHERE post_id = p.id AND user_id = ?) as is_liked,
+             (SELECT COUNT(*) > 0 FROM favorites WHERE post_id = p.id AND user_id = ?) as is_favorited
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.user_id = ? AND p.is_private = TRUE AND p.is_archived = FALSE
+      ORDER BY p.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const [posts] = await pool.query(query, [userId, userId, userId, limit, offset]);
+
+    const [total] = await pool.query(
+      'SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND is_private = TRUE AND is_archived = FALSE',
+      [userId]
     );
 
     res.json({
