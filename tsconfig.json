@@ -3,16 +3,8 @@
   "compilerOptions": {
     "strict": true,
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "paths": {
-      "@/*": ["./*"]
-    }
-  },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-  ]
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
+  }
 }
