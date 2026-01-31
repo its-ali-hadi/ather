@@ -23,9 +23,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const navigation = useNavigation<NavigationProp>();
-  const { user, isGuest, logout } = useAuth();
+  const { user, isGuest } = useAuth();
 
-  // Show guest screen if user is a guest
+  // Show GuestProfileScreen if user is a guest
   if (isGuest) {
     return <GuestProfileScreen />;
   }

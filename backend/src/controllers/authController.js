@@ -65,7 +65,7 @@ exports.sendRegistrationOTP = async (req, res, next) => {
 // Register new user with OTP verification
 exports.register = async (req, res, next) => {
   try {
-    const { phone, name, email, password, orderId, code } = req.body;
+    const { phone, name, orderId, code } = req.body;
 
     // Verify OTP
     const verifyResult = await verifyOTP(orderId, code);
@@ -79,24 +79,21 @@ exports.register = async (req, res, next) => {
 
     // Check if user exists
     const [existingUsers] = await pool.query(
-      'SELECT id FROM users WHERE phone = ? OR email = ?',
-      [phone, email]
+      'SELECT id FROM users WHERE phone = ?',
+      [phone]
     );
 
     if (existingUsers.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'رقم الهاتف أو البريد الإلكتروني مستخدم مسبقاً'
+        message: 'رقم الهاتف مستخدم مسبقاً'
       });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user with verified phone
+    // Create user with verified phone (no password required)
     const [result] = await pool.query(
-      'INSERT INTO users (phone, name, email, password, is_verified) VALUES (?, ?, ?, ?, ?)',
-      [phone, name, email, hashedPassword, true]
+      'INSERT INTO users (phone, name, is_verified) VALUES (?, ?, ?)',
+      [phone, name, true]
     );
 
     // Get created user

@@ -21,14 +21,6 @@ const registerValidation = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('الاسم يجب أن يكون بين 2 و 100 حرف'),
-  body('email')
-    .optional()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('البريد الإلكتروني غير صحيح'),
-  body('password')
-    .isLength({ min: 6 })
-    .withMessage('كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
   body('orderId')
     .notEmpty()
     .withMessage('معرف الطلب مطلوب'),

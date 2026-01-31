@@ -49,8 +49,6 @@ const api = {
   async register(data: {
     phone: string;
     name: string;
-    email?: string;
-    password: string;
     orderId: string;
     code: string;
   }) {

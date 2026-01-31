@@ -27,8 +27,6 @@ export default function AuthScreen() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -98,11 +96,6 @@ export default function AuthScreen() {
       return;
     }
 
-    if (!isLogin && !password) {
-      Alert.alert('خطأ', 'الرجاء إدخال كلمة المرور');
-      return;
-    }
-
     setIsLoading(true);
 
     try {
@@ -120,8 +113,6 @@ export default function AuthScreen() {
         response = await api.register({
           phone: phoneNumber,
           name,
-          email: email || undefined,
-          password,
           orderId,
           code: verificationCode,
         });
@@ -166,8 +157,6 @@ export default function AuthScreen() {
     setPhoneNumber('');
     setVerificationCode('');
     setName('');
-    setEmail('');
-    setPassword('');
     setIsCodeSent(false);
     setOrderId('');
   };
@@ -252,25 +241,6 @@ export default function AuthScreen() {
                     </Animated.View>
                   )}
 
-                  {/* Email Input (Optional for Sign Up) */}
-                  {!isLogin && (
-                    <Animated.View entering={FadeInDown.delay(150).springify()}>
-                      <View style={[styles.inputContainer, { backgroundColor: COLORS.inputBg }]}>
-                        <Ionicons name="mail-outline" size={20} color={COLORS.textSecondary} />
-                        <TextInput
-                          style={[styles.input, { color: COLORS.text }]}
-                          placeholder="البريد الإلكتروني (اختياري)"
-                          placeholderTextColor={COLORS.textSecondary}
-                          value={email}
-                          onChangeText={setEmail}
-                          keyboardType="email-address"
-                          autoCapitalize="none"
-                          editable={!isLoading}
-                        />
-                      </View>
-                    </Animated.View>
-                  )}
-
                   {/* Phone Number Input */}
                   <View style={[styles.inputContainer, { backgroundColor: COLORS.inputBg }]}>
                     <Ionicons name="call-outline" size={20} color={COLORS.textSecondary} />
@@ -285,24 +255,6 @@ export default function AuthScreen() {
                       editable={!isLoading}
                     />
                   </View>
-
-                  {/* Password Input (Only for Sign Up) */}
-                  {!isLogin && (
-                    <Animated.View entering={FadeInDown.delay(200).springify()}>
-                      <View style={[styles.inputContainer, { backgroundColor: COLORS.inputBg }]}>
-                        <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
-                        <TextInput
-                          style={[styles.input, { color: COLORS.text }]}
-                          placeholder="كلمة المرور (6 أحرف على الأقل)"
-                          placeholderTextColor={COLORS.textSecondary}
-                          value={password}
-                          onChangeText={setPassword}
-                          secureTextEntry
-                          editable={!isLoading}
-                        />
-                      </View>
-                    </Animated.View>
-                  )}
 
                   {/* Send Code Button */}
                   <TouchableOpacity
