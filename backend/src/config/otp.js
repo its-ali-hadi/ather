@@ -11,7 +11,7 @@ const TEST_PHONE_NUMBER = process.env.TEST_PHONE_NUMBER;
 const TEST_OTP_CODE = process.env.TEST_OTP_CODE;
 
 /**
- * إرسال OTP عبر SMS
+ * إرسال OTP عبر WhatsApp
  * @param {string} phone - رقم الهاتف بصيغة دولية (مثال: +9647XXXXXXXXX)
  * @returns {Promise<{success: boolean, orderId?: string, error?: string}>}
  */
@@ -36,7 +36,7 @@ const sendOTP = async (phone) => {
       {
         app_id: OTP_DEV_APP_ID,
         phone_number: phone,
-        channel: 'sms',
+        channel: 'whatsapp',
       },
       {
         auth: {
