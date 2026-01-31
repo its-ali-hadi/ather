@@ -1,89 +1,108 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
-export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem('admin_token'))
-  const user = ref<any>(null)
-  const isLoading = ref(false)
+interface User {
+  id: number
+  name: string
+  phone: string
+  email?: string
+  role: string
+}
 
-  const isAuthenticated = computed(() => !!token.value && !!user.value)
+interface AuthState {
+  user: User | null
+  token: string | null
+  isAuthenticated: boolean
+}
 
-  // Set axios default headers
-  if (token.value) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-  }
+export const useAuthStore = defineStore('auth', {
+  state: (): AuthState => ({
+    user: null,
+    token: localStorage.getItem('admin_token'),
+    isAuthenticated: !!localStorage.getItem('admin_token'),
+  }),
 
-  async function login(phone: string, password: string) {
-    isLoading.value = true
-    try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        phone,
-        password
-      })
+  actions: {
+    async login(phone: string, password: string) {
+      try {
+        const response = await axios.post(`${API_URL}/auth/login`, {
+          phone,
+          password,
+        })
 
-      if (response.data.success) {
-        token.value = response.data.data.token
-        user.value = response.data.data.user
+        if (response.data.success) {
+          const { token, user } = response.data.data
 
-        // Check if user is admin
-        if (user.value.role !== 'admin') {
-          throw new Error('غير مصرح لك بالوصول')
+          // Check if user is admin
+          if (user.role !== 'admin') {
+            return {
+              success: false,
+              message: 'غير مصرح لك بالوصول إلى لوحة التحكم',
+            }
+          }
+
+          this.token = token
+          this.user = user
+          this.isAuthenticated = true
+
+          localStorage.setItem('admin_token', token)
+          localStorage.setItem('admin_user', JSON.stringify(user))
+
+          // Set default authorization header
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+          return {
+            success: true,
+            message: 'تم تسجيل الدخول بنجاح',
+          }
         }
 
-        localStorage.setItem('admin_token', token.value)
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-
-        return { success: true }
-      }
-
-      return { success: false, message: response.data.message }
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.response?.data?.message || error.message || 'حدث خطأ'
-      }
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  async function checkAuth() {
-    if (!token.value) return
-
-    try {
-      const response = await axios.get(`${API_URL}/auth/me`)
-      
-      if (response.data.success) {
-        user.value = response.data.data
-
-        if (user.value.role !== 'admin') {
-          logout()
+        return {
+          success: false,
+          message: response.data.message || 'فشل تسجيل الدخول',
         }
-      } else {
-        logout()
+      } catch (error: any) {
+        console.error('Login error:', error)
+        return {
+          success: false,
+          message: error.response?.data?.message || 'حدث خطأ أثناء تسجيل الدخول',
+        }
       }
-    } catch (error) {
-      logout()
-    }
-  }
+    },
 
-  function logout() {
-    token.value = null
-    user.value = null
-    localStorage.removeItem('admin_token')
-    delete axios.defaults.headers.common['Authorization']
-  }
+    logout() {
+      this.user = null
+      this.token = null
+      this.isAuthenticated = false
 
-  return {
-    token,
-    user,
-    isLoading,
-    isAuthenticated,
-    login,
-    checkAuth,
-    logout
-  }
+      localStorage.removeItem('admin_token')
+      localStorage.removeItem('admin_user')
+
+      delete axios.defaults.headers.common['Authorization']
+    },
+
+    async checkAuth() {
+      const token = localStorage.getItem('admin_token')
+      const userStr = localStorage.getItem('admin_user')
+
+      if (token && userStr) {
+        try {
+          this.token = token
+          this.user = JSON.parse(userStr)
+          this.isAuthenticated = true
+
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+          return true
+        } catch (error) {
+          this.logout()
+          return false
+        }
+      }
+
+      return false
+    },
+  },
 })

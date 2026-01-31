@@ -16,7 +16,7 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginView,
-      meta: { requiresGuest: true }
+      meta: { requiresAuth: false },
     },
     {
       path: '/',
@@ -25,45 +25,50 @@ const router = createRouter({
       children: [
         {
           path: '',
-          name: 'dashboard',
-          component: DashboardHome
+          name: 'home',
+          component: DashboardHome,
         },
         {
           path: 'users',
           name: 'users',
-          component: UsersView
+          component: UsersView,
         },
         {
           path: 'posts',
           name: 'posts',
-          component: PostsView
+          component: PostsView,
         },
         {
           path: 'comments',
           name: 'comments',
-          component: CommentsView
+          component: CommentsView,
         },
         {
           path: 'notifications',
           name: 'notifications',
-          component: NotificationsView
+          component: NotificationsView,
         },
         {
           path: 'settings',
           name: 'settings',
-          component: SettingsView
-        }
-      ]
-    }
-  ]
+          component: SettingsView,
+        },
+      ],
+    },
+  ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
-  
+
+  // Check authentication status
+  if (!authStore.isAuthenticated) {
+    await authStore.checkAuth()
+  }
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
-  } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
+  } else if (to.path === '/login' && authStore.isAuthenticated) {
     next('/')
   } else {
     next()

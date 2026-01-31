@@ -1,64 +1,83 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
-export const useDashboardStore = defineStore('dashboard', () => {
-  const stats = ref({
-    totalUsers: 0,
-    totalPosts: 0,
-    totalComments: 0,
-    totalLikes: 0
-  })
+interface Stats {
+  totalUsers: number
+  totalPosts: number
+  totalComments: number
+  totalLikes: number
+  newUsersToday: number
+  newPostsToday: number
+  postsByType: any[]
+  postsByCategory: any[]
+  recentActivity: any[]
+}
 
-  const recentUsers = ref([])
-  const recentPosts = ref([])
-  const isLoading = ref(false)
+interface DashboardState {
+  stats: Stats
+  recentUsers: any[]
+  recentPosts: any[]
+  isLoading: boolean
+}
 
-  async function fetchStats() {
-    isLoading.value = true
-    try {
-      const response = await axios.get(`${API_URL}/admin/stats`)
-      if (response.data.success) {
-        stats.value = response.data.data
+export const useDashboardStore = defineStore('dashboard', {
+  state: (): DashboardState => ({
+    stats: {
+      totalUsers: 0,
+      totalPosts: 0,
+      totalComments: 0,
+      totalLikes: 0,
+      newUsersToday: 0,
+      newPostsToday: 0,
+      postsByType: [],
+      postsByCategory: [],
+      recentActivity: [],
+    },
+    recentUsers: [],
+    recentPosts: [],
+    isLoading: false,
+  }),
+
+  actions: {
+    async fetchStats() {
+      this.isLoading = true
+      try {
+        const response = await axios.get(`${API_URL}/admin/stats`)
+
+        if (response.data.success) {
+          this.stats = response.data.data
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error)
+      } finally {
+        this.isLoading = false
       }
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    } finally {
-      isLoading.value = false
-    }
-  }
+    },
 
-  async function fetchRecentUsers() {
-    try {
-      const response = await axios.get(`${API_URL}/admin/users/recent`)
-      if (response.data.success) {
-        recentUsers.value = response.data.data
+    async fetchRecentUsers() {
+      try {
+        const response = await axios.get(`${API_URL}/admin/users/recent`)
+
+        if (response.data.success) {
+          this.recentUsers = response.data.data
+        }
+      } catch (error) {
+        console.error('Error fetching recent users:', error)
       }
-    } catch (error) {
-      console.error('Error fetching recent users:', error)
-    }
-  }
+    },
 
-  async function fetchRecentPosts() {
-    try {
-      const response = await axios.get(`${API_URL}/admin/posts/recent`)
-      if (response.data.success) {
-        recentPosts.value = response.data.data
+    async fetchRecentPosts() {
+      try {
+        const response = await axios.get(`${API_URL}/admin/posts/recent`)
+
+        if (response.data.success) {
+          this.recentPosts = response.data.data
+        }
+      } catch (error) {
+        console.error('Error fetching recent posts:', error)
       }
-    } catch (error) {
-      console.error('Error fetching recent posts:', error)
-    }
-  }
-
-  return {
-    stats,
-    recentUsers,
-    recentPosts,
-    isLoading,
-    fetchStats,
-    fetchRecentUsers,
-    fetchRecentPosts
-  }
+    },
+  },
 })
