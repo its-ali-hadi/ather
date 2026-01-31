@@ -165,6 +165,7 @@ const api = {
     media_url?: string;
     link_url?: string;
     category: string;
+    is_private?: boolean;
   }) {
     return this.request('/posts', {
       method: 'POST',
