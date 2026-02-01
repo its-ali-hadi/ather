@@ -1,0 +1,416 @@
+{
+  "isLogged": false,
+  "banners": [
+    {
+      "image": "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80",
+      "text": "شارك أفكارك مع العالم",
+      "icon": "bulb"
+    },
+    {
+      "image": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80",
+      "text": "تواصل مع المبدعين",
+      "icon": "people"
+    },
+    {
+      "image": "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&q=80",
+      "text": "اكتشف مواضيع جديدة",
+      "icon": "compass"
+    }
+  ],
+  "about": {
+    "title": "عن منصة أثر",
+    "description": "أثر هي مساحة مخصصة لنشر الأفكار ومشاركتها مع الآخرين. اكتشف مواضيع متنوعة وشارك إبداعاتك مع مجتمع من المفكرين والمبدعين واترك أثرك في العالم",
+    "list": [
+      {
+        "icon": "create",
+        "text": "انشر أفكارك بحرية"
+      },
+      {
+        "icon": "people-circle",
+        "text": "تواصل مع المبدعين"
+      },
+      {
+        "icon": "trending-up",
+        "text": "تابع المواضيع الرائجة"
+      },
+      {
+        "icon": "bookmark",
+        "text": "احفظ ما يهمك"
+      }
+    ],
+    "button": "ابدأ رحلتك"
+  },
+  "cards": [
+    {
+      "id": "1",
+      "image": "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&q=80",
+      "title": "صندوق التقنية والبرمجة",
+      "description": "أحدث الأفكار والمشاريع في عالم التقنية والبرمجة والذكاء الاصطناعي",
+      "category": "تقنية",
+      "icon": "code-slash",
+      "shortDescription": "مساحة للمطورين والمبرمجين",
+      "longDescription": "صندوق التقنية والبرمجة هو مجتمع نابض بالحياة يجمع المطورين والمبرمجين والمهتمين بالتكنولوجيا من جميع أنحاء العالم. هنا يمكنك مشاركة مشاريعك البرمجية، طرح الأسئلة التقنية، ومناقشة أحدث التقنيات والأدوات. سواء كنت مبتدئاً أو خبيراً، ستجد هنا محتوى قيماً يساعدك على تطوير مهاراتك والبقاء على اطلاع بآخر التطورات في عالم البرمجة والذكاء الاصطناعي.",
+      "allowedTypes": ["image", "video", "text", "link"],
+      "rules": [
+        "شارك كود نظيف ومنظم",
+        "اذكر المصادر عند الاقتباس",
+        "كن محترماً مع المبتدئين",
+        "تجنب المحتوى الترويجي المباشر"
+      ],
+      "contentSuggestions": "شارك مشاريعك البرمجية، اكتب عن تجربتك في تعلم لغة جديدة، ناقش أفضل الممارسات في البرمجة، أو اطرح أسئلة تقنية تحتاج إلى إجابات من المجتمع."
+    },
+    {
+      "id": "2",
+      "image": "https://images.unsplash.com/photo-1513128034602-7814ccaddd4e?w=800&q=80",
+      "title": "صندوق الفن والإبداع",
+      "description": "مساحة للفنانين والمبدعين لمشاركة أعمالهم وإلهام الآخرين",
+      "category": "فن",
+      "icon": "color-palette",
+      "shortDescription": "عالم من الإبداع والجمال",
+      "longDescription": "صندوق الفن والإبداع هو معرض رقمي يحتفي بجميع أشكال الفن والإبداع. من الرسم والتصوير إلى التصميم الجرافيكي والفن الرقمي، هذا المكان المثالي لعرض أعمالك الفنية والحصول على ملاحظات بناءة من مجتمع من الفنانين والمبدعين. شارك عملياتك الإبداعية، تقنياتك المفضلة، وألهم الآخرين بفنك الفريد.",
+      "allowedTypes": ["image", "video", "text", "link"],
+      "rules": [
+        "شارك أعمالك الأصلية فقط",
+        "احترم حقوق الملكية الفكرية",
+        "قدم نقداً بناءً ومحترماً",
+        "اذكر الأدوات والتقنيات المستخدمة"
+      ],
+      "contentSuggestions": "انشر لوحاتك وتصاميمك، شارك فيديوهات لعمليتك الإبداعية، اكتب عن مصادر إلهامك، أو قدم دروساً تعليمية في مجال تخصصك الفني."
+    },
+    {
+      "id": "3",
+      "image": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&q=80",
+      "title": "صندوق الكتابة والأدب",
+      "description": "قصص وأفكار أدبية من كتّاب موهوبين حول العالم",
+      "category": "أدب",
+      "icon": "book",
+      "shortDescription": "حيث تنبض الكلمات بالحياة",
+      "longDescription": "صندوق الكتابة والأدب هو ملاذ للكتّاب والقراء المتحمسين. سواء كنت تكتب الشعر، القصص القصيرة، الروايات، أو المقالات، ستجد هنا جمهوراً متفاعلاً يقدر الكلمة المكتوبة. شارك إبداعاتك الأدبية، احصل على ملاحظات من كتّاب آخرين، وانغمس في عالم من القصص والأفكار الملهمة.",
+      "allowedTypes": ["text", "image", "link"],
+      "rules": [
+        "احترم حقوق النشر والملكية الفكرية",
+        "قدم نقداً أدبياً بناءً",
+        "تجنب المحتوى المسيء أو المسروق",
+        "اذكر المصدر عند الاقتباس"
+      ],
+      "contentSuggestions": "انشر قصصك وقصائدك، شارك مقتطفات من رواياتك، اكتب مراجعات للكتب التي قرأتها، أو ناقش تقنيات الكتابة والأساليب الأدبية المختلفة."
+    },
+    {
+      "id": "4",
+      "image": "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&q=80",
+      "title": "صندوق الرياضة واللياقة",
+      "description": "نصائح وتجارب رياضية لحياة صحية ونشطة",
+      "category": "رياضة",
+      "icon": "fitness",
+      "shortDescription": "طريقك نحو حياة صحية",
+      "longDescription": "صندوق الرياضة واللياقة هو مجتمع داعم للرياضيين وعشاق اللياقة البدنية من جميع المستويات. شارك رحلتك الرياضية، تمارينك المفضلة، نصائحك الغذائية، وإنجازاتك الشخصية. سواء كنت مبتدئاً في عالم الرياضة أو رياضياً محترفاً، ستجد هنا الدعم والتحفيز لتحقيق أهدافك الصحية.",
+      "allowedTypes": ["image", "video", "text", "link"],
+      "rules": [
+        "شارك نصائح آمنة ومدروسة",
+        "احترم مستويات اللياقة المختلفة",
+        "تجنب الترويج للمنتجات بشكل مباشر",
+        "استشر متخصصاً للنصائح الطبية"
+      ],
+      "contentSuggestions": "شارك روتينك الرياضي، انشر صور تقدمك، اكتب عن تجربتك مع رياضة معينة، أو قدم نصائح غذائية صحية تساعد الآخرين في رحلتهم."
+    },
+    {
+      "id": "5",
+      "image": "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80",
+      "title": "صندوق السفر والمغامرات",
+      "description": "تجارب سفر مذهلة ووجهات سياحية من حول العالم",
+      "category": "سفر",
+      "icon": "airplane",
+      "shortDescription": "استكشف العالم معنا",
+      "longDescription": "صندوق السفر والمغامرات هو بوابتك لاستكشاف العالم من خلال عيون المسافرين الآخرين. شارك تجاربك في السفر، صورك من وجهات مختلفة، نصائحك للمسافرين، وقصصك المثيرة من رحلاتك. سواء كنت تفضل السفر الفاخر أو المغامرات البرية، ستجد هنا مجتمعاً من عشاق السفر الذين يشاركونك شغفك باستكشاف العالم.",
+      "allowedTypes": ["image", "video", "text", "link"],
+      "rules": [
+        "شارك تجاربك الحقيقية",
+        "احترم الثقافات المختلفة",
+        "قدم نصائح عملية ومفيدة",
+        "اذكر التكاليف التقريبية إن أمكن"
+      ],
+      "contentSuggestions": "انشر صور رحلاتك، شارك دليل سفر لمدينة زرتها، اكتب عن تجربة ثقافية فريدة، أو قدم نصائح لتوفير المال أثناء السفر."
+    },
+    {
+      "id": "6",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
+      "title": "صندوق ريادة الأعمال",
+      "description": "أفكار ونصائح لرواد الأعمال والمشاريع الناشئة",
+      "category": "أعمال",
+      "icon": "briefcase",
+      "shortDescription": "ابدأ مشروعك الخاص",
+      "longDescription": "صندوق ريادة الأعمال هو مجتمع لرواد الأعمال الطموحين وأصحاب المشاريع الناشئة. شارك أفكارك التجارية، تجاربك في بناء مشروعك، التحديات التي واجهتها وكيف تغلبت عليها. تعلم من تجارب الآخرين، احصل على نصائح قيمة، وابنِ شبكة علاقات مع رواد أعمال آخرين يشاركونك نفس الطموحات.",
+      "allowedTypes": ["text", "image", "video", "link"],
+      "rules": [
+        "شارك تجارب حقيقية وصادقة",
+        "تجنب الترويج المباشر للمنتجات",
+        "احترم الأفكار والملكية الفكرية",
+        "قدم قيمة حقيقية للمجتمع"
+      ],
+      "contentSuggestions": "شارك قصة نجاحك أو فشلك، اكتب عن استراتيجيات التسويق التي نجحت معك، ناقش تحديات ريادة الأعمال، أو قدم نصائح لرواد الأعمال المبتدئين."
+    }
+  ],
+  "posts": [
+    {
+      "id": "1",
+      "boxId": "1",
+      "userId": "current-user",
+      "userName": "مستخدم جديد",
+      "userAvatar": null,
+      "type": "text",
+      "title": "تجربتي في تعلم React Native",
+      "content": "بدأت رحلتي في تعلم React Native منذ شهرين، وأود مشاركة تجربتي معكم. التحديات كانت كثيرة في البداية، لكن المجتمع الداعم والموارد المتاحة ساعدتني كثيراً. أنصح المبتدئين بالتركيز على الأساسيات أولاً قبل الانتقال للمكتبات المتقدمة.",
+      "image": null,
+      "video": null,
+      "link": null,
+      "likes": 24,
+      "comments": 8,
+      "shares": 3,
+      "isLiked": false,
+      "isFavorite": false,
+      "createdAt": "2024-01-15T10:30:00Z",
+      "category": "تقنية"
+    },
+    {
+      "id": "2",
+      "boxId": "2",
+      "userId": "user-2",
+      "userName": "سارة الفنانة",
+      "userAvatar": "https://i.pravatar.cc/150?img=5",
+      "type": "image",
+      "title": "لوحتي الجديدة - غروب الشمس",
+      "content": "لوحة جديدة رسمتها بالألوان المائية، مستوحاة من غروب الشمس على شاطئ البحر. استغرقت مني 3 أيام لإكمالها.",
+      "image": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800&q=80",
+      "video": null,
+      "link": null,
+      "likes": 156,
+      "comments": 23,
+      "shares": 12,
+      "isLiked": true,
+      "isFavorite": true,
+      "createdAt": "2024-01-14T15:20:00Z",
+      "category": "فن"
+    },
+    {
+      "id": "3",
+      "boxId": "3",
+      "userId": "user-3",
+      "userName": "أحمد الكاتب",
+      "userAvatar": "https://i.pravatar.cc/150?img=12",
+      "type": "text",
+      "title": "قصة قصيرة: الطريق",
+      "content": "كان الطريق طويلاً، والليل حالكاً. سار وحيداً، لا يرافقه سوى صوت خطواته على الحصى. في نهاية الطريق، كان هناك نور خافت يلوح في الأفق، كأنه يدعوه للمضي قدماً...",
+      "image": null,
+      "video": null,
+      "link": null,
+      "likes": 89,
+      "comments": 15,
+      "shares": 7,
+      "isLiked": false,
+      "isFavorite": false,
+      "createdAt": "2024-01-13T09:45:00Z",
+      "category": "أدب"
+    },
+    {
+      "id": "4",
+      "boxId": "4",
+      "userId": "user-4",
+      "userName": "محمد الرياضي",
+      "userAvatar": "https://i.pravatar.cc/150?img=8",
+      "type": "image",
+      "title": "روتيني الصباحي للياقة",
+      "content": "أشارك معكم روتيني الصباحي الذي ساعدني على خسارة 15 كيلو في 3 أشهر. التمارين بسيطة ولا تحتاج معدات!",
+      "image": "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80",
+      "video": null,
+      "link": null,
+      "likes": 234,
+      "comments": 45,
+      "shares": 67,
+      "isLiked": true,
+      "isFavorite": true,
+      "createdAt": "2024-01-12T07:00:00Z",
+      "category": "رياضة"
+    },
+    {
+      "id": "5",
+      "boxId": "5",
+      "userId": "user-5",
+      "userName": "ليلى المسافرة",
+      "userAvatar": "https://i.pravatar.cc/150?img=9",
+      "type": "image",
+      "title": "رحلتي إلى اليابان",
+      "content": "زيارة طوكيو كانت حلماً تحقق! المدينة مذهلة بتناقضاتها بين التقليد والحداثة. هذه الصورة من معبد سينسوجي.",
+      "image": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80",
+      "video": null,
+      "link": null,
+      "likes": 312,
+      "comments": 56,
+      "shares": 89,
+      "isLiked": false,
+      "isFavorite": false,
+      "createdAt": "2024-01-11T14:30:00Z",
+      "category": "سفر"
+    },
+    {
+      "id": "6",
+      "boxId": "6",
+      "userId": "user-6",
+      "userName": "خالد رائد الأعمال",
+      "userAvatar": "https://i.pravatar.cc/150?img=13",
+      "type": "text",
+      "title": "5 دروس تعلمتها من فشل مشروعي الأول",
+      "content": "فشل مشروعي الأول كان أفضل معلم لي. تعلمت أهمية دراسة السوق، الاستماع للعملاء، وعدم الاستسلام. اليوم، مشروعي الثاني ينمو بشكل مستمر بفضل هذه الدروس.",
+      "image": null,
+      "video": null,
+      "link": null,
+      "likes": 178,
+      "comments": 34,
+      "shares": 45,
+      "isLiked": false,
+      "isFavorite": false,
+      "createdAt": "2024-01-10T11:15:00Z",
+      "category": "أعمال"
+    },
+    {
+      "id": "7",
+      "boxId": "1",
+      "userId": "user-7",
+      "userName": "فاطمة المطورة",
+      "userAvatar": "https://i.pravatar.cc/150?img=10",
+      "type": "link",
+      "title": "أفضل 10 مصادر لتعلم البرمجة مجاناً",
+      "content": "جمعت لكم أفضل المصادر المجانية لتعلم البرمجة من الصفر. هذه المواقع ساعدتني شخصياً في بداية مسيرتي.",
+      "image": null,
+      "video": null,
+      "link": "https://www.freecodecamp.org",
+      "likes": 445,
+      "comments": 78,
+      "shares": 156,
+      "isLiked": false,
+      "isFavorite": false,
+      "createdAt": "2024-01-09T16:45:00Z",
+      "category": "تقنية"
+    },
+    {
+      "id": "8",
+      "boxId": "2",
+      "userId": "user-8",
+      "userName": "عمر المصمم",
+      "userAvatar": "https://i.pravatar.cc/150?img=14",
+      "type": "image",
+      "title": "تصميم شعار جديد لمقهى محلي",
+      "content": "سعيد بمشاركة آخر أعمالي - تصميم هوية بصرية كاملة لمقهى محلي. التحدي كان في دمج الطابع التقليدي مع لمسة عصرية.",
+      "image": "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&q=80",
+      "video": null,
+      "link": null,
+      "likes": 267,
+      "comments": 41,
+      "shares": 28,
+      "isLiked": false,
+      "isFavorite": false,
+      "createdAt": "2024-01-08T13:20:00Z",
+      "category": "فن"
+    }
+  ],
+  "users": [
+    {
+      "id": "user-1",
+      "name": "أحمد محمد",
+      "username": "@ahmed_dev",
+      "avatar": "https://i.pravatar.cc/150?img=11",
+      "bio": "مطور تطبيقات | مهتم بالتقنية والبرمجة",
+      "followers": 1234,
+      "following": 567,
+      "posts": 15,
+      "joinDate": "2023-06-15"
+    },
+    {
+      "id": "user-2",
+      "name": "سارة الفنانة",
+      "username": "@sara_art",
+      "avatar": "https://i.pravatar.cc/150?img=5",
+      "bio": "فنانة تشكيلية | أحب الألوان المائية",
+      "followers": 5678,
+      "following": 234,
+      "posts": 42,
+      "joinDate": "2023-03-20"
+    },
+    {
+      "id": "user-3",
+      "name": "أحمد الكاتب",
+      "username": "@ahmed_writer",
+      "avatar": "https://i.pravatar.cc/150?img=12",
+      "bio": "كاتب وروائي | أحب القصص القصيرة",
+      "followers": 3456,
+      "following": 890,
+      "posts": 28,
+      "joinDate": "2023-05-10"
+    },
+    {
+      "id": "user-4",
+      "name": "محمد الرياضي",
+      "username": "@mohamed_fitness",
+      "avatar": "https://i.pravatar.cc/150?img=8",
+      "bio": "مدرب لياقة بدنية | نمط حياة صحي",
+      "followers": 8901,
+      "following": 345,
+      "posts": 67,
+      "joinDate": "2023-01-05"
+    },
+    {
+      "id": "user-5",
+      "name": "ليلى المسافرة",
+      "username": "@layla_travel",
+      "avatar": "https://i.pravatar.cc/150?img=9",
+      "bio": "عاشقة السفر والمغامرات | 45 دولة",
+      "followers": 12345,
+      "following": 678,
+      "posts": 89,
+      "joinDate": "2022-11-20"
+    },
+    {
+      "id": "user-6",
+      "name": "خالد رائد الأعمال",
+      "username": "@khaled_entrepreneur",
+      "avatar": "https://i.pravatar.cc/150?img=13",
+      "bio": "رائد أعمال | مؤسس 3 شركات ناشئة",
+      "followers": 6789,
+      "following": 456,
+      "posts": 34,
+      "joinDate": "2023-02-14"
+    },
+    {
+      "id": "user-7",
+      "name": "فاطمة المطورة",
+      "username": "@fatima_dev",
+      "avatar": "https://i.pravatar.cc/150?img=10",
+      "bio": "مطورة Full Stack | React & Node.js",
+      "followers": 4567,
+      "following": 789,
+      "posts": 56,
+      "joinDate": "2023-04-08"
+    },
+    {
+      "id": "user-8",
+      "name": "عمر المصمم",
+      "username": "@omar_designer",
+      "avatar": "https://i.pravatar.cc/150?img=14",
+      "bio": "مصمم جرافيك | UI/UX Designer",
+      "followers": 7890,
+      "following": 234,
+      "posts": 78,
+      "joinDate": "2023-07-22"
+    },
+    {
+      "id": "current-user",
+      "name": "مستخدم جديد",
+      "username": "@new_user",
+      "avatar": null,
+      "bio": "مستخدم جديد في المنصة",
+      "followers": 0,
+      "following": 0,
+      "posts": 1,
+      "joinDate": "2024-01-15"
+    }
+  ]
+}

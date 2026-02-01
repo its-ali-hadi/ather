@@ -1,0 +1,3 @@
+{
+  "note": "This file is deprecated. All seed data is now managed from the backend. Please refer to backend/src/scripts/seedData.js"
+}

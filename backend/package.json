@@ -1,0 +1,31 @@
+{
+  "name": "athar-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Athar App",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "init-db": "node src/scripts/initDatabase.js",
+    "seed": "node src/scripts/seedData.js",
+    "create-test-user": "node src/scripts/createTestUser.js"
+  },
+  "keywords": ["athar", "api", "backend"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.6.0",
+    "node-fetch": "^2.6.12"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
