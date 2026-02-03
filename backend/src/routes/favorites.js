@@ -10,6 +10,7 @@ const router = express.Router();
 // All favorite actions require authentication
 router.get('/', auth, requireAuth, favoriteController.getUserFavorites);
 router.post('/', auth, requireAuth, body('post_id').isInt(), validate, favoriteController.addFavorite);
+router.post('/:postId', auth, requireAuth, param('postId').isInt(), validate, favoriteController.toggleFavorite);
 router.delete('/:postId', auth, requireAuth, param('postId').isInt(), validate, favoriteController.removeFavorite);
 
 module.exports = router;

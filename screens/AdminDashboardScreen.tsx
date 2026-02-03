@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import api from '../utils/api';
@@ -36,6 +37,7 @@ interface RecentActivity {
 
 export default function AdminDashboardScreen() {
   const colorScheme = useColorScheme();
+  const navigation = useNavigation();
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -71,7 +73,7 @@ export default function AdminDashboardScreen() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/admin/dashboard');
+      const response = await api.request('/admin/dashboard');
       if (response.success && response.data) {
         setStats(response.data.stats);
         setRecentActivity(response.data.recentActivity || []);
@@ -153,14 +155,11 @@ export default function AdminDashboardScreen() {
       onPress={onPress}
       style={[styles.actionButton, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}
     >
-      <LinearGradient
-        colors={[color, color + 'CC']}
-        style={styles.actionIconContainer}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <View
+        style={[styles.actionIconContainer, { backgroundColor: color }]}
       >
         <Ionicons name={icon as any} size={24} color="#FFF" />
-      </LinearGradient>
+      </View>
       <Text style={[styles.actionTitle, { color: COLORS.text }]}>{title}</Text>
       <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
     </TouchableOpacity>
@@ -299,8 +298,8 @@ export default function AdminDashboardScreen() {
                           activity.type === 'user'
                             ? COLORS.info + '20'
                             : activity.type === 'post'
-                            ? COLORS.success + '20'
-                            : COLORS.warning + '20',
+                              ? COLORS.success + '20'
+                              : COLORS.warning + '20',
                       },
                     ]}
                   >
@@ -309,16 +308,16 @@ export default function AdminDashboardScreen() {
                         activity.type === 'user'
                           ? 'person'
                           : activity.type === 'post'
-                          ? 'document-text'
-                          : 'chatbubble'
+                            ? 'document-text'
+                            : 'chatbubble'
                       }
                       size={20}
                       color={
                         activity.type === 'user'
                           ? COLORS.info
                           : activity.type === 'post'
-                          ? COLORS.success
-                          : COLORS.warning
+                            ? COLORS.success
+                            : COLORS.warning
                       }
                     />
                   </View>

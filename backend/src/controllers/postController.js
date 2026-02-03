@@ -214,7 +214,7 @@ exports.getUserPosts = async (req, res, next) => {
       LIMIT ? OFFSET ?
     `;
 
-    const params = currentUserId 
+    const params = currentUserId
       ? [currentUserId, currentUserId, targetUserId, limit, offset]
       : [targetUserId, limit, offset];
 
@@ -417,7 +417,7 @@ exports.searchPosts = async (req, res, next) => {
       LIMIT ? OFFSET ?
     `;
 
-    const params = userId 
+    const params = userId
       ? [userId, userId, searchTerm, searchTerm, limit, offset]
       : [searchTerm, searchTerm, limit, offset];
 
@@ -543,6 +543,139 @@ exports.publishPost = async (req, res, next) => {
       success: true,
       message: 'تم نشر المنشور بنجاح! أصبح الآن عاماً ويمكن للجميع رؤيته',
       data: updatedPosts[0]
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get current user's posts
+exports.getMyPosts = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const query = `
+      SELECT p.*, 
+             u.name as user_name, u.profile_image as user_image, u.is_verified as user_verified,
+             (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
+             (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count,
+             (SELECT COUNT(*) > 0 FROM likes WHERE post_id = p.id AND user_id = ?) as is_liked,
+             (SELECT COUNT(*) > 0 FROM favorites WHERE post_id = p.id AND user_id = ?) as is_favorited
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.user_id = ? AND p.is_archived = FALSE
+      ORDER BY p.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const [posts] = await pool.query(query, [userId, userId, userId, limit, offset]);
+
+    const [total] = await pool.query(
+      'SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND is_archived = FALSE',
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      data: posts,
+      pagination: {
+        page,
+        limit,
+        total: total[0].count,
+        pages: Math.ceil(total[0].count / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get archived posts
+exports.getArchivedPosts = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const query = `
+      SELECT p.*, 
+             u.name as user_name, u.profile_image as user_image, u.is_verified as user_verified,
+             (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
+             (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count,
+             (SELECT COUNT(*) > 0 FROM likes WHERE post_id = p.id AND user_id = ?) as is_liked,
+             (SELECT COUNT(*) > 0 FROM favorites WHERE post_id = p.id AND user_id = ?) as is_favorited
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.user_id = ? AND p.is_archived = TRUE
+      ORDER BY p.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const [posts] = await pool.query(query, [userId, userId, userId, limit, offset]);
+
+    const [total] = await pool.query(
+      'SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND is_archived = TRUE',
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      data: posts,
+      pagination: {
+        page,
+        limit,
+        total: total[0].count,
+        pages: Math.ceil(total[0].count / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get liked posts
+exports.getLikedPosts = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const query = `
+      SELECT p.*, 
+             u.name as user_name, u.profile_image as user_image, u.is_verified as user_verified,
+             (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
+             (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count,
+             TRUE as is_liked,
+             (SELECT COUNT(*) > 0 FROM favorites WHERE post_id = p.id AND user_id = ?) as is_favorited
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      JOIN likes l ON p.id = l.post_id
+      WHERE l.user_id = ? AND p.is_archived = FALSE
+      ORDER BY l.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const [posts] = await pool.query(query, [userId, userId, limit, offset]);
+
+    const [total] = await pool.query(
+      'SELECT COUNT(*) as count FROM likes WHERE user_id = ?',
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      data: posts,
+      pagination: {
+        page,
+        limit,
+        total: total[0].count,
+        pages: Math.ceil(total[0].count / limit)
+      }
     });
   } catch (error) {
     next(error);

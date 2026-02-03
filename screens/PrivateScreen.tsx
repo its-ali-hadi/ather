@@ -185,7 +185,7 @@ export default function PrivateScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
         refreshControl={

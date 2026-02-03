@@ -1,7 +1,55 @@
 const { pool } = require('../config/database');
 
-// Toggle favorite
-exports.toggleFavorite = async (req, res, next) => {
+// Add to favorites
+exports.addFavorite = async (req, res, next) => {
+  try {
+    const { post_id } = req.body;
+    const userId = req.user.id;
+
+    // Check if post exists
+    const [posts] = await pool.query(
+      'SELECT id FROM posts WHERE id = ?',
+      [post_id]
+    );
+
+    if (posts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'المنشور غير موجود'
+      });
+    }
+
+    // Check if already favorited
+    const [existingFavorites] = await pool.query(
+      'SELECT id FROM favorites WHERE post_id = ? AND user_id = ?',
+      [post_id, userId]
+    );
+
+    if (existingFavorites.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'المنشور موجود في المفضلة بالفعل'
+      });
+    }
+
+    // Add to favorites
+    await pool.query(
+      'INSERT INTO favorites (post_id, user_id) VALUES (?, ?)',
+      [post_id, userId]
+    );
+
+    return res.json({
+      success: true,
+      message: 'تم إضافة المنشور للمفضلة',
+      data: { isFavorited: true }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Remove from favorites
+exports.removeFavorite = async (req, res, next) => {
   try {
     const postId = req.params.postId;
     const userId = req.user.id;
@@ -19,37 +67,24 @@ exports.toggleFavorite = async (req, res, next) => {
       });
     }
 
-    // Check if already favorited
-    const [existingFavorites] = await pool.query(
-      'SELECT id FROM favorites WHERE post_id = ? AND user_id = ?',
+    // Remove from favorites
+    const [result] = await pool.query(
+      'DELETE FROM favorites WHERE post_id = ? AND user_id = ?',
       [postId, userId]
     );
 
-    if (existingFavorites.length > 0) {
-      // Remove from favorites
-      await pool.query(
-        'DELETE FROM favorites WHERE post_id = ? AND user_id = ?',
-        [postId, userId]
-      );
-
-      return res.json({
-        success: true,
-        message: 'تم إزالة المنشور من المفضلة',
-        data: { isFavorited: false }
-      });
-    } else {
-      // Add to favorites
-      await pool.query(
-        'INSERT INTO favorites (post_id, user_id) VALUES (?, ?)',
-        [postId, userId]
-      );
-
-      return res.json({
-        success: true,
-        message: 'تم إضافة المنشور للمفضلة',
-        data: { isFavorited: true }
+    if (result.affectedRows === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'المنشور غير موجود في المفضلة'
       });
     }
+
+    return res.json({
+      success: true,
+      message: 'تم إزالة المنشور من المفضلة',
+      data: { isFavorited: false }
+    });
   } catch (error) {
     next(error);
   }
@@ -95,6 +130,61 @@ exports.getUserFavorites = async (req, res, next) => {
         pages: Math.ceil(total[0].count / limit)
       }
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Toggle favorite
+exports.toggleFavorite = async (req, res, next) => {
+  try {
+    const postId = req.params.postId;
+    const userId = req.user.id;
+
+    // Check if post exists
+    const [posts] = await pool.query(
+      'SELECT id FROM posts WHERE id = ?',
+      [postId]
+    );
+
+    if (posts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'المنشور غير موجود'
+      });
+    }
+
+    // Check if already favorited
+    const [existingFavorites] = await pool.query(
+      'SELECT id FROM favorites WHERE post_id = ? AND user_id = ?',
+      [postId, userId]
+    );
+
+    if (existingFavorites.length > 0) {
+      // Remove
+      await pool.query(
+        'DELETE FROM favorites WHERE post_id = ? AND user_id = ?',
+        [postId, userId]
+      );
+
+      return res.json({
+        success: true,
+        message: 'تم إزالة المنشور من المفضلة',
+        data: { isFavorited: false }
+      });
+    } else {
+      // Add
+      await pool.query(
+        'INSERT INTO favorites (post_id, user_id) VALUES (?, ?)',
+        [postId, userId]
+      );
+
+      return res.json({
+        success: true,
+        message: 'تم إضافة المنشور للمفضلة',
+        data: { isFavorited: true }
+      });
+    }
   } catch (error) {
     next(error);
   }

@@ -3,6 +3,7 @@ const { body } = require('express-validator');
 const { validate } = require('../middleware/validation');
 const { auth, optionalAuth } = require('../middleware/auth');
 const userController = require('../controllers/userController');
+const upload = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -26,10 +27,10 @@ const updateProfileValidation = [
 // Routes
 router.get('/search', userController.searchUsers);
 router.get('/:id', optionalAuth, userController.getUserProfile);
-router.put('/profile', auth, updateProfileValidation, validate, userController.updateProfile);
+router.put('/profile', auth, upload.single('profile_image'), userController.updateProfile);
 router.post('/:id/follow', auth, userController.followUser);
 router.delete('/:id/follow', auth, userController.unfollowUser);
-router.get('/:id/followers', userController.getFollowers);
-router.get('/:id/following', userController.getFollowing);
+router.get('/:id/followers', optionalAuth, userController.getFollowers);
+router.get('/:id/following', optionalAuth, userController.getFollowing);
 
 module.exports = router;

@@ -10,10 +10,14 @@ const api = {
 
   // Helper function for API calls
   async request(endpoint: string, options: RequestInit = {}) {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...options.headers as any,
     };
+
+    if (options.body instanceof FormData) {
+      delete headers['Content-Type'];
+    }
 
     if (authToken) {
       headers['Authorization'] = `Bearer ${authToken}`;
@@ -37,6 +41,8 @@ const api = {
       throw error;
     }
   },
+
+  // ... (keeping other methods same until updateProfile)
 
   // Auth endpoints
   async sendRegistrationOTP(phone: string) {
@@ -102,15 +108,10 @@ const api = {
     return this.request(`/users/${userId}`);
   },
 
-  async updateProfile(data: {
-    name: string;
-    email?: string;
-    bio?: string;
-    profile_image?: string;
-  }) {
+  async updateProfile(data: any) {
     return this.request('/users/profile', {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: data instanceof FormData ? data : JSON.stringify(data),
     });
   },
 
@@ -253,11 +254,19 @@ const api = {
     });
   },
 
+  async getMyComments(page = 1, limit = 20) {
+    return this.request(`/comments/my?page=${page}&limit=${limit}`);
+  },
+
   // Likes endpoints
   async toggleLike(postId: string) {
     return this.request(`/likes/${postId}`, {
       method: 'POST',
     });
+  },
+
+  async getLikedPosts(page = 1, limit = 20) {
+    return this.request(`/posts/my/likes?page=${page}&limit=${limit}`);
   },
 
   // Favorites endpoints
@@ -302,6 +311,46 @@ const api = {
 
   async getUserContactMessages(page = 1, limit = 20) {
     return this.request(`/contact/my?page=${page}&limit=${limit}`);
+  },
+
+  // Banners endpoints
+  async getBanners() {
+    return this.request('/banners');
+  },
+
+  // Reports endpoints
+  async createReport(data: {
+    type: 'post' | 'user' | 'comment';
+    target_id: number;
+    reason: string;
+    description?: string;
+  }) {
+    return this.request('/reports', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Boxes endpoints
+  async getBoxes() {
+    return this.request('/boxes');
+  },
+
+  async getBox(boxId: string) {
+    return this.request(`/boxes/${boxId}`);
+  },
+
+  async getCategories(boxId?: number) {
+    const url = boxId ? `/boxes/categories?boxId=${boxId}` : '/boxes/categories';
+    return this.request(url);
+  },
+
+  // File URL helper
+  getFileUrl(path: string | null | undefined) {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    const cleanBase = API_URL.replace('/api', '');
+    return `${cleanBase}${path.startsWith('/') ? '' : '/'}${path}`;
   },
 };
 

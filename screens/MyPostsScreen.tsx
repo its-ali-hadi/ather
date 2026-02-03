@@ -10,17 +10,22 @@ import {
   View,
   Platform,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-
-import SeedData from '../constants/seed-data.json';
+import { useState, useEffect, useCallback } from 'react';
+import api from '../utils/api';
 
 export default function MyPostsScreen() {
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -31,8 +36,29 @@ export default function MyPostsScreen() {
     textSecondary: colorScheme === 'dark' ? '#D4C4B0' : '#7A6F65',
   };
 
-  // Get current user's posts
-  const myPosts = SeedData.posts.filter((post) => post.userId === 'current-user');
+  const fetchPosts = useCallback(async () => {
+    try {
+      const response = await api.getMyPosts();
+      if (response.success && response.data) {
+        setPosts(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching my posts:', error);
+      Alert.alert('خطأ', 'فشل تحميل المنشورات');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchPosts();
+    setRefreshing(false);
+  };
 
   const handleDeletePost = (postId: string, postTitle: string) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -44,9 +70,19 @@ export default function MyPostsScreen() {
         {
           text: 'حذف',
           style: 'destructive',
-          onPress: () => {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert('تم الحذف', 'تم حذف المنشور بنجاح');
+          onPress: async () => {
+            try {
+              const response = await api.deletePost(postId);
+              if (response.success) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                setPosts((prev) => prev.filter((p) => p.id !== postId));
+              } else {
+                Alert.alert('خطأ', 'فشل حذف المنشور');
+              }
+            } catch (error) {
+              console.error('Error deleting post:', error);
+              Alert.alert('خطأ', 'حدث خطأ أثناء الحذف');
+            }
           },
         },
       ]
@@ -56,6 +92,7 @@ export default function MyPostsScreen() {
   const handleEditPost = (postId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert('تعديل المنشور', 'سيتم إضافة هذه الميزة قريباً');
+    // Implementation for edit navigation could go here
   };
 
   const renderPostCard = (post: any, index: number) => {
@@ -66,74 +103,77 @@ export default function MyPostsScreen() {
         style={styles.postCard}
       >
         <View style={[styles.postCardInner, { backgroundColor: COLORS.cardBg }]}>
-          {/* Post Header */}
-          <View style={styles.postHeader}>
-            <View style={[styles.categoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
-              <Text style={[styles.categoryText, { color: COLORS.accent }]}>
-                {post.category}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('PostDetail', { postId: post.id.toString() });
+            }}
+          >
+            {/* Post Header */}
+            <View style={styles.postHeader}>
+              <View style={[styles.categoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
+                <Text style={[styles.categoryText, { color: COLORS.accent }]}>
+                  {post.category}
+                </Text>
+              </View>
+              <View style={styles.postActions}>
+                <TouchableOpacity
+                  onPress={() => handleEditPost(post.id)}
+                  style={styles.actionButton}
+                >
+                  <Ionicons name="create-outline" size={22} color={COLORS.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleDeletePost(post.id, post.title)}
+                  style={styles.actionButton}
+                >
+                  <Ionicons name="trash-outline" size={22} color="#E94B3C" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Post Content */}
+            <View style={styles.postContent}>
+              <Text style={[styles.postTitle, { color: COLORS.text }]}>
+                {post.title}
               </Text>
+              {post.content && (
+                <Text
+                  style={[styles.postDescription, { color: COLORS.textSecondary }]}
+                  numberOfLines={3}
+                >
+                  {post.content}
+                </Text>
+              )}
             </View>
-            <View style={styles.postActions}>
-              <TouchableOpacity
-                onPress={() => handleEditPost(post.id)}
-                style={styles.actionButton}
-              >
-                <Ionicons name="create-outline" size={22} color={COLORS.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleDeletePost(post.id, post.title)}
-                style={styles.actionButton}
-              >
-                <Ionicons name="trash-outline" size={22} color="#E94B3C" />
-              </TouchableOpacity>
-            </View>
-          </View>
 
-          {/* Post Content */}
-          <View style={styles.postContent}>
-            <Text style={[styles.postTitle, { color: COLORS.text }]}>
-              {post.title}
-            </Text>
-            <Text
-              style={[styles.postDescription, { color: COLORS.textSecondary }]}
-              numberOfLines={3}
-            >
-              {post.content}
-            </Text>
-          </View>
-
-          {/* Post Image */}
-          {post.image && (
-            <ExpoImage
-              source={{ uri: post.image }}
+            {/* Post Image */}
+            {post.media_url && <ExpoImage
+              source={{ uri: api.getFileUrl(post.media_url) ?? undefined }}
               style={styles.postImage}
               contentFit="cover"
             />
-          )}
+            }
+          </TouchableOpacity>
 
           {/* Post Stats */}
           <View style={styles.postStats}>
             <View style={styles.statItem}>
               <Ionicons name="heart" size={18} color="#E94B3C" />
               <Text style={[styles.statText, { color: COLORS.textSecondary }]}>
-                {post.likes}
+                {post.likes_count || 0}
               </Text>
             </View>
             <View style={styles.statItem}>
               <Ionicons name="chatbubble" size={18} color={COLORS.textSecondary} />
               <Text style={[styles.statText, { color: COLORS.textSecondary }]}>
-                {post.comments}
-              </Text>
-            </View>
-            <View style={styles.statItem}>
-              <Ionicons name="share-social" size={18} color={COLORS.textSecondary} />
-              <Text style={[styles.statText, { color: COLORS.textSecondary }]}>
-                {post.shares}
+                {post.comments_count || 0}
               </Text>
             </View>
             <View style={{ flex: 1 }} />
             <Text style={[styles.postDate, { color: COLORS.textSecondary }]}>
-              {new Date(post.createdAt).toLocaleDateString('ar-SA')}
+              {new Date(post.created_at).toLocaleDateString('ar-SA')}
             </Text>
           </View>
         </View>
@@ -162,60 +202,71 @@ export default function MyPostsScreen() {
         </View>
       </View>
 
-      {/* Stats Summary */}
-      <Animated.View
-        entering={FadeInDown.delay(50).springify()}
-        style={styles.statsContainer}
-      >
-        <View style={[styles.statsCard, { backgroundColor: COLORS.cardBg }]}>
-          <View style={styles.statBox}>
-            <Text style={[styles.statValue, { color: COLORS.text }]}>
-              {myPosts.length}
-            </Text>
-            <Text style={[styles.statLabel, { color: COLORS.textSecondary }]}>
-              منشور
-            </Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={[styles.statValue, { color: COLORS.text }]}>
-              {myPosts.reduce((sum, post) => sum + post.likes, 0)}
-            </Text>
-            <Text style={[styles.statLabel, { color: COLORS.textSecondary }]}>
-              إعجاب
-            </Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={[styles.statValue, { color: COLORS.text }]}>
-              {myPosts.reduce((sum, post) => sum + post.comments, 0)}
-            </Text>
-            <Text style={[styles.statLabel, { color: COLORS.textSecondary }]}>
-              تعليق
-            </Text>
-          </View>
+      {loading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
-      </Animated.View>
-
-      {/* Posts List */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
-      >
-        <View style={styles.postsContainer}>
-          {myPosts.length > 0 ? (
-            myPosts.map((post, index) => renderPostCard(post, index))
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="document-text-outline" size={64} color={COLORS.textSecondary} />
-              <Text style={[styles.emptyText, { color: COLORS.text }]}>
-                لم تنشر أي منشورات بعد
-              </Text>
-              <Text style={[styles.emptySubtext, { color: COLORS.textSecondary }]}>
-                ابدأ بمشاركة أفكارك مع المجتمع
-              </Text>
+      ) : (
+        <>
+          {/* Stats Summary */}
+          <Animated.View
+            entering={FadeInDown.delay(50).springify()}
+            style={styles.statsContainer}
+          >
+            <View style={[styles.statsCard, { backgroundColor: COLORS.cardBg }]}>
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: COLORS.text }]}>
+                  {posts.length}
+                </Text>
+                <Text style={[styles.statLabel, { color: COLORS.textSecondary }]}>
+                  منشور
+                </Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: COLORS.text }]}>
+                  {posts.reduce((sum, post) => sum + (post.likes_count || 0), 0)}
+                </Text>
+                <Text style={[styles.statLabel, { color: COLORS.textSecondary }]}>
+                  إعجاب
+                </Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: COLORS.text }]}>
+                  {posts.reduce((sum, post) => sum + (post.comments_count || 0), 0)}
+                </Text>
+                <Text style={[styles.statLabel, { color: COLORS.textSecondary }]}>
+                  تعليق
+                </Text>
+              </View>
             </View>
-          )}
-        </View>
-      </ScrollView>
+          </Animated.View>
+
+          {/* Posts List */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+            }
+          >
+            <View style={styles.postsContainer}>
+              {posts.length > 0 ? (
+                posts.map((post, index) => renderPostCard(post, index))
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="document-text-outline" size={64} color={COLORS.textSecondary} />
+                  <Text style={[styles.emptyText, { color: COLORS.text }]}>
+                    لم تنشر أي منشورات بعد
+                  </Text>
+                  <Text style={[styles.emptySubtext, { color: COLORS.textSecondary }]}>
+                    ابدأ بمشاركة أفكارك مع المجتمع
+                  </Text>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        </>
+      )}
     </SafeAreaView>
   );
 }
@@ -223,6 +274,11 @@ export default function MyPostsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row-reverse',

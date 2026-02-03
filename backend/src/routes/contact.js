@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const contactController = require('../controllers/contactController');
-const { authenticate, requireAdmin } = require('../middleware/auth');
+const { auth, adminOnly } = require('../middleware/auth');
 const { body } = require('express-validator');
 const { validate } = require('../middleware/validation');
 
@@ -37,14 +37,14 @@ const statusValidation = [
 ];
 
 // Public/User routes
-router.post('/', authenticate, createMessageValidation, validate, contactController.createContactMessage);
-router.get('/my', authenticate, contactController.getUserMessages);
+router.post('/', auth, createMessageValidation, validate, contactController.createContactMessage);
+router.get('/my', auth, contactController.getUserMessages);
 
 // Admin routes
-router.get('/', authenticate, requireAdmin, contactController.getAllMessages);
-router.get('/:id', authenticate, requireAdmin, contactController.getMessage);
-router.put('/:id/status', authenticate, requireAdmin, statusValidation, validate, contactController.updateMessageStatus);
-router.post('/:id/reply', authenticate, requireAdmin, replyValidation, validate, contactController.replyToMessage);
-router.delete('/:id', authenticate, requireAdmin, contactController.deleteMessage);
+router.get('/', auth, adminOnly, contactController.getAllMessages);
+router.get('/:id', auth, adminOnly, contactController.getMessage);
+router.put('/:id/status', auth, adminOnly, statusValidation, validate, contactController.updateMessageStatus);
+router.post('/:id/reply', auth, adminOnly, replyValidation, validate, contactController.replyToMessage);
+router.delete('/:id', auth, adminOnly, contactController.deleteMessage);
 
 module.exports = router;

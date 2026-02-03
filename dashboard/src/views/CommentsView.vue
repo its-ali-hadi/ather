@@ -13,7 +13,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="البحث عن تعليق..."
+            placeholder="البحث بالتعليق أو المعرف (ID)..."
             class="input-field"
             @input="handleSearch"
           />
@@ -38,6 +38,7 @@
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الرقم #</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">التعليق</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الكاتب</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">المنشور</th>
@@ -47,6 +48,9 @@
           </thead>
           <tbody class="divide-y divide-gray-200">
             <tr v-for="comment in comments" :key="comment.id" class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                #{{ comment.id }}
+              </td>
               <td class="px-6 py-4">
                 <p class="text-sm text-gray-900 line-clamp-3">{{ comment.content }}</p>
               </td>

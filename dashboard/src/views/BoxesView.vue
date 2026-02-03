@@ -215,10 +215,8 @@ onMounted(async () => {
 const loadBoxes = async () => {
   try {
     isLoading.value = true
-    const token = localStorage.getItem('token')
-    const response = await axios.get(`${API_URL}/boxes/admin/all`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const token = localStorage.getItem('admin_token')
+    const response = await axios.get(`${API_URL}/boxes/admin/all`)
     boxes.value = response.data.data
   } catch (error) {
     console.error('Error loading boxes:', error)
@@ -241,15 +239,13 @@ const saveBox = async () => {
     if (showEditModal.value && editingBox.value) {
       await axios.put(
         `${API_URL}/boxes/admin/${editingBox.value.id}`,
-        formData.value,
-        { headers: { Authorization: `Bearer ${token}` } }
+        formData.value
       )
       alert('تم تحديث الصندوق بنجاح')
     } else {
       await axios.post(
         `${API_URL}/boxes/admin`,
-        formData.value,
-        { headers: { Authorization: `Bearer ${token}` } }
+        formData.value
       )
       alert('تم إضافة الصندوق بنجاح')
     }
@@ -267,8 +263,7 @@ const toggleBoxStatus = async (box: any) => {
     const token = localStorage.getItem('token')
     await axios.put(
       `${API_URL}/boxes/admin/${box.id}`,
-      { ...box, is_active: !box.is_active },
-      { headers: { Authorization: `Bearer ${token}` } }
+      { ...box, is_active: !box.is_active }
     )
     await loadBoxes()
   } catch (error) {
@@ -281,10 +276,7 @@ const deleteBox = async (id: number) => {
   if (!confirm('هل أنت متأكد من حذف هذا الصندوق؟')) return
   
   try {
-    const token = localStorage.getItem('token')
-    await axios.delete(`${API_URL}/boxes/admin/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    await axios.delete(`${API_URL}/boxes/admin/${id}`)
     alert('تم حذف الصندوق بنجاح')
     await loadBoxes()
   } catch (error) {

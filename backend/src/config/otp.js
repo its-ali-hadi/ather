@@ -18,9 +18,19 @@ const TEST_OTP_CODE = process.env.TEST_OTP_CODE;
 const sendOTP = async (phone) => {
   try {
     // تحويل الرقم الدولي إلى صيغة عراقية للمقارنة
-    const localPhone = phone.startsWith('+964') 
-      ? '0' + phone.substring(4) 
+    const localPhone = phone.startsWith('+964')
+      ? '0' + phone.substring(4)
       : phone;
+
+    // حالة التطوير (Development Mode)
+    if (process.env.NODE_ENV === 'development') {
+      const devCode = Math.floor(100000 + Math.random() * 900000).toString();
+      console.log('🔒 [DEV MODE] OTP for ' + phone + ':', devCode);
+      return {
+        success: true,
+        orderId: `dev-${phone}-${devCode}-${Date.now()}`,
+      };
+    }
 
     // التحقق من الرقم التجريبي
     if (TEST_PHONE_NUMBER && localPhone === TEST_PHONE_NUMBER) {
@@ -77,6 +87,27 @@ const sendOTP = async (phone) => {
  */
 const verifyOTP = async (orderId, code) => {
   try {
+    // التحقق من وضع التطوير (Development Mode)
+    if (orderId && orderId.startsWith('dev-')) {
+      const parts = orderId.split('-');
+      const devCode = parts[2]; // dev-phone-CODE-timestamp
+
+      console.log('🔍 [DEV MODE] Verifying OTP. Expected:', devCode, 'Received:', code);
+
+      if (code === devCode) {
+        return {
+          success: true,
+          verified: true,
+        };
+      } else {
+        return {
+          success: false,
+          verified: false,
+          error: 'رمز التحقق غير صحيح',
+        };
+      }
+    }
+
     // التحقق من الرقم التجريبي
     if (orderId.startsWith('test-order-id-')) {
       console.log('التحقق من OTP التجريبي');

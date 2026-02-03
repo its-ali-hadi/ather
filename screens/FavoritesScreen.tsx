@@ -16,9 +16,8 @@ import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth } from '../contexts/AuthContext';
-import { useEffect } from 'react';
-
-import SeedData from '../constants/seed-data.json';
+import { useEffect, useState } from 'react';
+import api from '../utils/api';
 
 export default function FavoritesScreen() {
   const colorScheme = useColorScheme();
@@ -33,8 +32,8 @@ export default function FavoritesScreen() {
         'تسجيل الدخول مطلوب',
         'يجب عليك تسجيل الدخول لعرض المفضلات',
         [
-          { 
-            text: 'إلغاء', 
+          {
+            text: 'إلغاء',
             style: 'cancel',
             onPress: () => navigation.goBack(),
           },
@@ -58,12 +57,42 @@ export default function FavoritesScreen() {
     textSecondary: colorScheme === 'dark' ? '#D4C4B0' : '#7A6F65',
   };
 
-  // Get favorite posts (posts with isFavorite: true)
-  const favoritePosts = SeedData.posts.filter((post) => post.isFavorite);
+  const [favoritePosts, setFavoritePosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleRemoveFavorite = (postId: string) => {
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
+
+  const fetchFavorites = async () => {
+    try {
+      setLoading(true);
+      const response = await api.getFavorites();
+      if (response.success) {
+        setFavoritePosts(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveFavorite = async (postId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Implement remove from favorites
+
+    // Optimistic update
+    const previousFavorites = [...favoritePosts];
+    setFavoritePosts(current => current.filter(p => p.id !== postId));
+
+    try {
+      await api.toggleFavorite(postId);
+    } catch (error) {
+      console.error('Error removing favorite:', error);
+      // Revert if error
+      setFavoritePosts(previousFavorites);
+      Alert.alert('خطأ', 'فشل إزالة المنشور من المفضلات');
+    }
   };
 
   const renderPostCard = (post: any, index: number) => {
@@ -81,9 +110,9 @@ export default function FavoritesScreen() {
           {/* Post Header */}
           <View style={styles.postHeader}>
             <View style={styles.userInfo}>
-              {post.userAvatar ? (
+              {(post.user_image || post.userAvatar) ? (
                 <ExpoImage
-                  source={{ uri: post.userAvatar }}
+                  source={{ uri: api.getFileUrl(post.user_image || post.userAvatar) ?? undefined }}
                   style={styles.userAvatar}
                   contentFit="cover"
                 />
@@ -97,7 +126,7 @@ export default function FavoritesScreen() {
               )}
               <View style={styles.userDetails}>
                 <Text style={[styles.userName, { color: COLORS.text }]}>
-                  {post.userName}
+                  {post.user_name || post.userName}
                 </Text>
                 <Text style={[styles.postTime, { color: COLORS.textSecondary }]}>
                   {new Date(post.createdAt).toLocaleDateString('ar-SA')}
@@ -126,9 +155,9 @@ export default function FavoritesScreen() {
           </View>
 
           {/* Post Image */}
-          {post.image && (
+          {(post.media_url || post.image) && (
             <ExpoImage
-              source={{ uri: post.image }}
+              source={{ uri: api.getFileUrl(post.media_url || post.image) ?? undefined }}
               style={styles.postImage}
               contentFit="cover"
             />

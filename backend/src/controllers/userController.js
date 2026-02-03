@@ -3,7 +3,7 @@ const { pool } = require('../config/database');
 // Get user profile
 exports.getUserProfile = async (req, res, next) => {
   try {
-    const userId = req.params.userId;
+    const userId = req.params.id;
 
     const [users] = await pool.query(
       `SELECT 
@@ -14,7 +14,7 @@ exports.getUserProfile = async (req, res, next) => {
         (SELECT COUNT(*) > 0 FROM follows WHERE follower_id = ? AND followed_id = u.id) as is_following
       FROM users u
       WHERE u.id = ?`,
-      [req.user.id, userId]
+      [req.user?.id || 0, userId]
     );
 
     if (users.length === 0) {
@@ -36,14 +36,50 @@ exports.getUserProfile = async (req, res, next) => {
 // Update user profile
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { name, email, bio, profile_image } = req.body;
-    const userId = req.user.id;
+    // Log request body and file for debugging
+    console.log('UpdateProfile Request Full Body:', req.body);
+    console.log('UpdateProfile Request File:', req.file);
 
-    // Update user
-    await pool.query(
-      'UPDATE users SET name = ?, email = ?, bio = ?, profile_image = ? WHERE id = ?',
-      [name, email, bio, profile_image, userId]
-    );
+    const name = req.body.name;
+    const email = req.body.email;
+    const bio = req.body.bio;
+
+    const userId = req.user.id;
+    const updates = [];
+    const values = [];
+
+    // Check strict inequality to null/undefined, allow empty string
+    if (name !== undefined && name !== null) {
+      updates.push('name = ?');
+      values.push(name);
+    }
+
+    if (email !== undefined && email !== null) {
+      updates.push('email = ?');
+      values.push(email);
+    }
+
+    if (bio !== undefined && bio !== null) {
+      updates.push('bio = ?');
+      values.push(bio);
+    }
+
+    if (req.file) {
+      const imagePath = '/uploads/images/' + req.file.filename;
+      updates.push('profile_image = ?');
+      values.push(imagePath);
+    }
+
+    if (updates.length > 0) {
+      console.log('Applying updates:', updates, values);
+      values.push(userId);
+      await pool.query(
+        `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+        values
+      );
+    } else {
+      console.log('No updates found to apply');
+    }
 
     // Get updated user
     const [users] = await pool.query(
@@ -65,7 +101,7 @@ exports.updateProfile = async (req, res, next) => {
 exports.followUser = async (req, res, next) => {
   try {
     const followerId = req.user.id;
-    const followedId = req.params.userId;
+    const followedId = req.params.id;
 
     if (followerId === parseInt(followedId)) {
       return res.status(400).json({
@@ -95,8 +131,8 @@ exports.followUser = async (req, res, next) => {
 
     // Create notification
     await pool.query(
-      'INSERT INTO notifications (user_id, type, content, related_id) VALUES (?, ?, ?, ?)',
-      [followedId, 'follow', 'بدأ بمتابعتك', followerId]
+      'INSERT INTO notifications (user_id, sender_id, type, content, body, related_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [followedId, followerId, 'follow', 'بدأ بمتابعتك', 'بدأ بمتابعتك', followerId]
     );
 
     res.json({
@@ -112,7 +148,7 @@ exports.followUser = async (req, res, next) => {
 exports.unfollowUser = async (req, res, next) => {
   try {
     const followerId = req.user.id;
-    const followedId = req.params.userId;
+    const followedId = req.params.id;
 
     await pool.query(
       'DELETE FROM follows WHERE follower_id = ? AND followed_id = ?',
@@ -131,7 +167,7 @@ exports.unfollowUser = async (req, res, next) => {
 // Get followers
 exports.getFollowers = async (req, res, next) => {
   try {
-    const userId = req.params.userId;
+    const userId = req.params.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
@@ -145,7 +181,7 @@ exports.getFollowers = async (req, res, next) => {
       WHERE f.followed_id = ?
       ORDER BY f.created_at DESC
       LIMIT ? OFFSET ?`,
-      [req.user.id, userId, limit, offset]
+      [req.user?.id || 0, userId, limit, offset]
     );
 
     const [countResult] = await pool.query(
@@ -171,7 +207,7 @@ exports.getFollowers = async (req, res, next) => {
 // Get following
 exports.getFollowing = async (req, res, next) => {
   try {
-    const userId = req.params.userId;
+    const userId = req.params.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
@@ -185,7 +221,7 @@ exports.getFollowing = async (req, res, next) => {
       WHERE f.follower_id = ?
       ORDER BY f.created_at DESC
       LIMIT ? OFFSET ?`,
-      [req.user.id, userId, limit, offset]
+      [req.user?.id || 0, userId, limit, offset]
     );
 
     const [countResult] = await pool.query(
@@ -227,7 +263,7 @@ exports.searchUsers = async (req, res, next) => {
       WHERE u.name LIKE ? OR u.phone LIKE ?
       ORDER BY followers_count DESC
       LIMIT ? OFFSET ?`,
-      [req.user.id, searchPattern, searchPattern, limit, offset]
+      [req.user?.id || 0, searchPattern, searchPattern, limit, offset]
     );
 
     const [countResult] = await pool.query(

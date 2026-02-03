@@ -28,7 +28,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const { width } = Dimensions.get('window');
 const CARD_PADDING = 24;
 const CARD_GAP = 12;
-const CARD_WIDTH = (width - CARD_PADDING * 2 - CARD_GAP * 2) / 3;
+const CARD_WIDTH = (width - CARD_PADDING * 2 - CARD_GAP) / 2;
 
 interface Post {
   id: number;
@@ -44,6 +44,7 @@ interface Post {
   is_liked: boolean;
   is_favorited: boolean;
   created_at: string;
+  user_id: number;
 }
 
 export default function ExploreScreen() {
@@ -157,10 +158,10 @@ export default function ExploreScreen() {
         prev.map((post) =>
           post.id === postId
             ? {
-                ...post,
-                is_liked: !post.is_liked,
-                likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1,
-              }
+              ...post,
+              is_liked: !post.is_liked,
+              likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1,
+            }
             : post
         )
       );
@@ -303,7 +304,7 @@ export default function ExploreScreen() {
         <View style={styles.postHeader}>
           <TouchableOpacity
             style={styles.postUserInfo}
-            onPress={() => handleUserPress(item.id.toString())}
+            onPress={() => handleUserPress(item.user_id.toString())}
             activeOpacity={0.7}
           >
             <View style={styles.postUserDetails}>
@@ -313,7 +314,7 @@ export default function ExploreScreen() {
               </Text>
             </View>
             {item.user_image ? (
-              <ExpoImage source={{ uri: item.user_image }} style={styles.postAvatar} />
+              <ExpoImage source={{ uri: api.getFileUrl(item.user_image) ?? undefined }} style={styles.postAvatar} />
             ) : (
               <View style={[styles.postAvatarPlaceholder, { backgroundColor: COLORS.accent }]}>
                 <Ionicons name="person" size={20} color="#FFF" />
@@ -341,7 +342,7 @@ export default function ExploreScreen() {
 
         {/* Post Image */}
         {item.media_url && item.type === 'image' && (
-          <ExpoImage source={{ uri: item.media_url }} style={styles.postImage} contentFit="cover" />
+          <ExpoImage source={{ uri: api.getFileUrl(item.media_url) ?? undefined }} style={styles.postImage} contentFit="cover" />
         )}
 
         {/* Post Footer */}

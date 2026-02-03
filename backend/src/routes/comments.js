@@ -30,7 +30,8 @@ const updateCommentValidation = [
 ];
 
 // Guests can view comments
-router.get('/post/:postId', optionalAuth, param('postId').isInt(), validate, commentController.getCommentsByPost);
+router.get('/post/:postId', optionalAuth, param('postId').isInt(), validate, commentController.getPostComments);
+router.get('/my', auth, requireAuth, commentController.getUserComments);
 
 // Require authentication for creating/updating/deleting
 router.post('/', auth, requireAuth, createCommentValidation, validate, commentController.createComment);

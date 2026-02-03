@@ -34,8 +34,8 @@ export default function CreateScreen() {
         'تسجيل الدخول مطلوب',
         'يجب عليك تسجيل الدخول لإنشاء منشور',
         [
-          { 
-            text: 'إلغاء', 
+          {
+            text: 'إلغاء',
             style: 'cancel',
             onPress: () => navigation.goBack(),
           },
@@ -112,14 +112,14 @@ export default function CreateScreen() {
       );
       return;
     }
-    
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate(screen);
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
       >

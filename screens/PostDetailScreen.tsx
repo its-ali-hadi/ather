@@ -19,69 +19,53 @@ import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-
-import SeedData from '../constants/seed-data.json';
+import api from '../utils/api';
+import { ActivityIndicator } from 'react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PostDetail'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-// Mock comments data
-const mockComments = [
-  {
-    id: '1',
-    userId: 'user-1',
-    userName: 'أحمد محمد',
-    userAvatar: 'https://i.pravatar.cc/150?img=11',
-    content: 'منشور رائع! استفدت كثيراً من المعلومات المشاركة هنا.',
-    likes: 12,
-    isLiked: false,
-    createdAt: '2024-01-15T11:30:00Z',
-    replies: [
-      {
-        id: 'r1',
-        userId: 'user-2',
-        userName: 'سارة أحمد',
-        userAvatar: 'https://i.pravatar.cc/150?img=5',
-        content: 'أتفق معك تماماً!',
-        likes: 3,
-        isLiked: false,
-        createdAt: '2024-01-15T12:00:00Z',
-      },
-    ],
-  },
-  {
-    id: '2',
-    userId: 'user-3',
-    userName: 'محمد علي',
-    userAvatar: 'https://i.pravatar.cc/150?img=12',
-    content: 'هل يمكنك مشاركة المزيد من التفاصيل؟',
-    likes: 8,
-    isLiked: true,
-    createdAt: '2024-01-15T13:45:00Z',
-    replies: [],
-  },
-  {
-    id: '3',
-    userId: 'user-4',
-    userName: 'فاطمة خالد',
-    userAvatar: 'https://i.pravatar.cc/150?img=9',
-    content: 'شكراً على المشاركة! محتوى قيم جداً 🌟',
-    likes: 15,
-    isLiked: false,
-    createdAt: '2024-01-15T14:20:00Z',
-    replies: [],
-  },
-];
 
 export default function PostDetailScreen({ route }: Props) {
   const { postId } = route.params;
   const colorScheme = useColorScheme();
   const navigation = useNavigation<NavigationProp>();
   const { isGuest, logout } = useAuth();
+
+  const [post, setPost] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [comment, setComment] = useState('');
-  const [comments, setComments] = useState(mockComments);
+  const [comments, setComments] = useState<any[]>([]);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  useEffect(() => {
+    fetchPostData();
+  }, [postId]);
+
+  const fetchPostData = async () => {
+    try {
+      setIsLoading(true);
+      const [postRes, commentsRes] = await Promise.all([
+        api.getPost(postId),
+        api.getComments(postId)
+      ]);
+
+      if (postRes.success) {
+        setPost(postRes.data);
+      }
+
+      if (commentsRes.success) {
+        setComments(commentsRes.data);
+      }
+    } catch (error) {
+      console.error('Error fetching post data:', error);
+      // Don't show alert here to avoid blocking UI on load, 
+      // instead we can show error UI or just log it if it's "not found" it will stay null
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -94,12 +78,22 @@ export default function PostDetailScreen({ route }: Props) {
     inputBg: colorScheme === 'dark' ? 'rgba(42, 36, 32, 0.5)' : 'rgba(255, 255, 255, 0.8)',
   };
 
-  // Get post data
-  const post = SeedData.posts.find((p) => p.id === postId);
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </SafeAreaView>
+    );
+  }
 
   if (!post) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-forward" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+        </View>
         <Text style={[styles.errorText, { color: COLORS.text }]}>المنشور غير موجود</Text>
       </SafeAreaView>
     );
@@ -120,29 +114,65 @@ export default function PostDetailScreen({ route }: Props) {
         {
           text: 'تسجيل الدخول',
           onPress: async () => {
-            await logout();
+            // await logout(); // Usually don't want to logout current session if existing
+            navigation.navigate('Auth');
           },
         },
       ]
     );
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (isGuest) {
       handleGuestAction('إضافة إعجاب');
       return;
     }
+
+    // Optimistic update
+    const previousState = { ...post };
+    const newLikedState = !post.is_liked;
+    const newLikesCount = newLikedState ? post.likes_count + 1 : post.likes_count - 1;
+
+    setPost({
+      ...post,
+      is_liked: newLikedState,
+      likes_count: newLikesCount
+    });
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Implement like functionality
+
+    try {
+      await api.toggleLike(String(post.id));
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      // Revert on error
+      setPost(previousState);
+    }
   };
 
-  const handleFavorite = () => {
+  const handleFavorite = async () => {
     if (isGuest) {
       handleGuestAction('حفظ المنشور');
       return;
     }
+
+    // Optimistic update
+    const previousState = { ...post };
+    const newFavState = !post.is_favorited;
+
+    setPost({
+      ...post,
+      is_favorited: newFavState
+    });
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Implement favorite functionality
+
+    try {
+      await api.toggleFavorite(String(post.id));
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      setPost(previousState);
+    }
   };
 
   const handleShare = async () => {
@@ -158,45 +188,50 @@ export default function PostDetailScreen({ route }: Props) {
   };
 
   const handleReport = () => {
+    if (isGuest) {
+      handleGuestAction('الإبلاغ عن المنشور');
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
-      'الإبلاغ عن المنشور',
-      'هل تريد الإبلاغ عن هذا المنشور؟',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'إبلاغ',
-          style: 'destructive',
-          onPress: () => Alert.alert('تم الإبلاغ', 'شكراً لك، سنراجع المنشور قريباً'),
-        },
-      ]
-    );
+    navigation.navigate('Report', {
+      type: 'post',
+      id: parseInt(postId),
+      title: post.title
+    });
   };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (isGuest) {
       handleGuestAction('إضافة تعليق');
       return;
     }
-    
+
     if (!comment.trim()) return;
-    
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    const newComment = {
-      id: Date.now().toString(),
-      userId: 'current-user',
-      userName: 'أنت',
-      userAvatar: null,
-      content: comment,
-      likes: 0,
-      isLiked: false,
-      createdAt: new Date().toISOString(),
-      replies: [],
-    };
-    
-    setComments([newComment, ...comments]);
-    setComment('');
+    setIsSubmittingComment(true);
+
+    try {
+      const response = await api.createComment({
+        post_id: parseInt(postId),
+        content: comment.trim()
+      });
+
+      if (response.success) {
+        // Optimistically add comment or refetch
+        // Here we'll just refetch for simplicity and correctness (dates, user info etc)
+        const commentsRes = await api.getComments(postId);
+        if (commentsRes.success) {
+          setComments(commentsRes.data);
+        }
+        setComment('');
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      Alert.alert('خطأ', 'فشل إضافة التعليق');
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
   const handleCommentLike = (commentId: string) => {
@@ -231,15 +266,15 @@ export default function PostDetailScreen({ route }: Props) {
           style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}
         >
           {/* Post Header */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.postHeader}
-            onPress={() => handleUserPress(post.userId)}
+            onPress={() => handleUserPress(String(post.user_id || post.userId))}
             activeOpacity={0.7}
           >
             <View style={styles.userInfo}>
-              {post.userAvatar ? (
+              {(post.user_image || post.userAvatar) ? (
                 <ExpoImage
-                  source={{ uri: post.userAvatar }}
+                  source={{ uri: api.getFileUrl(post.user_image || post.userAvatar) ?? undefined }}
                   style={styles.userAvatar}
                   contentFit="cover"
                 />
@@ -249,7 +284,7 @@ export default function PostDetailScreen({ route }: Props) {
                 </LinearGradient>
               )}
               <View style={styles.userDetails}>
-                <Text style={[styles.userName, { color: COLORS.text }]}>{post.userName}</Text>
+                <Text style={[styles.userName, { color: COLORS.text }]}>{post.user_name || post.userName}</Text>
                 <Text style={[styles.postTime, { color: COLORS.textSecondary }]}>
                   {new Date(post.createdAt).toLocaleDateString('ar-SA')}
                 </Text>
@@ -269,8 +304,8 @@ export default function PostDetailScreen({ route }: Props) {
           </View>
 
           {/* Post Image */}
-          {post.image && (
-            <ExpoImage source={{ uri: post.image }} style={styles.postImage} contentFit="cover" />
+          {(post.media_url || post.image) && (
+            <ExpoImage source={{ uri: api.getFileUrl(post.media_url || post.image) ?? undefined }} style={styles.postImage} contentFit="cover" />
           )}
 
           {/* Post Link */}
@@ -334,14 +369,14 @@ export default function PostDetailScreen({ route }: Props) {
                 entering={FadeInDown.delay(300 + index * 50).springify()}
                 style={[styles.commentCard, { backgroundColor: COLORS.cardBg }]}
               >
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.commentHeader}
-                  onPress={() => handleUserPress(comment.userId)}
+                  onPress={() => handleUserPress(String(comment.user_id || comment.userId))}
                   activeOpacity={0.7}
                 >
-                  {comment.userAvatar ? (
+                  {(comment.user_image || comment.userAvatar) ? (
                     <ExpoImage
-                      source={{ uri: comment.userAvatar }}
+                      source={{ uri: api.getFileUrl(comment.user_image || comment.userAvatar) ?? undefined }}
                       style={styles.commentAvatar}
                       contentFit="cover"
                     />
@@ -352,7 +387,7 @@ export default function PostDetailScreen({ route }: Props) {
                   )}
                   <View style={styles.commentInfo}>
                     <Text style={[styles.commentUserName, { color: COLORS.text }]}>
-                      {comment.userName}
+                      {comment.user_name || comment.userName}
                     </Text>
                     <Text style={[styles.commentTime, { color: COLORS.textSecondary }]}>
                       {new Date(comment.createdAt).toLocaleDateString('ar-SA')}
@@ -392,14 +427,14 @@ export default function PostDetailScreen({ route }: Props) {
                   <View style={styles.repliesContainer}>
                     {comment.replies.map((reply) => (
                       <View key={reply.id} style={styles.replyCard}>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={styles.commentHeader}
                           onPress={() => handleUserPress(reply.userId)}
                           activeOpacity={0.7}
                         >
-                          {reply.userAvatar ? (
+                          {(reply.user_image || reply.userAvatar) ? (
                             <ExpoImage
-                              source={{ uri: reply.userAvatar }}
+                              source={{ uri: api.getFileUrl(reply.user_image || reply.userAvatar) ?? undefined }}
                               style={styles.replyAvatar}
                               contentFit="cover"
                             />
@@ -413,7 +448,7 @@ export default function PostDetailScreen({ route }: Props) {
                           )}
                           <View style={styles.commentInfo}>
                             <Text style={[styles.replyUserName, { color: COLORS.text }]}>
-                              {reply.userName}
+                              {reply.user_name || reply.userName}
                             </Text>
                             <Text style={[styles.replyTime, { color: COLORS.textSecondary }]}>
                               {new Date(reply.createdAt).toLocaleDateString('ar-SA')}

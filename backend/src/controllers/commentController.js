@@ -52,8 +52,8 @@ exports.createComment = async (req, res, next) => {
     // Create notification for post owner (if not commenting on own post)
     if (posts[0].user_id !== userId) {
       await pool.query(
-        'INSERT INTO notifications (user_id, type, content, related_id) VALUES (?, ?, ?, ?)',
-        [posts[0].user_id, 'comment', 'علق على منشورك', post_id]
+        'INSERT INTO notifications (user_id, sender_id, type, content, body, related_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [posts[0].user_id, userId, 'comment', 'علق على منشورك', content, post_id]
       );
     }
 
@@ -229,6 +229,45 @@ exports.deleteComment = async (req, res, next) => {
     res.json({
       success: true,
       message: 'تم حذف التعليق بنجاح'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get current user's comments
+exports.getUserComments = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const [comments] = await pool.query(
+      `SELECT c.*, p.title as post_title, u.name as user_name, u.profile_image as user_image, u.is_verified as user_verified
+       FROM comments c
+       JOIN posts p ON c.post_id = p.id
+       JOIN users u ON c.user_id = u.id
+       WHERE c.user_id = ?
+       ORDER BY c.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [userId, limit, offset]
+    );
+
+    const [total] = await pool.query(
+      'SELECT COUNT(*) as count FROM comments WHERE user_id = ?',
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      data: comments,
+      pagination: {
+        page,
+        limit,
+        total: total[0].count,
+        pages: Math.ceil(total[0].count / limit)
+      }
     });
   } catch (error) {
     next(error);

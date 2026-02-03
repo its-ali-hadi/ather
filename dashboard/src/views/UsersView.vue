@@ -13,7 +13,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="البحث عن مستخدم..."
+            placeholder="البحث بالاسم، الهاتف، البريد أو المعرف (ID)..."
             class="input-field"
             @input="handleSearch"
           />
@@ -38,6 +38,7 @@
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الرقم #</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">المستخدم</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">رقم الهاتف</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">البريد</th>
@@ -49,6 +50,9 @@
           </thead>
           <tbody class="divide-y divide-gray-200">
             <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                #{{ user.id }}
+              </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 bg-primary-200 rounded-full flex items-center justify-center">

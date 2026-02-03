@@ -11,13 +11,16 @@ import {
   View,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import api from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
 import SeedData from '../constants/seed-data.json';
 
@@ -30,6 +33,7 @@ export default function UserProfileScreen({ route }: Props) {
   const navigation = useNavigation<NavigationProp>();
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const { isGuest, user: currentUser } = useAuth();
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -41,8 +45,72 @@ export default function UserProfileScreen({ route }: Props) {
     border: colorScheme === 'dark' ? '#3A3430' : '#E8E8E8',
   };
 
-  // Get user data from seed-data
-  const user = SeedData.users.find((u) => u.id === userId);
+  // State for user data
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [userPosts, setUserPosts] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchUserProfile();
+    fetchUserPosts();
+  }, [userId]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await api.getUserProfile(userId);
+      if (response.success) {
+        // Map API response to match UI fields
+        const userData = response.data;
+        setUser({
+          id: userData.id,
+          name: userData.name,
+          username: '@' + (userData.name ? userData.name.replace(/\s+/g, '').toLowerCase() : 'user'),
+          bio: userData.bio || 'لا توجد نبذة',
+          avatar: api.getFileUrl(userData.profile_image),
+          posts: userData.posts_count || 0,
+          followers: userData.followers_count || 0,
+          following: userData.following_count || 0,
+          isFollowing: userData.is_following,
+        });
+        setIsFollowing(!!userData.is_following);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserPosts = async () => {
+    try {
+      const response = await api.getUserPosts(userId);
+      if (response.success) {
+        // Map API posts to UI
+        const mappedPosts = response.data.map((post: any) => ({
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          image: api.getFileUrl(post.media_url),
+          category: post.category,
+          likes: post.likes_count,
+          comments: post.comments_count,
+          shares: 0,
+          createdAt: post.created_at,
+        }));
+        setUserPosts(mappedPosts);
+      }
+    } catch (error) {
+      console.error('Error fetching user posts:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </SafeAreaView>
+    );
+  }
 
   // If user not found, show error
   if (!user) {
@@ -63,11 +131,44 @@ export default function UserProfileScreen({ route }: Props) {
     );
   }
 
-  const userPosts = SeedData.posts.filter((post) => post.userId === userId);
 
-  const handleFollow = () => {
+  const handleFollow = async () => {
+    if (isGuest) {
+      Alert.alert('تنبيه', 'يجب عليك تسجيل الدخول للمتابعة');
+      return;
+    }
+
+    if (currentUser?.id === parseInt(userId)) {
+      Alert.alert('تنبيه', 'لا يمكنك متابعة نفسك');
+      return;
+    }
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const originalState = isFollowing;
+
+    // Optimistic update
     setIsFollowing(!isFollowing);
+    setUser((prev: any) => prev ? {
+      ...prev,
+      followers: originalState ? prev.followers - 1 : prev.followers + 1
+    } : null);
+
+    try {
+      if (originalState) {
+        await api.unfollowUser(userId);
+      } else {
+        await api.followUser(userId);
+      }
+    } catch (error) {
+      console.error('Follow error:', error);
+      // Revert if error
+      setIsFollowing(originalState);
+      setUser((prev: any) => prev ? {
+        ...prev,
+        followers: originalState ? prev.followers + 1 : prev.followers - 1
+      } : null);
+      Alert.alert('خطأ', 'فشل تنفيذ الطلب، يرجى المحاولة لاحقاً');
+    }
   };
 
   const handlePostPress = (postId: string) => {
@@ -101,18 +202,11 @@ export default function UserProfileScreen({ route }: Props) {
 
   const handleReport = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
-      'الإبلاغ عن المستخدم',
-      'هل تريد الإبلاغ عن هذا المستخدم؟',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'إبلاغ',
-          style: 'destructive',
-          onPress: () => Alert.alert('تم الإبلاغ', 'شكراً لك، سنراجع البلاغ قريباً'),
-        },
-      ]
-    );
+    navigation.navigate('Report', {
+      type: 'user',
+      id: parseInt(userId),
+      title: user.name
+    });
   };
 
   const handleMoreOptions = () => {

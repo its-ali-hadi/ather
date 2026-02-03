@@ -25,11 +25,39 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   actions: {
-    async login(phone: string, password: string) {
+    async sendLoginOtp(phone: string) {
       try {
-        const response = await axios.post(`${API_URL}/auth/login`, {
+        const response = await axios.post(`${API_URL}/auth/send-login-otp`, {
           phone,
-          password,
+        })
+
+        if (response.data.success) {
+          return {
+            success: true,
+            message: response.data.message,
+            orderId: response.data.data.orderId,
+          }
+        }
+
+        return {
+          success: false,
+          message: response.data.message || 'فشل إرسال رمز التحقق',
+        }
+      } catch (error: any) {
+        console.error('Send OTP error:', error)
+        return {
+          success: false,
+          message: error.response?.data?.message || 'حدث خطأ أثناء إرسال الرمز',
+        }
+      }
+    },
+
+    async loginWithOtp(phone: string, code: string, orderId: string) {
+      try {
+        const response = await axios.post(`${API_URL}/auth/login-otp`, {
+          phone,
+          code,
+          orderId,
         })
 
         if (response.data.success) {

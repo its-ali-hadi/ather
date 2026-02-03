@@ -14,6 +14,9 @@ interface User {
   role: string;
   created_at: string;
   isGuest?: boolean;
+  posts_count?: number;
+  followers_count?: number;
+  following_count?: number;
 }
 
 interface AuthContextType {
@@ -56,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadAuthData = async () => {
     try {
       const guestMode = await AsyncStorage.getItem(GUEST_KEY);
-      
+
       if (guestMode === 'true') {
         // User is in guest mode
         setIsGuest(true);
@@ -79,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (savedToken && savedUser) {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
-        
+
         // Verify token is still valid
         const response = await api.getCurrentUser();
         if (response.success) {
@@ -102,11 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Request permissions
       const hasPermission = await requestNotificationPermissions();
-      
+
       if (hasPermission) {
         // Get push token
         const pushToken = await getPushToken();
-        
+
         if (pushToken) {
           // Save push token to backend
           await api.savePushToken(pushToken);
@@ -188,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     if (isGuest) return;
-    
+
     try {
       const response = await api.getCurrentUser();
       if (response.success) {

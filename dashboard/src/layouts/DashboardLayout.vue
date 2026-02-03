@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen bg-primary-50">
     <!-- Sidebar -->
-    <aside class="fixed right-0 top-0 h-full w-64 bg-white shadow-lg z-50">
-      <div class="p-6">
+    <aside class="fixed right-0 top-0 h-full w-64 bg-white shadow-lg z-50 flex flex-col">
+      <div class="p-6 flex-1 overflow-y-auto">
         <!-- Logo -->
         <div class="flex items-center gap-3 mb-8">
           <div class="w-12 h-12 bg-gradient-to-br from-primary-200 to-primary-300 rounded-full flex items-center justify-center">
@@ -17,7 +17,7 @@
         </div>
 
         <!-- Navigation -->
-        <nav class="space-y-2">
+        <nav class="space-y-1">
           <router-link
             v-for="item in menuItems"
             :key="item.path"
@@ -32,7 +32,7 @@
       </div>
 
       <!-- User Info -->
-      <div class="absolute bottom-0 right-0 left-0 p-6 border-t border-gray-200">
+      <div class="p-6 border-t border-gray-200 shrink-0">
         <div class="flex items-center gap-3 mb-3">
           <div class="w-10 h-10 bg-primary-200 rounded-full flex items-center justify-center">
             <span class="text-white font-bold">{{ userInitial }}</span>
@@ -110,6 +110,16 @@ const menuItems = [
     path: '/notifications',
     label: 'الإشعارات',
     icon: 'IconNotifications',
+  },
+  {
+    path: '/banners',
+    label: 'البنرات',
+    icon: 'IconBanners',
+  },
+  {
+    path: '/reports',
+    label: 'البلاغات',
+    icon: 'IconReports',
   },
   {
     path: '/settings',
@@ -209,6 +219,22 @@ const IconSettings = {
   `
 }
 
+const IconBanners = {
+  template: `
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  `
+}
+
+const IconReports = {
+  template: `
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+  `
+}
+
 export default {
   components: {
     IconHome,
@@ -220,6 +246,8 @@ export default {
     IconMessages,
     IconNotifications,
     IconSettings,
+    IconBanners,
+    IconReports,
   }
 }
 </script>

@@ -3,24 +3,24 @@ import { Image as ExpoImage } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { 
-  Dimensions, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  useColorScheme, 
-  View, 
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useColorScheme,
+  View,
   Platform,
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import Animated, { 
-  FadeInDown, 
-  FadeInRight, 
+import Animated, {
+  FadeInDown,
+  FadeInRight,
   FadeInUp,
-  useAnimatedStyle, 
-  useSharedValue, 
+  useAnimatedStyle,
+  useSharedValue,
   withSpring,
   withRepeat,
   withSequence,
@@ -131,11 +131,15 @@ const STATIC_DATA = {
 };
 
 export default function HomeScreen({ navigation }: Props) {
-  const { banners, about, cards } = STATIC_DATA;
+  const { about } = STATIC_DATA;
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const { isGuest, logout, user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+
+  const [banners, setBanners] = useState<any[]>(STATIC_DATA.banners);
+  const [boxes, setBoxes] = useState<any[]>(STATIC_DATA.cards);
+  const [isLoading, setIsLoading] = useState(true);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(3);
 
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -152,6 +156,10 @@ export default function HomeScreen({ navigation }: Props) {
   const bulbScale = useSharedValue(1.5);
 
   useEffect(() => {
+    fetchBanners();
+    fetchBoxes();
+    fetchUnreadCount();
+
     floatAnim.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 3000 }),
@@ -167,6 +175,43 @@ export default function HomeScreen({ navigation }: Props) {
       mass: 1,
     });
   }, [floatAnim, bulbScale]);
+
+  const fetchBanners = async () => {
+    try {
+      const response = await api.getBanners();
+      if (response.success && response.data && response.data.length > 0) {
+        setBanners(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching banners:', error);
+    }
+  };
+
+  const fetchBoxes = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.getBoxes();
+      if (response.success && response.data && response.data.length > 0) {
+        setBoxes(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching boxes:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    if (isGuest) return;
+    try {
+      const response = await api.getUnreadNotificationsCount();
+      if (response.success) {
+        setUnreadNotificationsCount(response.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
 
   // Check if user has seen tutorial
   useEffect(() => {
@@ -237,6 +282,23 @@ export default function HomeScreen({ navigation }: Props) {
     };
   });
 
+  const handleBannerPress = (banner: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (banner.target_url) {
+      if (banner.target_url.startsWith('http')) {
+        // Handle external URL
+      } else {
+        // Handle local route
+        // navigation.navigate(banner.target_url as any);
+      }
+    }
+  };
+
+  const handleCardPress = (boxId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate('BoxDetail', { boxId });
+  };
+
   const handleGuestAction = async (actionName: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
@@ -258,14 +320,10 @@ export default function HomeScreen({ navigation }: Props) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const handleCardPress = (boxId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate('BoxDetail', { boxId });
-  };
 
   const handleFeaturePress = (featureText: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+
     switch (featureText) {
       case 'انشر أفكارك بحرية':
         if (isGuest) {
@@ -335,7 +393,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
-      <ScrollView 
+      <ScrollView
         ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         bounces={true}
@@ -344,13 +402,13 @@ export default function HomeScreen({ navigation }: Props) {
       >
         {/* Hero Header with Gradient */}
         <LinearGradient
-          colors={colorScheme === 'dark' 
-            ? ['#3A3228', '#2A2420', COLORS.background] 
+          colors={colorScheme === 'dark'
+            ? ['#3A3228', '#2A2420', COLORS.background]
             : ['#D4C4B0', '#C9B89E', COLORS.background]}
           style={styles.heroSection}
         >
           <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.heroContent}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onLongPress={handleResetTutorial}
               activeOpacity={0.8}
               style={styles.heroIconContainer}
@@ -366,7 +424,7 @@ export default function HomeScreen({ navigation }: Props) {
                 </LinearGradient>
               </Animated.View>
             </TouchableOpacity>
-            
+
             <Text style={[styles.heroTitle, { color: colorScheme === 'dark' ? '#F5E6D3' : '#FFF' }]}>
               أثر
             </Text>
@@ -392,29 +450,29 @@ export default function HomeScreen({ navigation }: Props) {
             </TouchableOpacity>
           </Animated.View>
 
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             snapToInterval={CARD_WIDTH + 20}
             decelerationRate="fast"
             contentContainerStyle={styles.bannersContainer}
           >
             {banners.map((item, index) => (
-              <Animated.View 
+              <Animated.View
                 key={index}
                 entering={FadeInRight.delay(300 + index * 100).springify()}
               >
-                <TouchableOpacity 
+                <TouchableOpacity
                   activeOpacity={0.9}
-                  onPress={handlePress}
+                  onPress={() => handleBannerPress(item)}
                   style={[styles.bannerCard, { width: CARD_WIDTH }]}
                 >
-                  <ExpoImage 
-                    source={{ uri: item.image }} 
+                  <ExpoImage
+                    source={{ uri: api.getFileUrl(item.image_url || item.image) ?? undefined }}
                     style={styles.bannerImage}
                     contentFit="cover"
                   />
-                  
+
                   <LinearGradient
                     colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.85)']}
                     style={styles.bannerGradient}
@@ -441,7 +499,7 @@ export default function HomeScreen({ navigation }: Props) {
                         <Ionicons name={item.icon as any || 'bulb'} size={28} color="#E8B86D" />
                       </LinearGradient>
                     </View>
-                    <Text style={styles.bannerTitle}>{item.text}</Text>
+                    <Text style={styles.bannerTitle}>{item.title || item.text}</Text>
                     <View style={styles.bannerArrow}>
                       <Ionicons name="arrow-back" size={20} color="#E8B86D" />
                     </View>
@@ -453,8 +511,8 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
 
         {/* About Section - Premium Card */}
-        <Animated.View 
-          entering={FadeInUp.delay(500).springify()} 
+        <Animated.View
+          entering={FadeInUp.delay(500).springify()}
           style={styles.section}
         >
           <View style={[styles.aboutCard, { backgroundColor: COLORS.cardBg }]}>
@@ -492,13 +550,13 @@ export default function HomeScreen({ navigation }: Props) {
                     key={index}
                     entering={FadeInRight.delay(600 + index * 80).springify()}
                   >
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       activeOpacity={0.8}
                       onPress={() => handleFeaturePress(item.text)}
-                      style={[styles.featureItem, { 
-                        backgroundColor: colorScheme === 'dark' 
-                          ? 'rgba(196, 165, 123, 0.12)' 
-                          : 'rgba(184, 149, 106, 0.08)' 
+                      style={[styles.featureItem, {
+                        backgroundColor: colorScheme === 'dark'
+                          ? 'rgba(196, 165, 123, 0.12)'
+                          : 'rgba(184, 149, 106, 0.08)'
                       }]}
                     >
                       <View style={[styles.featureIconBg, { backgroundColor: COLORS.primary }]}>
@@ -513,7 +571,7 @@ export default function HomeScreen({ navigation }: Props) {
                 ))}
               </View>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={handleStartJourney}
                 style={styles.ctaButton}
@@ -546,26 +604,26 @@ export default function HomeScreen({ navigation }: Props) {
               </Text>
             </View>
             <View style={[styles.countBadge, { backgroundColor: COLORS.primary }]}>
-              <Text style={styles.countText}>{cards.length}</Text>
+              <Text style={styles.countText}>{boxes.length}</Text>
             </View>
           </Animated.View>
 
           <View style={styles.cardsGrid}>
-            {cards.map((card, index) => (
+            {boxes.map((card, index) => (
               <Animated.View
-                key={index}
+                key={card.id || index}
                 entering={FadeInUp.delay(800 + index * 120).springify()}
                 style={styles.cardWrapper}
               >
                 <TouchableOpacity
                   activeOpacity={0.92}
-                  onPress={() => handleCardPress(card.id)}
+                  onPress={() => handleCardPress(card.id.toString())}
                 >
                   <Animated.View style={[floatingStyle, styles.premiumCard, { backgroundColor: COLORS.cardBg }]}>
                     {/* Card Image */}
                     <View style={styles.cardImageWrapper}>
                       <ExpoImage
-                        source={{ uri: card.image }}
+                        source={{ uri: api.getFileUrl(card.image_url || card.image) ?? undefined }}
                         style={styles.cardImage}
                         contentFit="cover"
                       />
@@ -573,7 +631,7 @@ export default function HomeScreen({ navigation }: Props) {
                         colors={['transparent', 'rgba(0,0,0,0.4)']}
                         style={styles.cardImageOverlay}
                       />
-                      
+
                       {/* Premium Badge */}
                       <View style={styles.premiumBadge}>
                         <LinearGradient
@@ -588,7 +646,7 @@ export default function HomeScreen({ navigation }: Props) {
                       </View>
 
                       {/* Favorite Icon */}
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.favoriteButton}
                         onPress={handlePress}
                       >
@@ -607,23 +665,23 @@ export default function HomeScreen({ navigation }: Props) {
                     >
                       <View style={styles.cardHeader}>
                         <Text style={[styles.cardTitle, { color: COLORS.text }]} numberOfLines={1}>
-                          {card.title}
+                          {card.name || card.title}
                         </Text>
                         <View style={[styles.ratingBadge, { backgroundColor: COLORS.primary }]}>
-                          <Ionicons name="star" size={12} color="#E8B86D" />
-                          <Text style={styles.ratingText}>4.9</Text>
+                          <Ionicons name="chatbubbles" size={12} color="#E8B86D" />
+                          <Text style={styles.ratingText}>{card.posts_count || 0}</Text>
                         </View>
                       </View>
 
                       <Text style={[styles.cardDescription, { color: COLORS.textSecondary }]} numberOfLines={2}>
-                        {card.description}
+                        {card.short_description || card.description}
                       </Text>
 
                       <View style={styles.cardFooter}>
                         <View style={[styles.categoryTag, { backgroundColor: colorScheme === 'dark' ? 'rgba(196, 165, 123, 0.15)' : 'rgba(184, 149, 106, 0.12)' }]}>
                           <Ionicons name="pricetag" size={12} color={COLORS.primary} />
                           <Text style={[styles.categoryText, { color: COLORS.primary }]}>
-                            {card.category}
+                            {card.category || (card.name && card.name.split(' ').pop())}
                           </Text>
                         </View>
 
@@ -652,15 +710,15 @@ export default function HomeScreen({ navigation }: Props) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             navigation.navigate('Notifications' as any);
           }}
-          style={[styles.stickyNotificationButton, { 
+          style={[styles.stickyNotificationButton, {
             backgroundColor: COLORS.accent,
           }]}
         >
           <Ionicons name="notifications" size={28} color="#FFF" />
           {/* Notification Badge */}
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationBadgeText}>3</Text>
-          </View>
+          {unreadNotificationsCount > 0 && (
+            <View style={styles.notificationBadge} />
+          )}
         </TouchableOpacity>
       )}
 

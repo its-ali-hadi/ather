@@ -1,3 +1,4 @@
+import { Image as ExpoImage } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -8,27 +9,36 @@ import {
   useColorScheme,
   View,
   Platform,
+  Alert,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
 import { useAuth } from '../contexts/AuthContext';
 import GuestProfileScreen from './GuestProfileScreen';
+import api from '../utils/api';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const navigation = useNavigation<NavigationProp>();
-  const { user, isGuest } = useAuth();
+  const { user, isGuest, refreshUser, logout } = useAuth();
 
   // Show GuestProfileScreen if user is a guest
   if (isGuest) {
     return <GuestProfileScreen />;
   }
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshUser();
+    }, [])
+  );
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -37,112 +47,108 @@ export default function ProfileScreen() {
     cardBg: colorScheme === 'dark' ? '#2A2420' : '#FFFFFF',
     text: colorScheme === 'dark' ? '#F5E6D3' : '#4A3F35',
     textSecondary: colorScheme === 'dark' ? '#D4C4B0' : '#7A6F65',
+    border: colorScheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
   };
 
-  const stats = [
-    { label: 'المنشورات', value: '0', icon: 'document-text' },
-    { label: 'المتابعون', value: '0', icon: 'people' },
-    { label: 'المتابَعون', value: '0', icon: 'person-add' },
-  ];
+  // Stats removed in favor of menu items
 
   const menuItems = [
     {
-      id: '1',
-      icon: 'notifications',
-      title: 'الإشعارات',
-      subtitle: 'إدارة إشعاراتك',
-      color: '#E8B86D',
-      onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        navigation.navigate('Notifications');
-      },
-    },
-    {
-      id: '2',
+      id: 'search',
       icon: 'search',
       title: 'البحث المتقدم',
       subtitle: 'ابحث عن منشورات ومستخدمين',
-      color: '#4A90E2',
+      color: '#9B59B6',
       onPress: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         navigation.navigate('AdvancedSearch');
       },
     },
     {
-      id: '3',
-      icon: 'heart',
-      title: 'المفضلات',
-      subtitle: 'المنشورات المحفوظة',
-      color: '#E94B3C',
-      onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        navigation.navigate('Favorites');
-      },
-    },
-    {
-      id: '4',
-      icon: 'document-text',
-      title: 'منشوراتي',
-      subtitle: 'جميع منشوراتك',
-      color: '#50C878',
-      onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        navigation.navigate('MyPosts');
-      },
-    },
-    {
-      id: '5',
+      id: 'edit',
       icon: 'create',
       title: 'تعديل الملف الشخصي',
       subtitle: 'تحديث معلوماتك',
-      color: '#9B59B6',
+      color: '#34495E',
       onPress: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         navigation.navigate('EditProfile');
       },
     },
     {
-      id: '6',
+      id: 'favorites',
+      icon: 'bookmark',
+      title: 'المفضلات',
+      subtitle: 'المنشورات المحفوظة',
+      color: '#F1C40F',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('Favorites');
+      },
+    },
+    {
+      id: 'likes',
+      icon: 'heart',
+      title: 'الإعجابات',
+      subtitle: 'المنشورات التي أعجبتك',
+      color: '#E94B3C',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('LikedPosts');
+      },
+    },
+    {
+      id: 'comments',
+      icon: 'chatbubble',
+      title: 'التعليقات',
+      subtitle: 'تعليقاتك على المنشورات',
+      color: '#1ABC9C',
+      onPress: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate('MyComments');
+      },
+    },
+    {
+      id: 'settings',
       icon: 'settings',
       title: 'الإعدادات',
       subtitle: 'إعدادات التطبيق',
-      color: '#34495E',
+      color: '#95A5A6',
       onPress: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         navigation.navigate('Settings');
       },
     },
     {
-      id: '7',
-      icon: 'help-circle',
-      title: 'المساعدة والدعم',
-      subtitle: 'تواصل معنا',
-      color: '#F39C12',
-      onPress: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        navigation.navigate('HelpSupport');
-      },
-    },
-    {
-      id: '8',
+      id: 'terms',
       icon: 'document-text',
       title: 'شروط الخدمة',
       subtitle: 'اقرأ شروط الاستخدام',
-      color: '#4A90E2',
+      color: '#3498DB',
       onPress: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         navigation.navigate('TermsOfService');
       },
     },
     {
-      id: '9',
+      id: 'privacy',
       icon: 'shield-checkmark',
       title: 'سياسة الخصوصية',
       subtitle: 'كيف نحمي بياناتك',
-      color: '#50C878',
+      color: '#2ECC71',
+      onPress: () => {
+        navigation.navigate('PrivacyPolicy');
+      },
+    },
+    {
+      id: 'support',
+      icon: 'headset',
+      title: 'الدعم والمساعدة',
+      subtitle: 'تواصل معنا للمساعدة',
+      color: '#E8B86D',
       onPress: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        navigation.navigate('PrivacyPolicy');
+        navigation.navigate('Support');
       },
     },
   ];
@@ -151,45 +157,96 @@ export default function ProfileScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (screen) {
       navigation.navigate(screen as any);
+    } else {
+      Alert.alert(
+        'تسجيل الخروج',
+        'هل أنت متأكد من تسجيل الخروج؟',
+        [
+          { text: 'إلغاء', style: 'cancel' },
+          {
+            text: 'تسجيل الخروج',
+            style: 'destructive',
+            onPress: async () => {
+              await logout();
+            }
+          }
+        ]
+      );
     }
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
       >
         {/* Profile Header */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.profileHeader}>
-          <LinearGradient
-            colors={['#E8B86D', '#D4A574', '#C9956A']}
-            style={styles.avatar}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name="person" size={48} color="#FFF" />
-          </LinearGradient>
-          <Text style={[styles.username, { color: COLORS.text }]}>مستخدم جديد</Text>
-          <Text style={[styles.bio, { color: COLORS.textSecondary }]}>
-            مرحباً بك في منصة أثر
-          </Text>
+          {user?.profile_image ? (
+            <ExpoImage
+              source={{ uri: api.getFileUrl(user.profile_image) ?? undefined }}
+              style={styles.avatar}
+              contentFit="cover"
+            />
+          ) : (
+            <LinearGradient
+              colors={['#E8B86D', '#D4A574', '#C9956A']}
+              style={styles.avatar}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name="person" size={48} color="#FFF" />
+            </LinearGradient>
+          )}
+          <Text style={[styles.username, { color: COLORS.text }]}>{user?.name || 'مستخدم'}</Text>
+          {user?.bio && (
+            <Text style={[styles.bio, { color: COLORS.textSecondary }]}>
+              {user.bio}
+            </Text>
+          )}
         </Animated.View>
 
-        {/* Stats */}
-        <Animated.View entering={FadeInUp.delay(200).springify()} style={styles.statsContainer}>
-          <View style={[styles.statsCard, { backgroundColor: COLORS.cardBg }]}>
-            {stats.map((stat, index) => (
-              <View key={index} style={styles.statItem}>
-                <Ionicons name={stat.icon as any} size={24} color={COLORS.primary} />
-                <Text style={[styles.statValue, { color: COLORS.text }]}>{stat.value}</Text>
-                <Text style={[styles.statLabel, { color: COLORS.textSecondary }]}>
-                  {stat.label}
-                </Text>
-              </View>
-            ))}
-          </View>
+        {/* Stats Card */}
+        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.statsCard}>
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('MyPosts');
+            }}
+          >
+            <Text style={[styles.statValue, { color: COLORS.text }]}>{user?.posts_count || 0}</Text>
+            <Text style={[styles.statLabel, { color: COLORS.textSecondary }]}>منشورات</Text>
+          </TouchableOpacity>
+
+          <View style={[styles.statDivider, { backgroundColor: COLORS.border }]} />
+
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('UsersList', { type: 'followers', userId: user?.id?.toString() || '' });
+            }}
+          >
+            <Text style={[styles.statValue, { color: COLORS.text }]}>{user?.followers_count || 0}</Text>
+            <Text style={[styles.statLabel, { color: COLORS.textSecondary }]}>متابعون</Text>
+          </TouchableOpacity>
+
+          <View style={[styles.statDivider, { backgroundColor: COLORS.border }]} />
+
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('UsersList', { type: 'following', userId: user?.id?.toString() || '' });
+            }}
+          >
+            <Text style={[styles.statValue, { color: COLORS.text }]}>{user?.following_count || 0}</Text>
+            <Text style={[styles.statLabel, { color: COLORS.textSecondary }]}>متابَعون</Text>
+          </TouchableOpacity>
         </Animated.View>
+
 
         {/* Menu Items */}
         <View style={styles.menuContainer}>
@@ -237,15 +294,13 @@ export default function ProfileScreen() {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           navigation.navigate('Notifications');
         }}
-        style={[styles.stickyNotificationButton, { 
+        style={[styles.stickyNotificationButton, {
           backgroundColor: COLORS.accent,
         }]}
       >
         <Ionicons name="notifications" size={28} color="#FFF" />
         {/* Notification Badge */}
-        <View style={styles.notificationBadge}>
-          <Text style={styles.notificationBadgeText}>3</Text>
-        </View>
+        <View style={styles.notificationBadge} />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -290,40 +345,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Tajawal_400Regular',
     textAlign: 'center',
-  },
-  statsContainer: {
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  statsCard: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-around',
-    padding: 20,
-    borderRadius: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  statItem: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    fontFamily: 'Cairo_700Bold',
-  },
-  statLabel: {
-    fontSize: 14,
-    fontFamily: 'Tajawal_400Regular',
   },
   menuContainer: {
     paddingHorizontal: 24,
@@ -406,21 +427,39 @@ const styles = StyleSheet.create({
   },
   notificationBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 14,
+    right: 14,
     backgroundColor: '#E94B3C',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFF',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
-  notificationBadgeText: {
-    color: '#FFF',
-    fontSize: 11,
+  statsCard: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 24,
+    borderRadius: 20,
+    marginHorizontal: 24,
+    marginBottom: 24,
+    backgroundColor: 'rgba(232, 184, 109, 0.1)',
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+  statValue: {
+    fontSize: 24,
     fontWeight: 'bold',
     fontFamily: 'Cairo_700Bold',
+  },
+  statLabel: {
+    fontSize: 14,
+    fontFamily: 'Tajawal_500Medium',
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
   },
 });

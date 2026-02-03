@@ -41,7 +41,7 @@ interface Post {
 export default function PostsListScreen({ route, navigation }: Props) {
   const { boxId, category } = route.params;
   const colorScheme = useColorScheme();
-  
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -87,7 +87,7 @@ export default function PostsListScreen({ route, navigation }: Props) {
       }
 
       const response = await api.getPosts(params);
-      
+
       if (refresh || pageNum === 1) {
         setPosts(response.data);
       } else {
@@ -128,10 +128,10 @@ export default function PostsListScreen({ route, navigation }: Props) {
         prev.map(post =>
           post.id === postId
             ? {
-                ...post,
-                is_liked: !post.is_liked,
-                likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1,
-              }
+              ...post,
+              is_liked: !post.is_liked,
+              likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1,
+            }
             : post
         )
       );

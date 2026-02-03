@@ -14,33 +14,49 @@
 
       <!-- Login Card -->
       <div class="card">
-        <h2 class="text-2xl font-bold text-primary-900 mb-6 text-center">تسجيل الدخول</h2>
+        <h2 class="text-2xl font-bold text-primary-900 mb-6 text-center">
+          {{ step === 'phone' ? 'تسجيل الدخول' : 'التحقق من الرمز' }}
+        </h2>
 
-        <form @submit.prevent="handleLogin" class="space-y-4">
+        <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Phone Input -->
-          <div>
+          <div v-if="step === 'phone'">
             <label class="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف</label>
             <input
               v-model="phone"
               type="tel"
               placeholder="07701234567"
-              class="input-field"
+              class="input-field text-left"
+              dir="ltr"
               required
               :disabled="isLoading"
             />
           </div>
 
-          <!-- Password Input -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">كلمة المرور</label>
+          <!-- OTP Input -->
+          <div v-else>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              رمز التحقق (المرسل إلى {{ phone }})
+            </label>
             <input
-              v-model="password"
-              type="password"
-              placeholder="••••••••"
-              class="input-field"
+              v-model="otpCode"
+              type="text"
+              placeholder="123456"
+              class="input-field text-center tracking-widest text-lg"
+              maxlength="6"
               required
               :disabled="isLoading"
             />
+            <div class="mt-2 text-center">
+              <button 
+                type="button" 
+                @click="resetStep" 
+                class="text-sm text-primary-600 hover:text-primary-800"
+                :disabled="isLoading"
+              >
+                تغيير رقم الهاتف
+              </button>
+            </div>
           </div>
 
           <!-- Error Message -->
@@ -54,7 +70,9 @@
             class="btn-primary w-full"
             :disabled="isLoading"
           >
-            <span v-if="!isLoading">تسجيل الدخول</span>
+            <span v-if="!isLoading">
+              {{ step === 'phone' ? 'إرسال الرمز' : 'تحقق ودخول' }}
+            </span>
             <span v-else class="flex items-center justify-center">
               <svg class="animate-spin h-5 w-5 ml-3" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
@@ -82,27 +100,48 @@ import { useAuthStore } from '@/stores/auth'
 const router = useRouter()
 const authStore = useAuthStore()
 
+const step = ref<'phone' | 'otp'>('phone')
 const phone = ref('')
-const password = ref('')
+const otpCode = ref('') // Pre-filled value for convenience if needed, currently empty
+const orderId = ref('')
 const errorMessage = ref('')
 const isLoading = ref(false)
 
-const handleLogin = async () => {
+const handleSubmit = async () => {
   errorMessage.value = ''
   isLoading.value = true
 
   try {
-    const result = await authStore.login(phone.value, password.value)
-
-    if (result.success) {
-      router.push('/')
+    if (step.value === 'phone') {
+      // Step 1: Send OTP
+      const result = await authStore.sendLoginOtp(phone.value)
+      
+      if (result.success) {
+        orderId.value = result.orderId
+        step.value = 'otp'
+      } else {
+        errorMessage.value = result.message || 'فشل إرسال رمز التحقق'
+      }
     } else {
-      errorMessage.value = result.message || 'فشل تسجيل الدخول'
+      // Step 2: Verify OTP
+      const result = await authStore.loginWithOtp(phone.value, otpCode.value, orderId.value)
+
+      if (result.success) {
+        router.push('/')
+      } else {
+        errorMessage.value = result.message || 'رمز التحقق غير صحيح'
+      }
     }
   } catch (error: any) {
     errorMessage.value = error.message || 'حدث خطأ غير متوقع'
   } finally {
     isLoading.value = false
   }
+}
+
+const resetStep = () => {
+  step.value = 'phone'
+  otpCode.value = ''
+  errorMessage.value = ''
 }
 </script>

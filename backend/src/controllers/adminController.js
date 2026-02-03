@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const { pool: db } = require('../config/database');
 
 // Get Dashboard Stats
 exports.getStats = async (req, res) => {
@@ -84,18 +84,23 @@ exports.getUsers = async (req, res) => {
         u.is_verified, u.is_banned, u.role, u.created_at,
         COUNT(DISTINCT p.id) as posts_count,
         COUNT(DISTINCT f1.follower_id) as followers_count,
-        COUNT(DISTINCT f2.following_id) as following_count
+        COUNT(DISTINCT f2.followed_id) as following_count
       FROM users u
       LEFT JOIN posts p ON u.id = p.user_id
-      LEFT JOIN follows f1 ON u.id = f1.following_id
+      LEFT JOIN follows f1 ON u.id = f1.followed_id
       LEFT JOIN follows f2 ON u.id = f2.follower_id
     `;
 
     const params = [];
 
     if (search) {
-      query += ' WHERE u.name LIKE ? OR u.phone LIKE ? OR u.email LIKE ?';
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      if (!isNaN(search)) {
+        query += ' WHERE u.id = ? OR u.name LIKE ? OR u.phone LIKE ? OR u.email LIKE ?';
+        params.push(search, `%${search}%`, `%${search}%`, `%${search}%`);
+      } else {
+        query += ' WHERE u.name LIKE ? OR u.phone LIKE ? OR u.email LIKE ?';
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      }
     }
 
     query += ' GROUP BY u.id ORDER BY u.created_at DESC LIMIT ? OFFSET ?';
@@ -108,8 +113,13 @@ exports.getUsers = async (req, res) => {
     const countParams = [];
 
     if (search) {
-      countQuery += ' WHERE name LIKE ? OR phone LIKE ? OR email LIKE ?';
-      countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      if (!isNaN(search)) {
+        countQuery += ' WHERE id = ? OR name LIKE ? OR phone LIKE ? OR email LIKE ?';
+        countParams.push(search, `%${search}%`, `%${search}%`, `%${search}%`);
+      } else {
+        countQuery += ' WHERE name LIKE ? OR phone LIKE ? OR email LIKE ?';
+        countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      }
     }
 
     const [countResult] = await db.query(countQuery, countParams);
@@ -147,12 +157,12 @@ exports.getUserDetails = async (req, res) => {
         COUNT(DISTINCT c.id) as comments_count,
         COUNT(DISTINCT l.id) as likes_count,
         COUNT(DISTINCT f1.follower_id) as followers_count,
-        COUNT(DISTINCT f2.following_id) as following_count
+        COUNT(DISTINCT f2.followed_id) as following_count
       FROM users u
       LEFT JOIN posts p ON u.id = p.user_id
       LEFT JOIN comments c ON u.id = c.user_id
       LEFT JOIN likes l ON u.id = l.user_id
-      LEFT JOIN follows f1 ON u.id = f1.following_id
+      LEFT JOIN follows f1 ON u.id = f1.followed_id
       LEFT JOIN follows f2 ON u.id = f2.follower_id
       WHERE u.id = ?
       GROUP BY u.id`,
@@ -283,8 +293,13 @@ exports.getPosts = async (req, res) => {
     }
 
     if (search) {
-      query += ' AND (p.title LIKE ? OR p.content LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
+      if (!isNaN(search)) {
+        query += ' AND (p.id = ? OR p.title LIKE ? OR p.content LIKE ?)';
+        params.push(search, `%${search}%`, `%${search}%`);
+      } else {
+        query += ' AND (p.title LIKE ? OR p.content LIKE ?)';
+        params.push(`%${search}%`, `%${search}%`);
+      }
     }
 
     query += ' GROUP BY p.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
@@ -307,8 +322,13 @@ exports.getPosts = async (req, res) => {
     }
 
     if (search) {
-      countQuery += ' AND (title LIKE ? OR content LIKE ?)';
-      countParams.push(`%${search}%`, `%${search}%`);
+      if (!isNaN(search)) {
+        countQuery += ' AND (id = ? OR title LIKE ? OR content LIKE ?)';
+        countParams.push(search, `%${search}%`, `%${search}%`);
+      } else {
+        countQuery += ' AND (title LIKE ? OR content LIKE ?)';
+        countParams.push(`%${search}%`, `%${search}%`);
+      }
     }
 
     const [countResult] = await db.query(countQuery, countParams);
@@ -380,8 +400,13 @@ exports.getComments = async (req, res) => {
     const params = [];
 
     if (search) {
-      query += ' AND c.content LIKE ?';
-      params.push(`%${search}%`);
+      if (!isNaN(search)) {
+        query += ' AND (c.id = ? OR c.content LIKE ?)';
+        params.push(search, `%${search}%`);
+      } else {
+        query += ' AND c.content LIKE ?';
+        params.push(`%${search}%`);
+      }
     }
 
     query += ' ORDER BY c.created_at DESC LIMIT ? OFFSET ?';
@@ -394,8 +419,13 @@ exports.getComments = async (req, res) => {
     const countParams = [];
 
     if (search) {
-      countQuery += ' AND content LIKE ?';
-      countParams.push(`%${search}%`);
+      if (!isNaN(search)) {
+        countQuery += ' AND (id = ? OR content LIKE ?)';
+        countParams.push(search, `%${search}%`);
+      } else {
+        countQuery += ' AND content LIKE ?';
+        countParams.push(`%${search}%`);
+      }
     }
 
     const [countResult] = await db.query(countQuery, countParams);
@@ -467,21 +497,26 @@ exports.sendNotification = async (req, res) => {
       });
     }
 
+    const adminId = req.user.id;
+
     // Create notifications in database
     const notifications = targetUsers.map((userId) => [
       userId,
+      adminId,
       'admin',
       title,
       body,
+      body, // Using body for content as well
       JSON.stringify(data || {}),
     ]);
 
     if (notifications.length > 0) {
       await db.query(
-        'INSERT INTO notifications (user_id, type, title, body, data) VALUES ?',
+        'INSERT INTO notifications (user_id, sender_id, type, title, body, content, data) VALUES ?',
         [notifications]
       );
     }
+
 
     // TODO: Send push notifications using Expo Push Notifications
     // This requires implementing the push notification service

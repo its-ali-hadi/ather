@@ -11,15 +11,18 @@ import {
   useColorScheme,
   View,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { Alert } from 'react-native';
 
-import SeedData from '../constants/seed-data.json';
+import api from '../utils/api';
 
 type SearchTab = 'posts' | 'users' | 'boxes';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -29,7 +32,15 @@ export default function AdvancedSearchScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState<SearchTab>('posts');
+  const { isGuest, user: currentUser } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const [results, setResults] = useState<{
+    posts: any[];
+    users: any[];
+    boxes: any[];
+  }>({ posts: [], users: [], boxes: [] });
+  const [loading, setLoading] = useState(false);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -44,23 +55,45 @@ export default function AdvancedSearchScreen() {
 
   const categories = ['تقنية', 'فن', 'أدب', 'رياضة', 'سفر', 'أعمال'];
 
-  const filteredPosts = SeedData.posts.filter((post) => {
-    const matchesQuery = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        post.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !selectedCategory || post.category === selectedCategory;
-    return matchesQuery && matchesCategory;
-  });
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length < 2) {
+      setResults({ posts: [], users: [], boxes: [] });
+      return;
+    }
 
-  const filteredBoxes = SeedData.cards.filter((box) =>
-    box.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    box.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    setLoading(true);
+    try {
+      const [postsRes, usersRes] = await Promise.all([
+        api.searchPosts(query),
+        api.searchUsers(query)
+      ]);
 
-  const filteredUsers = SeedData.users.filter((user) =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (user.bio && user.bio.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+      const boxesRes = await api.getBoxes();
+      const filteredBoxes = boxesRes.success && Array.isArray(boxesRes.data)
+        ? boxesRes.data.filter((b: any) =>
+          (b.name && b.name.toLowerCase().includes(query.toLowerCase())) ||
+          (b.description && b.description.toLowerCase().includes(query.toLowerCase()))
+        )
+        : [];
+
+      setResults({
+        posts: postsRes.success && Array.isArray(postsRes.data) ? postsRes.data : [],
+        users: usersRes.success && Array.isArray(usersRes.data) ? usersRes.data : [],
+        boxes: filteredBoxes
+      });
+    } catch (error) {
+      console.error('Search error:', error);
+      setResults({ posts: [], users: [], boxes: [] });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getFilteredPosts = () => {
+    if (!selectedCategory) return results.posts;
+    return results.posts.filter(p => p.category === selectedCategory);
+  };
 
   const handleTabPress = (tab: SearchTab) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -72,9 +105,44 @@ export default function AdvancedSearchScreen() {
     setSelectedCategory(selectedCategory === category ? null : category);
   };
 
-  const handleUserPress = (userId: string) => {
+  const handleUserPress = (userId: any) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('UserProfile', { userId });
+    navigation.navigate('UserProfile', { userId: userId.toString() });
+  };
+
+  const handleFollow = async (userId: string, isCurrentlyFollowing: boolean) => {
+    if (isGuest) {
+      Alert.alert('تنبيه', 'يجب عليك تسجيل الدخول للمتابعة');
+      return;
+    }
+
+    if (currentUser?.id === parseInt(userId)) {
+      Alert.alert('تنبيه', 'لا يمكنك متابعة نفسك');
+      return;
+    }
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      if (isCurrentlyFollowing) {
+        await api.unfollowUser(userId);
+      } else {
+        await api.followUser(userId);
+      }
+
+      // Update local state for search results
+      setResults(prev => ({
+        ...prev,
+        users: prev.users.map(u =>
+          u.id.toString() === userId.toString()
+            ? { ...u, is_following: !isCurrentlyFollowing, followers_count: isCurrentlyFollowing ? (u.followers_count || 0) - 1 : (u.followers_count || 0) + 1 }
+            : u
+        )
+      }));
+    } catch (error) {
+      console.error('Follow error:', error);
+      Alert.alert('خطأ', 'فشل تنفيذ الطلب');
+    }
   };
 
   const handlePostPress = (postId: string) => {
@@ -107,11 +175,11 @@ export default function AdvancedSearchScreen() {
             placeholder="ابحث عن أي شيء..."
             placeholderTextColor={COLORS.textSecondary}
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={handleSearch}
             autoFocus
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <TouchableOpacity onPress={() => handleSearch('')}>
               <Ionicons name="close-circle" size={20} color={COLORS.textSecondary} />
             </TouchableOpacity>
           )}
@@ -225,200 +293,225 @@ export default function AdvancedSearchScreen() {
         contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
       >
         <View style={styles.resultsContainer}>
-          {/* Posts Results */}
-          {selectedTab === 'posts' && (
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+          ) : (
             <>
-              {filteredPosts.length > 0 ? (
-                filteredPosts.map((post, index) => (
-                  <Animated.View
-                    key={post.id}
-                    entering={FadeInDown.delay(100 + index * 50).springify()}
-                  >
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => handlePostPress(post.id)}
-                      style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}
-                    >
-                      <TouchableOpacity 
-                        style={styles.postHeader}
-                        onPress={() => handleUserPress(post.userId)}
-                        activeOpacity={0.7}
+              {/* Posts Results */}
+              {selectedTab === 'posts' && (
+                <>
+                  {getFilteredPosts().length > 0 ? (
+                    getFilteredPosts().map((post, index) => (
+                      <Animated.View
+                        key={post.id}
+                        entering={FadeInDown.delay(100 + index * 50).springify()}
                       >
-                        {post.userAvatar ? (
-                          <ExpoImage
-                            source={{ uri: post.userAvatar }}
-                            style={styles.postAvatar}
-                            contentFit="cover"
-                          />
-                        ) : (
-                          <LinearGradient colors={['#E8B86D', '#D4A574']} style={styles.postAvatar}>
-                            <Ionicons name="person" size={16} color="#FFF" />
-                          </LinearGradient>
-                        )}
-                        <View style={styles.postInfo}>
-                          <Text style={[styles.postUserName, { color: COLORS.text }]}>
-                            {post.userName}
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => handlePostPress(post.id)}
+                          style={[styles.postCard, { backgroundColor: COLORS.cardBg }]}
+                        >
+                          <TouchableOpacity
+                            style={styles.postHeader}
+                            onPress={() => handleUserPress(post.user_id)}
+                            activeOpacity={0.7}
+                          >
+                            {post.user_image ? (
+                              <ExpoImage
+                                source={{ uri: api.getFileUrl(post.user_image) ?? undefined }}
+                                style={styles.postAvatar}
+                                contentFit="cover"
+                              />
+                            ) : (
+                              <LinearGradient colors={['#E8B86D', '#D4A574']} style={styles.postAvatar}>
+                                <Ionicons name="person" size={16} color="#FFF" />
+                              </LinearGradient>
+                            )}
+                            <View style={styles.postInfo}>
+                              <Text style={[styles.postUserName, { color: COLORS.text }]}>
+                                {post.user_name}
+                              </Text>
+                              <View style={[styles.postCategoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
+                                <Text style={[styles.postCategoryText, { color: COLORS.accent }]}>
+                                  {post.category}
+                                </Text>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                          <Text style={[styles.postTitle, { color: COLORS.text }]} numberOfLines={2}>
+                            {post.title}
                           </Text>
-                          <View style={[styles.postCategoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
-                            <Text style={[styles.postCategoryText, { color: COLORS.accent }]}>
-                              {post.category}
-                            </Text>
+                          <Text style={[styles.postContent, { color: COLORS.textSecondary }]} numberOfLines={2}>
+                            {post.content}
+                          </Text>
+                          {post.media_url && (
+                            <ExpoImage
+                              source={{ uri: api.getFileUrl(post.media_url) ?? undefined }}
+                              style={styles.postMedia}
+                              contentFit="cover"
+                            />
+                          )}
+                          <View style={styles.postStats}>
+                            <View style={styles.postStat}>
+                              <Ionicons name="heart" size={16} color={COLORS.textSecondary} />
+                              <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
+                                {post.likes_count || 0}
+                              </Text>
+                            </View>
+                            <View style={styles.postStat}>
+                              <Ionicons name="chatbubble" size={16} color={COLORS.textSecondary} />
+                              <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
+                                {post.comments_count || 0}
+                              </Text>
+                            </View>
                           </View>
-                        </View>
-                      </TouchableOpacity>
-                      <Text style={[styles.postTitle, { color: COLORS.text }]} numberOfLines={2}>
-                        {post.title}
+                        </TouchableOpacity>
+                      </Animated.View>
+                    ))
+                  ) : (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons name="search-outline" size={64} color={COLORS.textSecondary} />
+                      <Text style={[styles.emptyText, { color: COLORS.text }]}>لا توجد نتائج</Text>
+                      <Text style={[styles.emptySubtext, { color: COLORS.textSecondary }]}>
+                        جرب البحث بكلمات مختلفة
                       </Text>
-                      <Text style={[styles.postContent, { color: COLORS.textSecondary }]} numberOfLines={2}>
-                        {post.content}
-                      </Text>
-                      <View style={styles.postStats}>
-                        <View style={styles.postStat}>
-                          <Ionicons name="heart" size={16} color={COLORS.textSecondary} />
-                          <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
-                            {post.likes}
-                          </Text>
-                        </View>
-                        <View style={styles.postStat}>
-                          <Ionicons name="chatbubble" size={16} color={COLORS.textSecondary} />
-                          <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
-                            {post.comments}
-                          </Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  </Animated.View>
-                ))
-              ) : (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="search-outline" size={64} color={COLORS.textSecondary} />
-                  <Text style={[styles.emptyText, { color: COLORS.text }]}>لا توجد نتائج</Text>
-                  <Text style={[styles.emptySubtext, { color: COLORS.textSecondary }]}>
-                    جرب البحث بكلمات مختلفة
-                  </Text>
-                </View>
+                    </View>
+                  )}
+                </>
               )}
-            </>
-          )}
 
-          {/* Users Results */}
-          {selectedTab === 'users' && (
-            <>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user, index) => (
-                  <Animated.View
-                    key={user.id}
-                    entering={FadeInDown.delay(100 + index * 50).springify()}
-                  >
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => handleUserPress(user.id)}
-                      style={[styles.userCard, { backgroundColor: COLORS.cardBg }]}
-                    >
-                      <View style={styles.userInfo}>
-                        {user.avatar ? (
-                          <ExpoImage
-                            source={{ uri: user.avatar }}
-                            style={styles.userAvatar}
-                            contentFit="cover"
-                          />
-                        ) : (
-                          <LinearGradient colors={['#E8B86D', '#D4A574']} style={styles.userAvatar}>
-                            <Ionicons name="person" size={28} color="#FFF" />
-                          </LinearGradient>
-                        )}
-                        <View style={styles.userDetails}>
-                          <Text style={[styles.userName, { color: COLORS.text }]}>{user.name}</Text>
-                          <Text style={[styles.userUsername, { color: COLORS.textSecondary }]}>
-                            {user.username}
-                          </Text>
-                          <Text style={[styles.userBio, { color: COLORS.textSecondary }]} numberOfLines={1}>
-                            {user.bio}
-                          </Text>
-                          <View style={styles.userStats}>
-                            <Ionicons name="people" size={14} color={COLORS.textSecondary} />
-                            <Text style={[styles.userStatsText, { color: COLORS.textSecondary }]}>
-                              {user.followers} متابع
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-                      <TouchableOpacity
-                        style={[styles.followButton, { backgroundColor: COLORS.accent }]}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        }}
+              {/* Users Results */}
+              {selectedTab === 'users' && (
+                <>
+                  {results.users.length > 0 ? (
+                    results.users.map((user, index) => (
+                      <Animated.View
+                        key={user.id}
+                        entering={FadeInDown.delay(100 + index * 50).springify()}
                       >
-                        <Text style={styles.followButtonText}>متابعة</Text>
-                      </TouchableOpacity>
-                    </TouchableOpacity>
-                  </Animated.View>
-                ))
-              ) : (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="people-outline" size={64} color={COLORS.textSecondary} />
-                  <Text style={[styles.emptyText, { color: COLORS.text }]}>لا توجد نتائج</Text>
-                  <Text style={[styles.emptySubtext, { color: COLORS.textSecondary }]}>
-                    جرب البحث بكلمات مختلفة
-                  </Text>
-                </View>
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => handleUserPress(user.id)}
+                          style={[styles.userCard, { backgroundColor: COLORS.cardBg }]}
+                        >
+                          <View style={styles.userInfo}>
+                            {user.profile_image ? (
+                              <ExpoImage
+                                source={{ uri: api.getFileUrl(user.profile_image) ?? undefined }}
+                                style={styles.userAvatar}
+                                contentFit="cover"
+                              />
+                            ) : (
+                              <LinearGradient colors={['#E8B86D', '#D4A574']} style={styles.userAvatar}>
+                                <Ionicons name="person" size={28} color="#FFF" />
+                              </LinearGradient>
+                            )}
+                            <View style={styles.userDetails}>
+                              <Text style={[styles.userName, { color: COLORS.text }]}>{user.name}</Text>
+                              <Text style={[styles.userUsername, { color: COLORS.textSecondary }]}>
+                                @{user.phone ? user.phone.slice(-4) : 'user'}
+                              </Text>
+                              <Text style={[styles.userBio, { color: COLORS.textSecondary }]} numberOfLines={1}>
+                                {user.bio || 'لا توجد نبذة شخصية'}
+                              </Text>
+                              <View style={styles.userStats}>
+                                <Ionicons name="people" size={14} color={COLORS.textSecondary} />
+                                <Text style={[styles.userStatsText, { color: COLORS.textSecondary }]}>
+                                  {user.followers_count || 0} متابع
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                          <TouchableOpacity
+                            style={[
+                              styles.followButton,
+                              { backgroundColor: user.is_following ? COLORS.cardBg : COLORS.accent, borderWidth: user.is_following ? 1 : 0, borderColor: COLORS.border }
+                            ]}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              handleFollow(user.id.toString(), !!user.is_following);
+                            }}
+                          >
+                            <Text style={[styles.followButtonText, { color: user.is_following ? COLORS.text : '#FFF' }]}>
+                              {user.is_following ? 'يتابع' : 'متابعة'}
+                            </Text>
+                          </TouchableOpacity>
+                        </TouchableOpacity>
+                      </Animated.View>
+                    ))
+                  ) : (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons name="people-outline" size={64} color={COLORS.textSecondary} />
+                      <Text style={[styles.emptyText, { color: COLORS.text }]}>لا توجد نتائج</Text>
+                      <Text style={[styles.emptySubtext, { color: COLORS.textSecondary }]}>
+                        جرب البحث بكلمات مختلفة
+                      </Text>
+                    </View>
+                  )}
+                </>
               )}
-            </>
-          )}
 
-          {/* Boxes Results */}
-          {selectedTab === 'boxes' && (
-            <>
-              {filteredBoxes.length > 0 ? (
-                filteredBoxes.map((box, index) => (
-                  <Animated.View
-                    key={box.id}
-                    entering={FadeInDown.delay(100 + index * 50).springify()}
-                  >
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => handleBoxPress(box.id)}
-                      style={[styles.boxCard, { backgroundColor: COLORS.cardBg }]}
-                    >
-                      <ExpoImage
-                        source={{ uri: box.image }}
-                        style={styles.boxImage}
-                        contentFit="cover"
-                      />
-                      <View style={styles.boxContent}>
-                        <View style={styles.boxHeader}>
-                          <Ionicons name={box.icon as any} size={24} color={COLORS.accent} />
-                          <View style={[styles.boxCategoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
-                            <Text style={[styles.boxCategoryText, { color: COLORS.accent }]}>
-                              {box.category}
+              {/* Boxes Results */}
+              {selectedTab === 'boxes' && (
+                <>
+                  {results.boxes.length > 0 ? (
+                    results.boxes.map((box, index) => (
+                      <Animated.View
+                        key={box.id}
+                        entering={FadeInDown.delay(100 + index * 50).springify()}
+                      >
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => handleBoxPress(box.id)}
+                          style={[styles.boxCard, { backgroundColor: COLORS.cardBg }]}
+                        >
+                          {box.image_url ? (
+                            <ExpoImage
+                              source={{ uri: api.getFileUrl(box.image_url) ?? undefined }}
+                              style={styles.boxImage}
+                              contentFit="cover"
+                            />
+                          ) : (
+                            <LinearGradient colors={[COLORS.primary, COLORS.accent]} style={styles.boxImage} />
+                          )}
+                          <View style={styles.boxContent}>
+                            <View style={styles.boxHeader}>
+                              <Ionicons name={(box.icon || 'cube') as any} size={24} color={COLORS.accent} />
+                              <View style={[styles.boxCategoryBadge, { backgroundColor: COLORS.accent + '20' }]}>
+                                <Text style={[styles.boxCategoryText, { color: COLORS.accent }]}>
+                                  {box.name}
+                                </Text>
+                              </View>
+                            </View>
+                            <Text style={[styles.boxTitle, { color: COLORS.text }]} numberOfLines={2}>
+                              {box.name}
+                            </Text>
+                            <Text style={[styles.boxDescription, { color: COLORS.textSecondary }]} numberOfLines={2}>
+                              {box.short_description || box.description}
                             </Text>
                           </View>
-                        </View>
-                        <Text style={[styles.boxTitle, { color: COLORS.text }]} numberOfLines={2}>
-                          {box.title}
-                        </Text>
-                        <Text style={[styles.boxDescription, { color: COLORS.textSecondary }]} numberOfLines={2}>
-                          {box.description}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  </Animated.View>
-                ))
-              ) : (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="cube-outline" size={64} color={COLORS.textSecondary} />
-                  <Text style={[styles.emptyText, { color: COLORS.text }]}>لا توجد نتائج</Text>
-                  <Text style={[styles.emptySubtext, { color: COLORS.textSecondary }]}>
-                    جرب البحث بكلمات مختلفة
-                  </Text>
-                </View>
+                        </TouchableOpacity>
+                      </Animated.View>
+                    ))
+                  ) : (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons name="cube-outline" size={64} color={COLORS.textSecondary} />
+                      <Text style={[styles.emptyText, { color: COLORS.text }]}>لا توجد نتائج</Text>
+                      <Text style={[styles.emptySubtext, { color: COLORS.textSecondary }]}>
+                        جرب البحث بكلمات مختلفة
+                      </Text>
+                    </View>
+                  )}
+                </>
               )}
             </>
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          )
+          }
+        </View >
+      </ScrollView >
+    </SafeAreaView >
   );
 }
 
@@ -436,6 +529,11 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+  },
+  loadingContainer: {
+    paddingVertical: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 20,
@@ -576,6 +674,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal_400Regular',
     textAlign: 'right',
     lineHeight: 22,
+  },
+  postMedia: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    marginTop: 8,
   },
   postStats: {
     flexDirection: 'row-reverse',

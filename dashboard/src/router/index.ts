@@ -11,6 +11,8 @@ import SettingsView from '@/views/SettingsView.vue'
 import BoxesView from '@/views/BoxesView.vue'
 import CategoriesView from '@/views/CategoriesView.vue'
 import MessagesView from '@/views/MessagesView.vue'
+import BannersView from '@/views/BannersView.vue'
+import ReportsView from '@/views/ReportsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -70,6 +72,16 @@ const router = createRouter({
           path: 'settings',
           name: 'settings',
           component: SettingsView,
+        },
+        {
+          path: 'banners',
+          name: 'banners',
+          component: BannersView,
+        },
+        {
+          path: 'reports',
+          name: 'reports',
+          component: ReportsView,
         },
       ],
     },

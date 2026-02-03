@@ -1,11 +1,12 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
 
 const { testConnection } = require('./config/database');
-const { errorHandler } = require('./middleware/errorHandler');
+const errorHandler = require('./middleware/errorHandler');
 const { seedData } = require('./scripts/seedData');
 
 // Import routes
@@ -19,11 +20,15 @@ const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
 const boxRoutes = require('./routes/boxes');
 const contactRoutes = require('./routes/contact');
+const reportRoutes = require('./routes/reports');
+const bannerRoutes = require('./routes/banners');
 
 const app = express();
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:8081',
   credentials: true
@@ -32,22 +37,27 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Static files
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
 // API Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/posts', require('./routes/posts'));
-app.use('/api/comments', require('./routes/comments'));
-app.use('/api/likes', require('./routes/likes'));
-app.use('/api/favorites', require('./routes/favorites'));
-app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/boxes', require('./routes/boxes'));
-app.use('/api/contact', require('./routes/contact'));
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/likes', likeRoutes);
+app.use('/api/favorites', favoriteRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/boxes', boxRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/banners', bannerRoutes);
 
 // 404 handler
 app.use((req, res) => {

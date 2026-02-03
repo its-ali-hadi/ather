@@ -12,7 +12,7 @@ exports.getNotifications = async (req, res, next) => {
       `SELECT n.*, 
               u.name as sender_name, u.profile_image as sender_image
        FROM notifications n
-       LEFT JOIN users u ON n.related_id = u.id AND n.type = 'follow'
+       LEFT JOIN users u ON n.sender_id = u.id
        WHERE n.user_id = ?
        ORDER BY n.created_at DESC
        LIMIT ? OFFSET ?`,

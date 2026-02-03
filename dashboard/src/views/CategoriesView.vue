@@ -218,7 +218,7 @@ onMounted(async () => {
 const loadCategories = async () => {
   try {
     isLoading.value = true
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('admin_token')
     const response = await axios.get(`${API_URL}/boxes/admin/categories/all`, {
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -233,7 +233,7 @@ const loadCategories = async () => {
 
 const loadBoxes = async () => {
   try {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('admin_token')
     const response = await axios.get(`${API_URL}/boxes/admin/all`, {
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -251,7 +251,7 @@ const editCategory = (category: any) => {
 
 const saveCategory = async () => {
   try {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('admin_token')
     
     if (showEditModal.value && editingCategory.value) {
       await axios.put(
@@ -281,7 +281,7 @@ const deleteCategory = async (id: number) => {
   if (!confirm('هل أنت متأكد من حذف هذه الفئة؟')) return
   
   try {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('admin_token')
     await axios.delete(`${API_URL}/boxes/admin/categories/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     })

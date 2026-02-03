@@ -37,6 +37,7 @@ import ArchiveScreen from './screens/ArchiveScreen';
 import MyPostsScreen from './screens/MyPostsScreen';
 import PrivateScreen from './screens/PrivateScreen';
 import HelpSupportScreen from './screens/HelpSupportScreen';
+import SupportScreen from './screens/SupportScreen';
 import TermsOfServiceScreen from './screens/TermsOfServiceScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 import AdvancedSearchScreen from './screens/AdvancedSearchScreen';
@@ -46,8 +47,11 @@ import CreateTextPostScreen from './screens/CreateTextPostScreen';
 import CreateImagePostScreen from './screens/CreateImagePostScreen';
 import CreateVideoPostScreen from './screens/CreateVideoPostScreen';
 import CreateLinkPostScreen from './screens/CreateLinkPostScreen';
-import AdminDashboardScreen from './screens/AdminDashboardScreen';
 import GuestProfileScreen from './screens/GuestProfileScreen';
+import ReportScreen from './screens/ReportScreen';
+import UsersListScreen from './screens/UsersListScreen';
+import LikedPostsScreen from './screens/LikedPostsScreen';
+import MyCommentsScreen from './screens/MyCommentsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -64,6 +68,7 @@ export type RootStackParamList = {
   MyPosts: undefined;
   Private: undefined;
   HelpSupport: undefined;
+  Support: undefined;
   TermsOfService: undefined;
   PrivacyPolicy: undefined;
   AdvancedSearch: undefined;
@@ -73,6 +78,11 @@ export type RootStackParamList = {
   CreateImagePost: undefined;
   CreateVideoPost: undefined;
   CreateLinkPost: undefined;
+  Report: { type: 'post' | 'user' | 'comment'; id: number; title?: string };
+  Notifications: undefined;
+  UsersList: { type: 'followers' | 'following'; userId: string };
+  LikedPosts: undefined;
+  MyComments: undefined;
 };
 
 function TabNavigator() {
@@ -158,18 +168,6 @@ function TabNavigator() {
           ),
         }}
       />
-      {user?.role === 'admin' && (
-        <Tab.Screen
-          name="AdminDashboard"
-          component={AdminDashboardScreen}
-          options={{
-            tabBarLabel: 'لوحة التحكم',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="shield-checkmark" size={size} color={color} />
-            ),
-          }}
-        />
-      )}
     </Tab.Navigator>
   );
 }
@@ -201,6 +199,7 @@ function AppNavigator() {
           <Stack.Screen name="MyPosts" component={MyPostsScreen} />
           <Stack.Screen name="Private" component={PrivateScreen} />
           <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+          <Stack.Screen name="Support" component={SupportScreen} />
           <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
           <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
           <Stack.Screen name="AdvancedSearch" component={AdvancedSearchScreen} />
@@ -210,6 +209,11 @@ function AppNavigator() {
           <Stack.Screen name="CreateImagePost" component={CreateImagePostScreen} />
           <Stack.Screen name="CreateVideoPost" component={CreateVideoPostScreen} />
           <Stack.Screen name="CreateLinkPost" component={CreateLinkPostScreen} />
+          <Stack.Screen name="Report" component={ReportScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
+          <Stack.Screen name="UsersList" component={UsersListScreen} />
+          <Stack.Screen name="LikedPosts" component={LikedPostsScreen} />
+          <Stack.Screen name="MyComments" component={MyCommentsScreen} />
         </>
       )}
     </Stack.Navigator>

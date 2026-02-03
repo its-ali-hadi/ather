@@ -11,19 +11,27 @@ import {
   Platform,
   Alert,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import api from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function EditProfileScreen() {
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
-  const [name, setName] = useState('مستخدم جديد');
-  const [bio, setBio] = useState('مرحباً بك في منصة أثر');
+  const { user, updateUser } = useAuth(); // We can also use useAuth to get initial user, but better fetch fresh
+  const [name, setName] = useState('');
+  const [bio, setBio] = useState('');
   const [profileImage, setProfileImage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [newImageUri, setNewImageUri] = useState<string | null>(null);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -35,34 +43,122 @@ export default function EditProfileScreen() {
     border: colorScheme === 'dark' ? '#3A3430' : '#E8E8E8',
   };
 
-  const handlePickImage = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert('اختيار صورة', 'سيتم إضافة وظيفة اختيار الصورة قريباً');
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await api.getCurrentUser();
+      if (response.success && response.data) {
+        setName(response.data.name || '');
+        setBio(response.data.bio || '');
+        setProfileImage(response.data.profile_image || '');
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      Alert.alert('خطأ', 'فشل تحميل بيانات المستخدم');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSave = () => {
+  const handlePickImage = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert('تنبيه', 'نحتاج صلاحية الوصول للصور لتغيير صورتك الشخصية');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setNewImageUri(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Image Picker Error:', error);
+      Alert.alert('خطأ', 'فشل اختيار الصورة');
+    }
+  };
+
+  const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('خطأ', 'الرجاء إدخال الاسم');
       return;
     }
 
+    setSaving(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert('نجح', 'تم حفظ التغييرات بنجاح!', [
-      { text: 'حسناً', onPress: () => navigation.goBack() }
-    ]);
+
+    try {
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('bio', bio);
+
+      if (newImageUri) {
+        // Append image as file
+        const filename = newImageUri.split('/').pop() || 'profile.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+        // @ts-ignore: FormData expects Blob/File on web, but works with object in RN
+        formData.append('profile_image', {
+          uri: newImageUri,
+          name: filename,
+          type: type,
+        });
+      }
+
+      const response = await api.updateProfile(formData);
+
+      if (response.success) {
+        // Update global auth context so image changes everywhere immediately
+        updateUser(response.data);
+
+        Alert.alert('نجح', 'تم حفظ التغييرات بنجاح!', [
+          { text: 'حسناً', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        Alert.alert('خطأ', response.message || 'فشل تحديث الملف الشخصي');
+      }
+    } catch (error) {
+      console.error('Update Profile Error:', error);
+      Alert.alert('خطأ', 'حدث خطأ أثناء حفظ التغييرات');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const displayImageUri = newImageUri || api.getFileUrl(profileImage);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
+            disabled={saving}
           >
             <Ionicons name="arrow-forward" size={24} color={COLORS.text} />
           </TouchableOpacity>
@@ -73,8 +169,8 @@ export default function EditProfileScreen() {
         {/* Profile Image Section */}
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.imageSection}>
           <View style={styles.avatarContainer}>
-            {profileImage ? (
-              <Image source={{ uri: profileImage }} style={styles.avatar} />
+            {displayImageUri ? (
+              <Image source={{ uri: displayImageUri }} style={styles.avatar} />
             ) : (
               <LinearGradient
                 colors={['#E8B86D', '#D4A574', '#C9956A']}
@@ -114,6 +210,7 @@ export default function EditProfileScreen() {
                 value={name}
                 onChangeText={setName}
                 textAlign="right"
+                editable={!saving}
               />
             </View>
           </View>
@@ -135,6 +232,7 @@ export default function EditProfileScreen() {
                 numberOfLines={4}
                 textAlign="right"
                 textAlignVertical="top"
+                editable={!saving}
               />
             </View>
             <Text style={[styles.charCount, { color: COLORS.textSecondary }]}>
@@ -155,15 +253,22 @@ export default function EditProfileScreen() {
             onPress={handleSave}
             activeOpacity={0.8}
             style={styles.saveButton}
+            disabled={saving}
           >
             <LinearGradient
-              colors={['#E8B86D', '#D4A574']}
+              colors={saving ? ['#ccc', '#bbb'] : ['#E8B86D', '#D4A574']}
               style={styles.saveGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Ionicons name="checkmark-circle" size={24} color="#FFF" />
-              <Text style={styles.saveText}>حفظ التغييرات</Text>
+              {saving ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={24} color="#FFF" />
+                  <Text style={styles.saveText}>حفظ التغييرات</Text>
+                </>
+              )}
             </LinearGradient>
           </TouchableOpacity>
 
@@ -172,6 +277,7 @@ export default function EditProfileScreen() {
             onPress={() => navigation.goBack()}
             activeOpacity={0.8}
             style={[styles.cancelButton, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}
+            disabled={saving}
           >
             <Text style={[styles.cancelText, { color: COLORS.textSecondary }]}>إلغاء</Text>
           </TouchableOpacity>

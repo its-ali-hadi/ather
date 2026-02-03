@@ -12,6 +12,7 @@ import {
   useColorScheme,
   View,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import Animated, {
   FadeInDown,
@@ -20,8 +21,8 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
-
-import SeedData from '../constants/seed-data.json';
+import { useState, useEffect, useCallback } from 'react';
+import api from '../utils/api';
 
 const { width } = Dimensions.get('window');
 const BANNER_HEIGHT = 320;
@@ -32,8 +33,8 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
   const { boxId } = route.params;
   const colorScheme = useColorScheme();
 
-  // Find the box data
-  const box = SeedData.cards.find((card) => card.id === boxId);
+  const [box, setBox] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   // Theme Colors
   const COLORS = {
@@ -46,6 +47,23 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
     textSecondary: colorScheme === 'dark' ? '#D4C4B0' : '#7A6F65',
   };
 
+  const fetchBoxDetails = useCallback(async () => {
+    try {
+      const response = await api.getBox(boxId);
+      if (response.success && response.data) {
+        setBox(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching box details:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [boxId]);
+
+  useEffect(() => {
+    fetchBoxDetails();
+  }, [fetchBoxDetails]);
+
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
@@ -57,8 +75,18 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
 
   const handleCreatePost = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // TODO: Navigate to create post screen
+    navigation.navigate('Create' as any);
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!box) {
     return (
@@ -80,12 +108,31 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
     link: 'link',
   };
 
+  // Helper to parse JSON fields safely
+  const parseJson = (data: any) => {
+    if (typeof data === 'string') {
+      try {
+        return JSON.parse(data);
+      } catch (e) {
+        return [];
+      }
+    }
+    return data || [];
+  };
+
+  const allowedTypes = parseJson(box.allowed_types);
+  const rules = parseJson(box.rules);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} bounces={true}>
         {/* Hero Banner */}
         <View style={styles.bannerContainer}>
-          <ExpoImage source={{ uri: box.image }} style={styles.bannerImage} contentFit="cover" />
+          {box.image_url ? (
+            <ExpoImage source={{ uri: box.image_url }} style={styles.bannerImage} contentFit="cover" />
+          ) : (
+            <LinearGradient colors={[COLORS.primary, COLORS.secondary]} style={styles.bannerImage} />
+          )}
 
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.85)']}
@@ -113,15 +160,15 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Ionicons name={box.icon as any} size={40} color="#FFF" />
+              <Ionicons name={box.icon as any || 'bulb'} size={40} color="#FFF" />
             </LinearGradient>
 
-            <Text style={styles.bannerTitle}>{box.title}</Text>
-            <Text style={styles.bannerSubtitle}>{box.shortDescription}</Text>
+            <Text style={styles.bannerTitle}>{box.name}</Text>
+            <Text style={styles.bannerSubtitle}>{box.short_description || box.description}</Text>
 
             <View style={[styles.categoryBadge, { backgroundColor: COLORS.accent }]}>
               <Ionicons name="pricetag" size={14} color="#FFF" />
-              <Text style={styles.categoryBadgeText}>{box.category}</Text>
+              <Text style={styles.categoryBadgeText}>{box.posts_count || 0} منشور</Text>
             </View>
           </View>
         </View>
@@ -165,116 +212,124 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
               </View>
 
               <Text style={[styles.longDescription, { color: COLORS.textSecondary }]}>
-                {box.longDescription}
+                {box.long_description || box.description}
               </Text>
             </LinearGradient>
           </View>
         </Animated.View>
 
         {/* Participation Rules Card */}
-        <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.section}>
-          <View style={[styles.card, { backgroundColor: COLORS.cardBg }]}>
-            <LinearGradient
-              colors={
-                colorScheme === 'dark'
-                  ? ['rgba(196, 165, 123, 0.1)', 'rgba(184, 149, 106, 0.05)']
-                  : ['rgba(212, 196, 176, 0.15)', 'rgba(255, 255, 255, 0.95)']
-              }
-              style={styles.cardGradient}
-            >
-              <View style={styles.cardHeader}>
-                <View style={[styles.cardIconBg, { backgroundColor: COLORS.primary }]}>
-                  <Ionicons name="shield-checkmark" size={24} color="#FFF" />
+        {rules.length > 0 && (
+          <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.section}>
+            <View style={[styles.card, { backgroundColor: COLORS.cardBg }]}>
+              <LinearGradient
+                colors={
+                  colorScheme === 'dark'
+                    ? ['rgba(196, 165, 123, 0.1)', 'rgba(184, 149, 106, 0.05)']
+                    : ['rgba(212, 196, 176, 0.15)', 'rgba(255, 255, 255, 0.95)']
+                }
+                style={styles.cardGradient}
+              >
+                <View style={styles.cardHeader}>
+                  <View style={[styles.cardIconBg, { backgroundColor: COLORS.primary }]}>
+                    <Ionicons name="shield-checkmark" size={24} color="#FFF" />
+                  </View>
+                  <Text style={[styles.cardTitle, { color: COLORS.text }]}>قواعد المشاركة</Text>
                 </View>
-                <Text style={[styles.cardTitle, { color: COLORS.text }]}>قواعد المشاركة</Text>
-              </View>
 
-              {/* Allowed Types */}
-              <Text style={[styles.sectionSubtitle, { color: COLORS.text }]}>
-                أنواع المحتوى المسموحة:
-              </Text>
-              <View style={styles.typesContainer}>
-                {box.allowedTypes.map((type, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.typeChip,
-                      {
-                        backgroundColor:
-                          colorScheme === 'dark'
-                            ? 'rgba(196, 165, 123, 0.15)'
-                            : 'rgba(184, 149, 106, 0.12)',
-                      },
-                    ]}
-                  >
-                    <Ionicons name={typeIcons[type]} size={18} color={COLORS.primary} />
-                    <Text style={[styles.typeText, { color: COLORS.primary }]}>
-                      {type === 'image' && 'صورة'}
-                      {type === 'video' && 'فيديو'}
-                      {type === 'text' && 'نص'}
-                      {type === 'link' && 'رابط'}
+                {/* Allowed Types */}
+                {allowedTypes.length > 0 && (
+                  <>
+                    <Text style={[styles.sectionSubtitle, { color: COLORS.text }]}>
+                      أنواع المحتوى المسموحة:
                     </Text>
-                  </View>
-                ))}
-              </View>
+                    <View style={styles.typesContainer}>
+                      {allowedTypes.map((type: string, index: number) => (
+                        <View
+                          key={index}
+                          style={[
+                            styles.typeChip,
+                            {
+                              backgroundColor:
+                                colorScheme === 'dark'
+                                  ? 'rgba(196, 165, 123, 0.15)'
+                                  : 'rgba(184, 149, 106, 0.12)',
+                            },
+                          ]}
+                        >
+                          <Ionicons name={typeIcons[type]} size={18} color={COLORS.primary} />
+                          <Text style={[styles.typeText, { color: COLORS.primary }]}>
+                            {type === 'image' && 'صورة'}
+                            {type === 'video' && 'فيديو'}
+                            {type === 'text' && 'نص'}
+                            {type === 'link' && 'رابط'}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </>
+                )}
 
-              {/* Rules List */}
-              <Text style={[styles.sectionSubtitle, { color: COLORS.text, marginTop: 20 }]}>
-                القواعد الأساسية:
-              </Text>
-              <View style={styles.rulesList}>
-                {box.rules.map((rule, index) => (
-                  <View key={index} style={styles.ruleItem}>
-                    <View style={[styles.ruleDot, { backgroundColor: COLORS.accent }]} />
-                    <Text style={[styles.ruleText, { color: COLORS.textSecondary }]}>
-                      {rule}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
+                {/* Rules List */}
+                <Text style={[styles.sectionSubtitle, { color: COLORS.text, marginTop: 20 }]}>
+                  القواعد الأساسية:
+                </Text>
+                <View style={styles.rulesList}>
+                  {rules.map((rule: string, index: number) => (
+                    <View key={index} style={styles.ruleItem}>
+                      <View style={[styles.ruleDot, { backgroundColor: COLORS.accent }]} />
+                      <Text style={[styles.ruleText, { color: COLORS.textSecondary }]}>
+                        {rule}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </LinearGradient>
+            </View>
+          </Animated.View>
+        )}
 
         {/* Content Suggestions Card */}
-        <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.section}>
-          <View style={[styles.card, { backgroundColor: COLORS.cardBg }]}>
-            <LinearGradient
-              colors={
-                colorScheme === 'dark'
-                  ? ['rgba(196, 165, 123, 0.1)', 'rgba(184, 149, 106, 0.05)']
-                  : ['rgba(212, 196, 176, 0.15)', 'rgba(255, 255, 255, 0.95)']
-              }
-              style={styles.cardGradient}
-            >
-              <View style={styles.cardHeader}>
-                <View style={[styles.cardIconBg, { backgroundColor: COLORS.accent }]}>
-                  <Ionicons name="bulb" size={24} color="#FFF" />
-                </View>
-                <Text style={[styles.cardTitle, { color: COLORS.text }]}>
-                  مقترحات المحتوى
-                </Text>
-              </View>
-
-              <View
-                style={[
-                  styles.suggestionBox,
-                  {
-                    backgroundColor:
-                      colorScheme === 'dark'
-                        ? 'rgba(232, 184, 109, 0.1)'
-                        : 'rgba(232, 184, 109, 0.15)',
-                  },
-                ]}
+        {box.content_suggestions && (
+          <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.section}>
+            <View style={[styles.card, { backgroundColor: COLORS.cardBg }]}>
+              <LinearGradient
+                colors={
+                  colorScheme === 'dark'
+                    ? ['rgba(196, 165, 123, 0.1)', 'rgba(184, 149, 106, 0.05)']
+                    : ['rgba(212, 196, 176, 0.15)', 'rgba(255, 255, 255, 0.95)']
+                }
+                style={styles.cardGradient}
               >
-                <Ionicons name="chatbox-ellipses" size={28} color={COLORS.accent} />
-                <Text style={[styles.suggestionText, { color: COLORS.textSecondary }]}>
-                  {box.contentSuggestions}
-                </Text>
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
+                <View style={styles.cardHeader}>
+                  <View style={[styles.cardIconBg, { backgroundColor: COLORS.accent }]}>
+                    <Ionicons name="bulb" size={24} color="#FFF" />
+                  </View>
+                  <Text style={[styles.cardTitle, { color: COLORS.text }]}>
+                    مقترحات المحتوى
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.suggestionBox,
+                    {
+                      backgroundColor:
+                        colorScheme === 'dark'
+                          ? 'rgba(232, 184, 109, 0.1)'
+                          : 'rgba(232, 184, 109, 0.15)',
+                    },
+                  ]}
+                >
+                  <Ionicons name="chatbox-ellipses" size={28} color={COLORS.accent} />
+                  <Text style={[styles.suggestionText, { color: COLORS.textSecondary }]}>
+                    {box.content_suggestions}
+                  </Text>
+                </View>
+              </LinearGradient>
+            </View>
+          </Animated.View>
+        )}
 
         {/* Bottom Spacing for Sticky Button */}
         <View style={{ height: 100 }} />
@@ -305,6 +360,11 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   errorContainer: {
     flex: 1,

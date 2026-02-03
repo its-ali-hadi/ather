@@ -1,8 +1,8 @@
-const { validationResult } = require('express-validator');
+const { validationResult, body } = require('express-validator');
 
 const validate = (req, res, next) => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
@@ -13,8 +13,16 @@ const validate = (req, res, next) => {
       }))
     });
   }
-  
+
   next();
 };
 
-module.exports = { validate };
+const validatePost = [
+  body('title').trim().notEmpty().withMessage('عنوان المنشور مطلوب'),
+  body('content').optional().trim(),
+  body('type').optional().isIn(['text', 'image', 'link', 'video']).withMessage('نوع المنشور غير صحيح'),
+  body('category').optional().trim(),
+  validate
+];
+
+module.exports = { validate, validatePost };

@@ -11,23 +11,28 @@ import {
   Platform,
   Alert,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import seedData from '../constants/seed-data.json';
 import api from '../utils/api';
 
 export default function CreateTextPostScreen() {
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
-  const [selectedBox, setSelectedBox] = useState('');
+  const [boxes, setBoxes] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedBox, setSelectedBox] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [loadingBoxes, setLoadingBoxes] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(false);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -39,14 +44,53 @@ export default function CreateTextPostScreen() {
     border: colorScheme === 'dark' ? '#3A3430' : '#E8E8E8',
   };
 
-  const boxes = seedData.cards;
-  const categories = ['تقنية', 'فن', 'أدب', 'رياضة', 'سفر', 'أعمال'];
+  useEffect(() => {
+    fetchBoxes();
+  }, []);
+
+  useEffect(() => {
+    if (selectedBox) {
+      fetchCategories(selectedBox);
+    } else {
+      setCategories([]);
+    }
+  }, [selectedBox]);
+
+  const fetchBoxes = async () => {
+    try {
+      const response = await api.getBoxes();
+      if (response.success) {
+        setBoxes(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching boxes:', error);
+      Alert.alert('خطأ', 'فشل تحميل الصناديق');
+    } finally {
+      setLoadingBoxes(false);
+    }
+  };
+
+  const fetchCategories = async (boxId: number) => {
+    setLoadingCategories(true);
+    try {
+      const response = await api.getCategories(boxId);
+      if (response.success) {
+        setCategories(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!selectedBox || !selectedCategory || !title || !content) {
       Alert.alert('خطأ', 'الرجاء ملء جميع الحقول المطلوبة');
       return;
     }
+
+    setUploading(true);
 
     try {
       const response = await api.createPost({
@@ -68,20 +112,23 @@ export default function CreateTextPostScreen() {
     } catch (error) {
       console.error('Error creating post:', error);
       Alert.alert('خطأ', 'حدث خطأ أثناء إنشاء المنشور');
+    } finally {
+      setUploading(false);
     }
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.background }]} edges={['top', 'bottom']}>
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
+            disabled={uploading}
           >
             <Ionicons name="arrow-forward" size={24} color={COLORS.text} />
           </TouchableOpacity>
@@ -104,18 +151,18 @@ export default function CreateTextPostScreen() {
           <View style={[styles.privacyContainer, { backgroundColor: COLORS.cardBg, borderColor: COLORS.border }]}>
             <View style={styles.privacyContent}>
               <View style={styles.privacyInfo}>
-                <Ionicons 
-                  name={isPrivate ? "lock-closed" : "globe-outline"} 
-                  size={24} 
-                  color={isPrivate ? '#E94B3C' : '#50C878'} 
+                <Ionicons
+                  name={isPrivate ? "lock-closed" : "globe-outline"}
+                  size={24}
+                  color={isPrivate ? '#E94B3C' : '#50C878'}
                 />
                 <View style={styles.privacyTextContainer}>
                   <Text style={[styles.privacyTitle, { color: COLORS.text }]}>
                     {isPrivate ? 'منشور خاص' : 'منشور عام'}
                   </Text>
                   <Text style={[styles.privacyDescription, { color: COLORS.textSecondary }]}>
-                    {isPrivate 
-                      ? 'سيظهر فقط في قسم المنشورات الخاصة' 
+                    {isPrivate
+                      ? 'سيظهر فقط في قسم المنشورات الخاصة'
                       : 'سيظهر للجميع في الصفحة الرئيسية'}
                   </Text>
                 </View>
@@ -128,6 +175,7 @@ export default function CreateTextPostScreen() {
                 }}
                 trackColor={{ false: '#50C878', true: '#E94B3C' }}
                 thumbColor="#FFF"
+                disabled={uploading}
               />
             </View>
           </View>
@@ -137,77 +185,95 @@ export default function CreateTextPostScreen() {
             <Text style={[styles.label, { color: COLORS.text }]}>
               الصندوق <Text style={{ color: '#E94B3C' }}>*</Text>
             </Text>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.optionsScrollContent}
-            >
-              {boxes.map((box) => (
-                <TouchableOpacity
-                  key={box.id}
-                  onPress={() => {
-                    setSelectedBox(box.id);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }}
-                  style={[
-                    styles.optionChip,
-                    { 
-                      backgroundColor: selectedBox === box.id ? COLORS.accent : COLORS.cardBg,
-                      borderColor: COLORS.border,
-                    }
-                  ]}
-                >
-                  <Ionicons 
-                    name={box.icon as any} 
-                    size={18} 
-                    color={selectedBox === box.id ? '#FFF' : COLORS.text} 
-                  />
-                  <Text 
+            {loadingBoxes ? (
+              <ActivityIndicator color={COLORS.primary} />
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.optionsScrollContent}
+              >
+                {boxes.map((box) => (
+                  <TouchableOpacity
+                    key={box.id}
+                    onPress={() => {
+                      setSelectedBox(box.id);
+                      setSelectedCategory('');
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}
+                    disabled={uploading}
                     style={[
-                      styles.optionText,
-                      { color: selectedBox === box.id ? '#FFF' : COLORS.text }
+                      styles.optionChip,
+                      {
+                        backgroundColor: selectedBox === box.id ? COLORS.accent : COLORS.cardBg,
+                        borderColor: COLORS.border,
+                      }
                     ]}
                   >
-                    {box.title}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                    <Ionicons
+                      name={box.icon || 'cube'}
+                      size={18}
+                      color={selectedBox === box.id ? '#FFF' : COLORS.text}
+                    />
+                    <Text
+                      style={[
+                        styles.optionText,
+                        { color: selectedBox === box.id ? '#FFF' : COLORS.text }
+                      ]}
+                    >
+                      {box.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
           </View>
 
           {/* Category Selection */}
-          <View style={styles.fieldContainer}>
-            <Text style={[styles.label, { color: COLORS.text }]}>
-              التصنيف <Text style={{ color: '#E94B3C' }}>*</Text>
-            </Text>
-            <View style={styles.categoriesGrid}>
-              {categories.map((category) => (
-                <TouchableOpacity
-                  key={category}
-                  onPress={() => {
-                    setSelectedCategory(category);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }}
-                  style={[
-                    styles.categoryChip,
-                    { 
-                      backgroundColor: selectedCategory === category ? COLORS.accent : COLORS.cardBg,
-                      borderColor: COLORS.border,
-                    }
-                  ]}
-                >
-                  <Text 
-                    style={[
-                      styles.categoryText,
-                      { color: selectedCategory === category ? '#FFF' : COLORS.text }
-                    ]}
-                  >
-                    {category}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+          {selectedBox && (
+            <View style={styles.fieldContainer}>
+              <Text style={[styles.label, { color: COLORS.text }]}>
+                التصنيف <Text style={{ color: '#E94B3C' }}>*</Text>
+              </Text>
+              {loadingCategories ? (
+                <ActivityIndicator color={COLORS.primary} />
+              ) : (
+                <View style={styles.categoriesGrid}>
+                  {categories.map((cat) => (
+                    <TouchableOpacity
+                      key={cat.id}
+                      onPress={() => {
+                        setSelectedCategory(cat.name);
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}
+                      disabled={uploading}
+                      style={[
+                        styles.categoryChip,
+                        {
+                          backgroundColor: selectedCategory === cat.name ? COLORS.accent : COLORS.cardBg,
+                          borderColor: COLORS.border,
+                        }
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.categoryText,
+                          { color: selectedCategory === cat.name ? '#FFF' : COLORS.text }
+                        ]}
+                      >
+                        {cat.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                  {categories.length === 0 && (
+                    <Text style={{ color: COLORS.textSecondary, fontFamily: 'Tajawal_400Regular' }}>
+                      لا توجد تصنيفات في هذا الصندوق
+                    </Text>
+                  )}
+                </View>
+              )}
             </View>
-          </View>
+          )}
 
           {/* Title Input */}
           <View style={styles.fieldContainer}>
@@ -217,7 +283,7 @@ export default function CreateTextPostScreen() {
             <TextInput
               style={[
                 styles.input,
-                { 
+                {
                   backgroundColor: COLORS.cardBg,
                   color: COLORS.text,
                   borderColor: COLORS.border,
@@ -228,6 +294,7 @@ export default function CreateTextPostScreen() {
               value={title}
               onChangeText={setTitle}
               textAlign="right"
+              editable={!uploading}
             />
           </View>
 
@@ -239,7 +306,7 @@ export default function CreateTextPostScreen() {
             <TextInput
               style={[
                 styles.textArea,
-                { 
+                {
                   backgroundColor: COLORS.cardBg,
                   color: COLORS.text,
                   borderColor: COLORS.border,
@@ -253,6 +320,7 @@ export default function CreateTextPostScreen() {
               numberOfLines={8}
               textAlign="right"
               textAlignVertical="top"
+              editable={!uploading}
             />
           </View>
 
@@ -260,16 +328,26 @@ export default function CreateTextPostScreen() {
           <TouchableOpacity
             onPress={handleSubmit}
             activeOpacity={0.8}
+            disabled={uploading}
             style={styles.submitButton}
           >
             <LinearGradient
-              colors={['#E8B86D', '#D4A574']}
+              colors={uploading ? ['#999', '#777'] : ['#E8B86D', '#D4A574']}
               style={styles.submitGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Ionicons name="checkmark-circle" size={24} color="#FFF" />
-              <Text style={styles.submitText}>نشر المنشور</Text>
+              {uploading ? (
+                <>
+                  <ActivityIndicator size="small" color="#FFF" />
+                  <Text style={styles.submitText}>جاري النشر...</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={24} color="#FFF" />
+                  <Text style={styles.submitText}>نشر المنشور</Text>
+                </>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>

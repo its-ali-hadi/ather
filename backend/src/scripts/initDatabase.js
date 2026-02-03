@@ -188,19 +188,42 @@ const initDatabase = async () => {
       CREATE TABLE IF NOT EXISTS notifications (
         id INT PRIMARY KEY AUTO_INCREMENT,
         user_id INT NOT NULL,
+        sender_id INT,
         type ENUM('like', 'comment', 'follow', 'mention', 'admin') NOT NULL,
         title VARCHAR(255),
-        body TEXT NOT NULL,
+        content TEXT NOT NULL,
+        related_id INT,
         data JSON,
         is_read BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL,
         INDEX idx_user_id (user_id),
+        INDEX idx_sender_id (sender_id),
         INDEX idx_is_read (is_read),
-        INDEX idx_created_at (created_at)
+        INDEX idx_created_at (created_at),
+        INDEX idx_related_id (related_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log('✅ Notifications table created');
+
+    // Create banners table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS banners (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        title VARCHAR(255) NOT NULL,
+        image_url VARCHAR(500) NOT NULL,
+        icon VARCHAR(50),
+        target_url VARCHAR(500),
+        is_active BOOLEAN DEFAULT TRUE,
+        order_index INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_is_active (is_active),
+        INDEX idx_order_index (order_index)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✅ Banners table created');
 
     // Create contact_messages table
     await connection.query(`
@@ -226,6 +249,29 @@ const initDatabase = async () => {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log('✅ Contact messages table created');
+
+    // Create reports table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS reports (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        reporter_id INT NOT NULL,
+        type ENUM('post', 'user', 'comment') NOT NULL,
+        target_id INT NOT NULL,
+        reason VARCHAR(255) NOT NULL,
+        description TEXT,
+        status ENUM('pending', 'reviewed', 'resolved', 'dismissed') DEFAULT 'pending',
+        admin_notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_reporter_id (reporter_id),
+        INDEX idx_type (type),
+        INDEX idx_target_id (target_id),
+        INDEX idx_status (status),
+        INDEX idx_created_at (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✅ Reports table created');
 
     // Insert default boxes
     await connection.query(`

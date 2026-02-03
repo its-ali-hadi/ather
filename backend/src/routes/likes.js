@@ -8,7 +8,9 @@ const likeController = require('../controllers/likeController');
 const router = express.Router();
 
 // All like actions require authentication
+router.get('/', auth, requireAuth, likeController.getUserLikes);
 router.post('/', auth, requireAuth, body('post_id').isInt(), validate, likeController.likePost);
+router.post('/:postId', auth, requireAuth, param('postId').isInt(), validate, likeController.toggleLike);
 router.delete('/:postId', auth, requireAuth, param('postId').isInt(), validate, likeController.unlikePost);
 
 module.exports = router;

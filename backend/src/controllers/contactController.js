@@ -201,12 +201,13 @@ exports.replyToMessage = async (req, res, next) => {
     if (messages.length > 0 && messages[0].user_id) {
       // Send notification to user
       await pool.query(
-        'INSERT INTO notifications (user_id, type, title, body) VALUES (?, ?, ?, ?)',
+        'INSERT INTO notifications (user_id, type, title, content, body) VALUES (?, ?, ?, ?, ?)',
         [
           messages[0].user_id,
           'admin',
           'رد على رسالتك',
           `تم الرد على رسالتك: ${messages[0].subject}`,
+          `تم الرد على رسالتك: ${messages[0].subject}`
         ]
       );
     }

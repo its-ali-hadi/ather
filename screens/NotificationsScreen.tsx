@@ -10,78 +10,29 @@ import {
   useColorScheme,
   View,
   Platform,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import api from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
-// Mock notifications data
-const mockNotifications = [
-  {
-    id: '1',
-    type: 'like',
-    userId: 'user-1',
-    userName: 'أحمد محمد',
-    userAvatar: 'https://i.pravatar.cc/150?img=11',
-    content: 'أعجب بمنشورك',
-    postTitle: 'تجربتي في تعلم React Native',
-    isRead: false,
-    createdAt: '2024-01-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    type: 'comment',
-    userId: 'user-2',
-    userName: 'سارة أحمد',
-    userAvatar: 'https://i.pravatar.cc/150?img=5',
-    content: 'علّق على منشورك',
-    postTitle: 'تجربتي في تعلم React Native',
-    isRead: false,
-    createdAt: '2024-01-15T09:15:00Z',
-  },
-  {
-    id: '3',
-    type: 'follow',
-    userId: 'user-3',
-    userName: 'محمد علي',
-    userAvatar: 'https://i.pravatar.cc/150?img=12',
-    content: 'بدأ بمتابعتك',
-    postTitle: null,
-    isRead: true,
-    createdAt: '2024-01-14T16:45:00Z',
-  },
-  {
-    id: '4',
-    type: 'like',
-    userId: 'user-4',
-    userName: 'فاطمة خالد',
-    userAvatar: 'https://i.pravatar.cc/150?img=9',
-    content: 'أعجب بمنشورك',
-    postTitle: 'قصة قصيرة: الطريق',
-    isRead: true,
-    createdAt: '2024-01-14T14:20:00Z',
-  },
-  {
-    id: '5',
-    type: 'comment',
-    userId: 'user-5',
-    userName: 'خالد عمر',
-    userAvatar: 'https://i.pravatar.cc/150?img=13',
-    content: 'علّق على منشورك',
-    postTitle: 'روتيني الصباحي للياقة',
-    isRead: true,
-    createdAt: '2024-01-13T11:30:00Z',
-  },
-];
-
-type NotificationType = 'all' | 'likes' | 'comments' | 'follows';
+type NotificationType = 'all' | 'like' | 'comment' | 'follow';
 
 export default function NotificationsScreen() {
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
-  const [selectedTab, setSelectedTab] = useState<NotificationType>('all');
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const { isGuest, logout } = useAuth();
+
+  const [selectedTab, setSelectedTab] = useState<NotificationType | 'all'>('all');
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const COLORS = {
     primary: colorScheme === 'dark' ? '#C4A57B' : '#B8956A',
@@ -91,6 +42,55 @@ export default function NotificationsScreen() {
     text: colorScheme === 'dark' ? '#F5E6D3' : '#4A3F35',
     textSecondary: colorScheme === 'dark' ? '#D4C4B0' : '#7A6F65',
     border: colorScheme === 'dark' ? '#3A3430' : '#E8E8E8',
+  };
+
+  useEffect(() => {
+    if (isGuest) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Alert.alert(
+        'تسجيل الدخول مطلوب',
+        'يجب عليك تسجيل الدخول لعرض الإشعارات',
+        [
+          {
+            text: 'إلغاء',
+            style: 'cancel',
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: 'تسجيل الدخول',
+            onPress: async () => {
+              await logout();
+            },
+          },
+        ]
+      );
+    }
+  }, [isGuest]);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const response = await api.getNotifications();
+      if (response.success && response.data) {
+        setNotifications(response.data);
+        setUnreadCount(response.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isGuest) {
+      fetchNotifications();
+    }
+  }, [isGuest, fetchNotifications]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchNotifications();
+    setRefreshing(false);
   };
 
   const getIconForType = (type: string) => {
@@ -108,29 +108,40 @@ export default function NotificationsScreen() {
 
   const filteredNotifications = notifications.filter((notif) => {
     if (selectedTab === 'all') return true;
-    if (selectedTab === 'likes') return notif.type === 'like';
-    if (selectedTab === 'comments') return notif.type === 'comment';
-    if (selectedTab === 'follows') return notif.type === 'follow';
-    return true;
+    return notif.type === selectedTab;
   });
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-  const handleNotificationPress = (notificationId: string) => {
+  const handleNotificationPress = async (notificationId: string, isRead: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Mark as read
-    setNotifications(
-      notifications.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
-    );
-    // TODO: Navigate to post or profile
+
+    if (!isRead) {
+      try {
+        await api.markNotificationAsRead(notificationId);
+        setNotifications(prev =>
+          prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
+      }
+    }
+    // Content navigation could be added here
   };
 
-  const handleMarkAllAsRead = () => {
+  const handleMarkAllAsRead = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
+    try {
+      await api.markAllNotificationsAsRead();
+
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      Alert.alert('خطأ', 'فشل تحديث الإشعارات');
+    }
   };
 
-  const handleTabPress = (tab: NotificationType) => {
+  const handleTabPress = (tab: NotificationType | 'all') => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedTab(tab);
   };
@@ -179,21 +190,21 @@ export default function NotificationsScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => handleTabPress('likes')}
+            onPress={() => handleTabPress('like')}
             style={[
               styles.tab,
-              { backgroundColor: selectedTab === 'likes' ? COLORS.accent : COLORS.cardBg },
+              { backgroundColor: selectedTab === 'like' ? COLORS.accent : COLORS.cardBg },
             ]}
           >
             <Ionicons
               name="heart"
               size={16}
-              color={selectedTab === 'likes' ? '#FFF' : COLORS.textSecondary}
+              color={selectedTab === 'like' ? '#FFF' : COLORS.textSecondary}
             />
             <Text
               style={[
                 styles.tabText,
-                { color: selectedTab === 'likes' ? '#FFF' : COLORS.textSecondary },
+                { color: selectedTab === 'like' ? '#FFF' : COLORS.textSecondary },
               ]}
             >
               الإعجابات
@@ -201,21 +212,21 @@ export default function NotificationsScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => handleTabPress('comments')}
+            onPress={() => handleTabPress('comment')}
             style={[
               styles.tab,
-              { backgroundColor: selectedTab === 'comments' ? COLORS.accent : COLORS.cardBg },
+              { backgroundColor: selectedTab === 'comment' ? COLORS.accent : COLORS.cardBg },
             ]}
           >
             <Ionicons
               name="chatbubble"
               size={16}
-              color={selectedTab === 'comments' ? '#FFF' : COLORS.textSecondary}
+              color={selectedTab === 'comment' ? '#FFF' : COLORS.textSecondary}
             />
             <Text
               style={[
                 styles.tabText,
-                { color: selectedTab === 'comments' ? '#FFF' : COLORS.textSecondary },
+                { color: selectedTab === 'comment' ? '#FFF' : COLORS.textSecondary },
               ]}
             >
               التعليقات
@@ -223,21 +234,21 @@ export default function NotificationsScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => handleTabPress('follows')}
+            onPress={() => handleTabPress('follow')}
             style={[
               styles.tab,
-              { backgroundColor: selectedTab === 'follows' ? COLORS.accent : COLORS.cardBg },
+              { backgroundColor: selectedTab === 'follow' ? COLORS.accent : COLORS.cardBg },
             ]}
           >
             <Ionicons
               name="person-add"
               size={16}
-              color={selectedTab === 'follows' ? '#FFF' : COLORS.textSecondary}
+              color={selectedTab === 'follow' ? '#FFF' : COLORS.textSecondary}
             />
             <Text
               style={[
                 styles.tabText,
-                { color: selectedTab === 'follows' ? '#FFF' : COLORS.textSecondary },
+                { color: selectedTab === 'follow' ? '#FFF' : COLORS.textSecondary },
               ]}
             >
               المتابعات
@@ -246,90 +257,90 @@ export default function NotificationsScreen() {
         </ScrollView>
       </View>
 
-      {/* Notifications List */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
-      >
-        <View style={styles.notificationsContainer}>
-          {filteredNotifications.length > 0 ? (
-            filteredNotifications.map((notification, index) => {
-              const icon = getIconForType(notification.type);
-              return (
-                <Animated.View
-                  key={notification.id}
-                  entering={FadeInDown.delay(100 + index * 50).springify()}
-                >
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handleNotificationPress(notification.id)}
-                    style={[
-                      styles.notificationCard,
-                      {
-                        backgroundColor: notification.isRead
-                          ? COLORS.cardBg
-                          : COLORS.accent + '10',
-                      },
-                    ]}
+      {loading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : (
+        /* Notifications List */
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 80 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+          }
+        >
+          <View style={styles.notificationsContainer}>
+            {filteredNotifications.length > 0 ? (
+              filteredNotifications.map((notification, index) => {
+                const icon = getIconForType(notification.type);
+                return (
+                  <Animated.View
+                    key={notification.id}
+                    entering={FadeInDown.delay(100 + index * 50).springify()}
                   >
-                    <View style={styles.notificationContent}>
-                      {notification.userAvatar ? (
-                        <ExpoImage
-                          source={{ uri: notification.userAvatar }}
-                          style={styles.userAvatar}
-                          contentFit="cover"
-                        />
-                      ) : (
-                        <LinearGradient colors={['#E8B86D', '#D4A574']} style={styles.userAvatar}>
-                          <Ionicons name="person" size={20} color="#FFF" />
-                        </LinearGradient>
-                      )}
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => handleNotificationPress(notification.id, notification.is_read)}
+                      style={[
+                        styles.notificationCard,
+                        {
+                          backgroundColor: notification.is_read
+                            ? COLORS.cardBg
+                            : COLORS.accent + '10',
+                        },
+                      ]}
+                    >
+                      <View style={styles.notificationContent}>
+                        {notification.sender_image ? (
+                          <ExpoImage
+                            source={{ uri: api.getFileUrl(notification.sender_image) ?? undefined }}
+                            style={styles.userAvatar}
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <LinearGradient colors={['#E8B86D', '#D4A574']} style={styles.userAvatar}>
+                            <Ionicons name="person" size={20} color="#FFF" />
+                          </LinearGradient>
+                        )}
 
-                      <View style={styles.notificationInfo}>
-                        <View style={styles.notificationHeader}>
-                          <Text style={[styles.userName, { color: COLORS.text }]}>
-                            {notification.userName}
-                          </Text>
-                          <Text style={[styles.notificationText, { color: COLORS.textSecondary }]}>
-                            {notification.content}
+                        <View style={styles.notificationInfo}>
+                          <View style={styles.notificationHeader}>
+                            <Text style={[styles.userName, { color: COLORS.text }]}>
+                              {notification.sender_name}
+                            </Text>
+                            <Text style={[styles.notificationText, { color: COLORS.textSecondary }]}>
+                              {notification.content}
+                            </Text>
+                          </View>
+
+                          <Text style={[styles.time, { color: COLORS.textSecondary }]}>
+                            {new Date(notification.created_at).toLocaleDateString('ar-SA')}
                           </Text>
                         </View>
 
-                        {notification.postTitle && (
-                          <Text
-                            style={[styles.postTitle, { color: COLORS.textSecondary }]}
-                            numberOfLines={1}
-                          >
-                            "{notification.postTitle}"
-                          </Text>
-                        )}
-
-                        <Text style={[styles.time, { color: COLORS.textSecondary }]}>
-                          {new Date(notification.createdAt).toLocaleDateString('ar-SA')}
-                        </Text>
+                        <View style={[styles.iconContainer, { backgroundColor: icon.color + '20' }]}>
+                          <Ionicons name={icon.name as any} size={20} color={icon.color} />
+                        </View>
                       </View>
 
-                      <View style={[styles.iconContainer, { backgroundColor: icon.color + '20' }]}>
-                        <Ionicons name={icon.name as any} size={20} color={icon.color} />
-                      </View>
-                    </View>
-
-                    {!notification.isRead && <View style={styles.unreadDot} />}
-                  </TouchableOpacity>
-                </Animated.View>
-              );
-            })
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="notifications-off-outline" size={64} color={COLORS.textSecondary} />
-              <Text style={[styles.emptyText, { color: COLORS.text }]}>لا توجد إشعارات</Text>
-              <Text style={[styles.emptySubtext, { color: COLORS.textSecondary }]}>
-                ستظهر إشعاراتك هنا
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+                      {!notification.is_read && <View style={styles.unreadDot} />}
+                    </TouchableOpacity>
+                  </Animated.View>
+                );
+              })
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="notifications-off-outline" size={64} color={COLORS.textSecondary} />
+                <Text style={[styles.emptyText, { color: COLORS.text }]}>لا توجد إشعارات</Text>
+                <Text style={[styles.emptySubtext, { color: COLORS.textSecondary }]}>
+                  ستظهر إشعاراتك هنا
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -337,6 +348,11 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row-reverse',
