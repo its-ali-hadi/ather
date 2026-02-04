@@ -8,12 +8,14 @@ services:
       dockerfile: Dockerfile
     container_name: athar-backend
     ports:
-      - "9000:9000"
+      - "3000:3000"
     volumes:
       # Persistent volume for uploaded images
       # Maps the local 'uploads' directory to the container's '/app/uploads'
       - ./backend/uploads:/app/uploads
     environment:
+      - JWT_SECRET=your_jwt_secret_key_here_change_in_production
+      - JWT_EXPIRE=7d
       - NODE_ENV=development
       - DB_HOST=db
       - DB_USER=root
