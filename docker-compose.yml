@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Backend API Container
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: athar-backend
+    ports:
+      - "9000:9000"
+    volumes:
+      # Persistent volume for uploaded images
+      # Maps the local 'uploads' directory to the container's '/app/uploads'
+      - ./backend/uploads:/app/uploads
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD='Alihadi0773788%'
+      - DB_NAME=athar_db
+      - DB_PORT=3306
+    depends_on:
+      - db
+    restart: always
+
+  # Dashboard Frontend Container
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: athar-dashboard
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+    depends_on:
+      - backend
+    restart: always
+
+  # MySQL Database Container
+  db:
+    image: mysql:8.0
+    container_name: athar-db
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 'Alihadi0773788%'
+      MYSQL_DATABASE: athar_db
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+
+volumes:
+  db_data:

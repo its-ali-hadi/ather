@@ -1,0 +1,3 @@
+copy "C:\Users\M I Co\.gemini\antigravity\brain\66ef082a-8e70-49ee-af00-d6c75b136dc2\athar_logo_circular_lightbulb_1770201460103.png" "c:\Users\M I Co\Desktop\athar\ather-Appacella\assets\images\icon.png" /y
+copy "C:\Users\M I Co\.gemini\antigravity\brain\66ef082a-8e70-49ee-af00-d6c75b136dc2\athar_splash_screen_logo_1770201474757.png" "c:\Users\M I Co\Desktop\athar\ather-Appacella\assets\images\splash-icon.png" /y
+copy "C:\Users\M I Co\.gemini\antigravity\brain\66ef082a-8e70-49ee-af00-d6c75b136dc2\athar_logo_circular_lightbulb_1770201460103.png" "c:\Users\M I Co\Desktop\athar\ather-Appacella\assets\images\adaptive-icon.png" /y

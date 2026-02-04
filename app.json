@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "athar",
-    "slug": "user-app-de287b82",
+    "name": "أثر - Athar",
+    "slug": "athar-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -15,10 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "dev.kiki.userapp.de287b82"
+      "bundleIdentifier": "com.athar.app"
     },
     "android": {
-      "package": "dev.kiki.userapp.nocihlic",
+      "package": "com.athar.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#FAF8F5"
@@ -50,6 +50,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": "https://project-11b2bbf3.dev.kiki.dev"
+      },
+      "eas": {
+        "projectId": "826fba69-364e-423c-987e-763f9bd67d7c"
+      }
     }
   }
 }

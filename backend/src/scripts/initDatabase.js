@@ -1,5 +1,8 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+// Only load .env if not in Docker (custom check) or if specific env var is missing
+if (!process.env.DB_HOST) {
+  require('dotenv').config({ path: '../../.env' }); // Adjust path if needed or just use default
+}
 
 const initDatabase = async () => {
   let connection;
@@ -9,7 +12,7 @@ const initDatabase = async () => {
     connection = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
+      password: (process.env.DB_PASSWORD || '').replace(/^'|'$/g, ''),
       port: process.env.DB_PORT || 3306,
     });
 

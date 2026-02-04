@@ -3,7 +3,7 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-require('dotenv').config();
+// require('dotenv').config();
 
 const { testConnection } = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
@@ -29,10 +29,7 @@ const app = express();
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:8081',
-  credentials: true
-}));
+app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -75,9 +72,21 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
-    // Test database connection
-    await testConnection();
-    console.log('✅ Database connected successfully');
+    // Test database connection with retry logic
+    const MAX_RETRIES = 10;
+    let retries = 0;
+    while (retries < MAX_RETRIES) {
+      try {
+        await testConnection();
+        console.log('✅ Database connected successfully');
+        break;
+      } catch (err) {
+        retries++;
+        console.log(`⏳ Database not ready yet... retrying (${retries}/${MAX_RETRIES})`);
+        await new Promise(res => setTimeout(res, 5000));
+      }
+    }
+    if (retries === MAX_RETRIES) throw new Error('Database connection timeout');
 
     // Seed data if AUTO_SEED is enabled
     if (process.env.AUTO_SEED === 'true') {
