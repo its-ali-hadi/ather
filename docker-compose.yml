@@ -31,32 +31,30 @@ services:
     build:
       context: ./dashboard
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=https://athar-api.alihadi.click/api
     container_name: athar-dashboard
     ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=https://athar-api.alihadi.click/api
-    depends_on:
-      - backend
-    networks:
-      - athar-network
+      - "3001:3001"
     restart: always
+    
 
   # MySQL Database Container
   db:
-    image: mysql:8.0
+    image: mariadb:10.6
     container_name: athar-db
+    command: --lower_case_table_names=1
     ports:
       - "3307:3306" # يمكنك الوصول للقاعدة من السيرفر عبر 3307
     environment:
-      MYSQL_ROOT_PASSWORD: 'Alihadi0773788%'
-      MYSQL_DATABASE: athar_db
+      # لاحظ هنا قمنا بتغيير اسم المتغيرات لتناسب MariaDB
+      MARIADB_ROOT_PASSWORD: 'Alihadi0773788%'
+      MARIADB_DATABASE: athar_db
     volumes:
       - db_data:/var/lib/mysql
     networks:
       - athar-network
     restart: always
-
 networks:
   athar-network:
     driver: bridge
