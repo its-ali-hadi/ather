@@ -11,10 +11,18 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // هذا السطر ضروري جداً لفتح المنفذ خارج الحاوية
+    host: true, 
+    allowedHosts: [
+      'athar-dash.alihadi.click'
+    ],
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true
+        // بما أنك في Docker، يفضل استخدام اسم الخدمة 'backend' 
+        // لكن سأتركها localhost إذا كنت تديرها يدوياً
+        target: 'http://athar-backend:3000', 
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   }

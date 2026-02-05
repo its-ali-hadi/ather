@@ -9,7 +9,7 @@ const app = createApp(App)
 const pinia = createPinia()
 
 // Setup axios defaults
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_URL = import.meta.env.VITE_API_URL || 'https://athar-api.alihadi.click/api'
 axios.defaults.baseURL = API_URL
 
 // Add token to requests if available
