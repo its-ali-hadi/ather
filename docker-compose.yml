@@ -10,8 +10,6 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Persistent volume for uploaded images
-      # Maps the local 'uploads' directory to the container's '/app/uploads'
       - ./backend/uploads:/app/uploads
     environment:
       - JWT_SECRET=your_jwt_secret_key_here_change_in_production
@@ -24,6 +22,8 @@ services:
       - DB_PORT=3306
     depends_on:
       - db
+    networks:
+      - athar-network
     restart: always
 
   # Dashboard Frontend Container
@@ -38,6 +38,8 @@ services:
       - VITE_API_URL=https://athar-api.alihadi.click/api
     depends_on:
       - backend
+    networks:
+      - athar-network
     restart: always
 
   # MySQL Database Container
@@ -45,13 +47,19 @@ services:
     image: mysql:8.0
     container_name: athar-db
     ports:
-      - "3307:3306"
+      - "3307:3306" # يمكنك الوصول للقاعدة من السيرفر عبر 3307
     environment:
       MYSQL_ROOT_PASSWORD: 'Alihadi0773788%'
       MYSQL_DATABASE: athar_db
     volumes:
       - db_data:/var/lib/mysql
+    networks:
+      - athar-network
     restart: always
+
+networks:
+  athar-network:
+    driver: bridge
 
 volumes:
   db_data:
