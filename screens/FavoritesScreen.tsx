@@ -200,10 +200,10 @@ export default function FavoritesScreen() {
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <LinearGradient
-            colors={['#E94B3C', '#C0392B']}
+            colors={['#E8B86D', '#D4A574']}
             style={styles.headerIcon}
           >
-            <Ionicons name="heart" size={28} color="#FFF" />
+            <Ionicons name="bookmark" size={28} color="#FFF" />
           </LinearGradient>
           <Text style={[styles.headerTitle, { color: COLORS.text }]}>المفضلات</Text>
         </View>

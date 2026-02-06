@@ -22,12 +22,14 @@ import * as ImagePicker from 'expo-image-picker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import api from '../utils/api';
 
-export default function CreateImagePostScreen() {
+export default function CreateImagePostScreen({ route }: any) {
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
+  const initialBoxId = route?.params?.initialBoxId;
+
   const [boxes, setBoxes] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [selectedBox, setSelectedBox] = useState<number | null>(null);
+  const [selectedBox, setSelectedBox] = useState<number | null>(initialBoxId || null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

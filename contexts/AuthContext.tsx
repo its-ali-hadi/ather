@@ -80,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const savedUser = await AsyncStorage.getItem(USER_KEY);
 
       if (savedToken && savedUser) {
+        api.setAuthToken(savedToken);
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
 

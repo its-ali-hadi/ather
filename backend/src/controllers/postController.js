@@ -42,6 +42,11 @@ exports.getPosts = async (req, res, next) => {
     const boxId = req.query.boxId;
     const userId = req.user?.id;
 
+    console.log('--- getPosts DEBUG ---');
+    console.log('Headers Auth:', req.header('Authorization'));
+    console.log('User from Auth:', req.user);
+    console.log('Derived userId:', userId);
+
     let query = `
       SELECT p.*, 
              u.name as user_name, u.profile_image as user_image, u.is_verified as user_verified,
@@ -51,11 +56,11 @@ exports.getPosts = async (req, res, next) => {
 
     if (userId) {
       query += `,
-             (SELECT COUNT(*) > 0 FROM likes WHERE post_id = p.id AND user_id = ?) as is_liked,
-             (SELECT COUNT(*) > 0 FROM favorites WHERE post_id = p.id AND user_id = ?) as is_favorited
+             IF((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND user_id = ?) > 0, 1, 0) as is_liked,
+             IF((SELECT COUNT(*) FROM favorites WHERE post_id = p.id AND user_id = ?) > 0, 1, 0) as is_favorited
       `;
     } else {
-      query += `, FALSE as is_liked, FALSE as is_favorited`;
+      query += `, 0 as is_liked, 0 as is_favorited`;
     }
 
     query += `
@@ -112,9 +117,16 @@ exports.getPosts = async (req, res, next) => {
 
     const [total] = await pool.query(countQuery, countParams);
 
+    // Convert to boolean
+    const postsWithBoolean = posts.map(p => ({
+      ...p,
+      is_liked: !!p.is_liked,
+      is_favorited: !!p.is_favorited
+    }));
+
     res.json({
       success: true,
-      data: posts,
+      data: postsWithBoolean,
       pagination: {
         page,
         limit,
@@ -143,11 +155,11 @@ exports.getPost = async (req, res, next) => {
 
     if (userId) {
       query += `,
-             (SELECT COUNT(*) > 0 FROM likes WHERE post_id = p.id AND user_id = ?) as is_liked,
-             (SELECT COUNT(*) > 0 FROM favorites WHERE post_id = p.id AND user_id = ?) as is_favorited
+             IF((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND user_id = ?) > 0, 1, 0) as is_liked,
+             IF((SELECT COUNT(*) FROM favorites WHERE post_id = p.id AND user_id = ?) > 0, 1, 0) as is_favorited
       `;
     } else {
-      query += `, FALSE as is_liked, FALSE as is_favorited`;
+      query += `, 0 as is_liked, 0 as is_favorited`;
     }
 
     query += `
@@ -172,9 +184,13 @@ exports.getPost = async (req, res, next) => {
       [postId]
     );
 
+    const post = posts[0];
+    post.is_liked = !!post.is_liked;
+    post.is_favorited = !!post.is_favorited;
+
     res.json({
       success: true,
-      data: posts[0]
+      data: post
     });
   } catch (error) {
     next(error);
@@ -199,11 +215,11 @@ exports.getUserPosts = async (req, res, next) => {
 
     if (currentUserId) {
       query += `,
-             (SELECT COUNT(*) > 0 FROM likes WHERE post_id = p.id AND user_id = ?) as is_liked,
-             (SELECT COUNT(*) > 0 FROM favorites WHERE post_id = p.id AND user_id = ?) as is_favorited
+             IF((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND user_id = ?) > 0, 1, 0) as is_liked,
+             IF((SELECT COUNT(*) FROM favorites WHERE post_id = p.id AND user_id = ?) > 0, 1, 0) as is_favorited
       `;
     } else {
-      query += `, FALSE as is_liked, FALSE as is_favorited`;
+      query += `, 0 as is_liked, 0 as is_favorited`;
     }
 
     query += `
@@ -225,9 +241,15 @@ exports.getUserPosts = async (req, res, next) => {
       [targetUserId]
     );
 
+    const postsWithBoolean = posts.map(p => ({
+      ...p,
+      is_liked: !!p.is_liked,
+      is_favorited: !!p.is_favorited
+    }));
+
     res.json({
       success: true,
-      data: posts,
+      data: postsWithBoolean,
       pagination: {
         page,
         limit,

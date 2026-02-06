@@ -161,19 +161,13 @@ const api = {
     return this.request(`/posts/${postId}`);
   },
 
-  async createPost(data: {
-    type: 'text' | 'image' | 'video' | 'link';
-    title: string;
-    content: string;
-    media_url?: string;
-    link_url?: string;
-    category: string;
-    is_private?: boolean;
-  }) {
-    return this.request('/posts', {
+  async createPost(data: any) {
+    const options: any = {
       method: 'POST',
-      body: JSON.stringify(data),
-    });
+      body: data instanceof FormData ? data : JSON.stringify(data),
+    };
+
+    return this.request('/posts', options);
   },
 
   async updatePost(postId: string, data: {

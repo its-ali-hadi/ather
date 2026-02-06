@@ -89,9 +89,13 @@ export default function PostsListScreen({ route, navigation }: Props) {
       const response = await api.getPosts(params);
 
       if (refresh || pageNum === 1) {
-        setPosts(response.data);
+        setPosts(response.data.map((p: any) => ({ ...p, is_liked: !!p.is_liked, is_favorited: !!p.is_favorited })));
       } else {
-        setPosts(prev => [...prev, ...response.data]);
+        setPosts(prev => {
+          const newPosts = response.data.map((p: any) => ({ ...p, is_liked: !!p.is_liked, is_favorited: !!p.is_favorited }));
+          const existingIds = new Set(prev.map(p => p.id));
+          return [...prev, ...newPosts.filter(p => !existingIds.has(p.id))];
+        });
       }
 
       setHasMore(response.pagination.hasMore);
@@ -122,35 +126,51 @@ export default function PostsListScreen({ route, navigation }: Props) {
 
   const handleLikePress = async (postId: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Save previous state to revert on error
+    const previousPosts = [...posts];
+
+    // Optimistic update
+    setPosts(prev =>
+      prev.map(post =>
+        post.id === postId
+          ? {
+            ...post,
+            is_liked: !post.is_liked,
+            likes_count: post.is_liked ? Math.max(0, post.likes_count - 1) : post.likes_count + 1,
+          }
+          : post
+      )
+    );
+
     try {
       await api.toggleLike(postId.toString());
-      setPosts(prev =>
-        prev.map(post =>
-          post.id === postId
-            ? {
-              ...post,
-              is_liked: !post.is_liked,
-              likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1,
-            }
-            : post
-        )
-      );
     } catch (error) {
       console.error('Error toggling like:', error);
+      // Revert if error
+      setPosts(previousPosts);
     }
   };
 
   const handleFavoritePress = async (postId: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Save previous state to revert on error
+    const previousPosts = [...posts];
+
+    // Optimistic update
+    setPosts(prev =>
+      prev.map(post =>
+        post.id === postId ? { ...post, is_favorited: !post.is_favorited } : post
+      )
+    );
+
     try {
       await api.toggleFavorite(postId.toString());
-      setPosts(prev =>
-        prev.map(post =>
-          post.id === postId ? { ...post, is_favorited: !post.is_favorited } : post
-        )
-      );
     } catch (error) {
       console.error('Error toggling favorite:', error);
+      // Revert if error
+      setPosts(previousPosts);
     }
   };
 
@@ -255,7 +275,7 @@ export default function PostsListScreen({ route, navigation }: Props) {
               <Ionicons
                 name={item.is_liked ? 'heart' : 'heart-outline'}
                 size={20}
-                color={item.is_liked ? '#E94B3C' : COLORS.textSecondary}
+                color={!!item.is_liked ? '#E94B3C' : COLORS.textSecondary}
               />
             </TouchableOpacity>
             <View style={styles.postStat}>

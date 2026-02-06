@@ -1,5 +1,7 @@
 import '@expo/metro-runtime';
 import './utils/global-error-handler';
+import { Image as ExpoImage } from 'expo-image';
+import api from './utils/api';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -54,11 +56,17 @@ import LikedPostsScreen from './screens/LikedPostsScreen';
 import MyCommentsScreen from './screens/MyCommentsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator();
+export type TabParamList = {
+  Home: undefined;
+  Explore: undefined;
+  Create: { boxId?: number };
+  Private: undefined;
+  Profile: undefined;
+};
 
 export type RootStackParamList = {
   Auth: undefined;
-  Main: undefined;
+  Main: { screen?: keyof TabParamList; params?: any } | undefined;
   PostDetail: { postId: string };
   UserProfile: { userId: string };
   EditProfile: undefined;
@@ -74,16 +82,18 @@ export type RootStackParamList = {
   AdvancedSearch: undefined;
   BoxDetail: { boxId: string };
   PostsList: { boxId?: number; category?: string };
-  CreateTextPost: undefined;
-  CreateImagePost: undefined;
-  CreateVideoPost: undefined;
-  CreateLinkPost: undefined;
+  CreateTextPost: { initialBoxId?: number };
+  CreateImagePost: { initialBoxId?: number };
+  CreateVideoPost: { initialBoxId?: number };
+  CreateLinkPost: { initialBoxId?: number };
   Report: { type: 'post' | 'user' | 'comment'; id: number; title?: string };
   Notifications: undefined;
   UsersList: { type: 'followers' | 'following'; userId: string };
   LikedPosts: undefined;
   MyComments: undefined;
 };
+
+const Tab = createBottomTabNavigator<TabParamList>();
 
 function TabNavigator() {
   const colorScheme = useColorScheme();
@@ -163,8 +173,21 @@ function TabNavigator() {
         component={ProfileScreen}
         options={{
           tabBarLabel: 'الملف الشخصي',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            user?.profile_image ? (
+              <ExpoImage
+                source={{ uri: api.getFileUrl(user.profile_image) ?? undefined }}
+                style={{
+                  width: size,
+                  height: size,
+                  borderRadius: size / 2,
+                  borderWidth: focused ? 1.5 : 0,
+                  borderColor: color
+                }}
+              />
+            ) : (
+              <Ionicons name="person" size={size} color={color} />
+            )
           ),
         }}
       />

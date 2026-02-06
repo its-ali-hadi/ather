@@ -95,6 +95,8 @@ export default function UserProfileScreen({ route }: Props) {
           likes: post.likes_count,
           comments: post.comments_count,
           shares: 0,
+          is_liked: !!post.is_liked,
+          is_favorited: !!post.is_favorited,
           createdAt: post.created_at,
         }));
         setUserPosts(mappedPosts);
@@ -174,6 +176,64 @@ export default function UserProfileScreen({ route }: Props) {
   const handlePostPress = (postId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate('PostDetail', { postId });
+  };
+
+  const handleLikePress = async (postId: number) => {
+    if (isGuest) {
+      Alert.alert('تنبيه', 'يجب عليك تسجيل الدخول للتفاعل');
+      return;
+    }
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Save previous state to revert on error
+    const previousPosts = [...userPosts];
+
+    // Optimistic update
+    setUserPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId
+          ? {
+            ...post,
+            is_liked: !post.is_liked,
+            likes: post.is_liked ? Math.max(0, post.likes - 1) : post.likes + 1,
+          }
+          : post
+      )
+    );
+
+    try {
+      await api.toggleLike(postId.toString());
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      setUserPosts(previousPosts);
+    }
+  };
+
+  const handleFavoritePress = async (postId: number) => {
+    if (isGuest) {
+      Alert.alert('تنبيه', 'يجب عليك تسجيل الدخول للتفاعل');
+      return;
+    }
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Save previous state to revert on error
+    const previousPosts = [...userPosts];
+
+    // Optimistic update
+    setUserPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId ? { ...post, is_favorited: !post.is_favorited } : post
+      )
+    );
+
+    try {
+      await api.toggleFavorite(postId.toString());
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      setUserPosts(previousPosts);
+    }
   };
 
   const handleMessage = () => {
@@ -351,24 +411,29 @@ export default function UserProfileScreen({ route }: Props) {
                     />
                   )}
                   <View style={styles.postStats}>
-                    <View style={styles.postStat}>
-                      <Ionicons name="heart" size={16} color={COLORS.textSecondary} />
+                    <TouchableOpacity onPress={() => handleLikePress(post.id)} style={styles.postStat}>
+                      <Ionicons
+                        name={post.is_liked ? "heart" : "heart-outline"}
+                        size={18}
+                        color={post.is_liked ? "#E94B3C" : COLORS.textSecondary}
+                      />
                       <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
                         {post.likes}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.postStat}>
-                      <Ionicons name="chatbubble" size={16} color={COLORS.textSecondary} />
+                      <Ionicons name="chatbubble-outline" size={18} color={COLORS.textSecondary} />
                       <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
                         {post.comments}
                       </Text>
                     </View>
-                    <View style={styles.postStat}>
-                      <Ionicons name="share-social" size={16} color={COLORS.textSecondary} />
-                      <Text style={[styles.postStatText, { color: COLORS.textSecondary }]}>
-                        {post.shares}
-                      </Text>
-                    </View>
+                    <TouchableOpacity onPress={() => handleFavoritePress(post.id)} style={[styles.postStat, { marginLeft: 'auto' }]}>
+                      <Ionicons
+                        name={post.is_favorited ? "bookmark" : "bookmark-outline"}
+                        size={18}
+                        color={post.is_favorited ? COLORS.accent : COLORS.textSecondary}
+                      />
+                    </TouchableOpacity>
                   </View>
                 </TouchableOpacity>
               </Animated.View>

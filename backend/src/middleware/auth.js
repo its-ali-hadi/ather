@@ -1,3 +1,6 @@
+// Load env vars
+try { require('dotenv').config(); } catch (e) { }
+
 const jwt = require('jsonwebtoken');
 
 // Required authentication
@@ -28,14 +31,16 @@ const optionalAuth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
+    if (token && token !== 'null' && token !== 'undefined') {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+      } catch (err) {
+        console.log('OptionalAuth Verify Error:', err.message);
+      }
     }
-    // If no token, continue without user
     next();
   } catch (error) {
-    // If token is invalid, continue without user
     next();
   }
 };

@@ -443,9 +443,9 @@ export default function HomeScreen({ navigation }: Props) {
                 مميز اليوم
               </Text>
             </View>
-            <TouchableOpacity onPress={handlePress}>
+            <TouchableOpacity onPress={() => navigation.navigate('Explore' as any)}>
               <Text style={[styles.seeAll, { color: COLORS.primary }]}>
-                عرض الكل
+                اكتشف المزيد
               </Text>
             </TouchableOpacity>
           </Animated.View>
@@ -645,15 +645,7 @@ export default function HomeScreen({ navigation }: Props) {
                         </LinearGradient>
                       </View>
 
-                      {/* Favorite Icon */}
-                      <TouchableOpacity
-                        style={styles.favoriteButton}
-                        onPress={handlePress}
-                      >
-                        <BlurView intensity={40} tint="dark" style={styles.favoriteBlur}>
-                          <Ionicons name="heart-outline" size={20} color="#FFF" />
-                        </BlurView>
-                      </TouchableOpacity>
+
                     </View>
 
                     {/* Card Content */}

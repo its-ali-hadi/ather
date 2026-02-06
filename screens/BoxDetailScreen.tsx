@@ -75,7 +75,10 @@ export default function BoxDetailScreen({ route, navigation }: Props) {
 
   const handleCreatePost = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate('Create' as any);
+    navigation.navigate('Main', {
+      screen: 'Create',
+      params: { boxId: box.id }
+    } as any);
   };
 
   if (loading) {

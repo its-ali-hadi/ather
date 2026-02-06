@@ -32,12 +32,11 @@ services:
       context: ./dashboard
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=https://athar-api.alihadi.click/api
+        - VITE_API_URL=http://localhost:3000/api
     container_name: athar-dashboard
     ports:
       - "3001:3001"
     restart: always
-    
 
   # MySQL Database Container
   db:

@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const postController = require('../controllers/postController');
-const { auth } = require('../middleware/auth');
+const { auth, optionalAuth } = require('../middleware/auth');
 const { validatePost } = require('../middleware/validation');
 // const upload = require('../middleware/upload'); // Removed as controller takes media_url directly
 
 // Public routes (Specific paths first)
-router.get('/', postController.getPosts);
-router.get('/search', postController.searchPosts);
-router.get('/user/:userId', postController.getUserPosts);
+router.get('/', optionalAuth, postController.getPosts);
+router.get('/search', optionalAuth, postController.searchPosts);
+router.get('/user/:userId', optionalAuth, postController.getUserPosts);
 
 // Protected routes (Specific paths first)
 // Note: We mount these before /:id to prevent /my being captured by /:id
@@ -25,6 +25,6 @@ router.post('/:id/archive', auth, postController.archivePost);
 router.post('/:id/publish', auth, postController.publishPost);
 
 // Public Generic routes (Must be last)
-router.get('/:id', postController.getPost);
+router.get('/:id', optionalAuth, postController.getPost);
 
 module.exports = router;

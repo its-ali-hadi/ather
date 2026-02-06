@@ -21,16 +21,18 @@ import * as ImagePicker from 'expo-image-picker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import api from '../utils/api';
 
-export default function CreateVideoPostScreen() {
+export default function CreateVideoPostScreen({ route }: any) {
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
+  const initialBoxId = route?.params?.initialBoxId;
+
   const [boxes, setBoxes] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [selectedBox, setSelectedBox] = useState<number | null>(null);
+  const [selectedBox, setSelectedBox] = useState<number | null>(initialBoxId || null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [videoUri, setVideoUri] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [loadingBoxes, setLoadingBoxes] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(false);
@@ -86,60 +88,30 @@ export default function CreateVideoPostScreen() {
     }
   };
 
-  const handlePickVideo = async () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (status !== 'granted') {
-        Alert.alert('خطأ', 'نحتاج صلاحية الوصول للفيديوهات');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: true,
-        quality: 0.8,
-        videoMaxDuration: 300, // 5 minutes
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setVideoUri(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking video:', error);
-      Alert.alert('خطأ', 'فشل اختيار الفيديو');
-    }
-  };
-
   const handleSubmit = async () => {
-    if (!selectedBox || !selectedCategory || !title || !description || !videoUri) {
+    if (!selectedBox || !selectedCategory || !title || !description || !youtubeUrl) {
       Alert.alert('خطأ', 'الرجاء ملء جميع الحقول المطلوبة');
+      return;
+    }
+
+    // Basic YouTube URL validation
+    const ytRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+    if (!ytRegex.test(youtubeUrl)) {
+      Alert.alert('خطأ', 'يرجى إدخال رابط يوتيوب صحيح');
       return;
     }
 
     setUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('type', 'video');
-      formData.append('title', title);
-      formData.append('content', description);
-      formData.append('category', selectedCategory);
-      formData.append('is_private', isPrivate ? 'true' : 'false');
-
-      const filename = videoUri.split('/').pop() || 'video.mp4';
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `video/${match[1]}` : 'video/mp4';
-
-      // @ts-ignore
-      formData.append('file', {
-        uri: videoUri,
-        name: filename,
-        type: type,
+      const response = await api.createPost({
+        type: 'video',
+        title: title,
+        content: description,
+        category: selectedCategory,
+        is_private: isPrivate,
+        media_url: youtubeUrl, // We store the YouTube URL in media_url
       });
-
-      const response = await api.createPost(formData);
 
       if (response.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -179,9 +151,9 @@ export default function CreateVideoPostScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Ionicons name="videocam" size={28} color="#FFF" />
+              <Ionicons name="logo-youtube" size={28} color="#FFF" />
             </LinearGradient>
-            <Text style={[styles.headerTitle, { color: COLORS.text }]}>منشور بفيديو</Text>
+            <Text style={[styles.headerTitle, { color: COLORS.text }]}>منشور فيديو يوتيوب</Text>
           </View>
         </View>
 
@@ -220,34 +192,30 @@ export default function CreateVideoPostScreen() {
             </View>
           </View>
 
-          {/* Video Picker */}
+          {/* YouTube URL Input */}
           <View style={styles.fieldContainer}>
             <Text style={[styles.label, { color: COLORS.text }]}>
-              الفيديو <Text style={{ color: '#E94B3C' }}>*</Text>
+              رابط اليوتيوب <Text style={{ color: '#E94B3C' }}>*</Text>
             </Text>
-            <TouchableOpacity
-              onPress={handlePickVideo}
-              disabled={uploading}
+            <TextInput
               style={[
-                styles.videoPicker,
+                styles.input,
                 {
                   backgroundColor: COLORS.cardBg,
+                  color: COLORS.text,
                   borderColor: COLORS.border,
                 }
               ]}
-            >
-              <Ionicons
-                name={videoUri ? "checkmark-circle" : "play-circle-outline"}
-                size={64}
-                color={videoUri ? '#4CAF50' : COLORS.textSecondary}
-              />
-              <Text style={[styles.videoPickerText, { color: COLORS.textSecondary }]}>
-                {videoUri ? 'تم اختيار الفيديو ✓' : 'اضغط لاختيار فيديو'}
-              </Text>
-              <Text style={[styles.videoPickerHint, { color: COLORS.textSecondary }]}>
-                الحد الأقصى: 5 دقائق
-              </Text>
-            </TouchableOpacity>
+              placeholder="https://www.youtube.com/watch?v=..."
+              placeholderTextColor={COLORS.textSecondary}
+              value={youtubeUrl}
+              onChangeText={setYoutubeUrl}
+              textAlign="right"
+              editable={!uploading}
+              keyboardType="url"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
           </View>
 
           {/* Box Selection */}

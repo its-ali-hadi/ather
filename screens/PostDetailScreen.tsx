@@ -14,6 +14,7 @@ import {
   Share,
   Alert,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -31,7 +32,7 @@ export default function PostDetailScreen({ route }: Props) {
   const { postId } = route.params;
   const colorScheme = useColorScheme();
   const navigation = useNavigation<NavigationProp>();
-  const { isGuest, logout } = useAuth();
+  const { isGuest, logout, user } = useAuth();
 
   const [post, setPost] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +53,12 @@ export default function PostDetailScreen({ route }: Props) {
       ]);
 
       if (postRes.success) {
-        setPost(postRes.data);
+        const mappedPost = {
+          ...postRes.data,
+          is_liked: !!postRes.data.is_liked,
+          is_favorited: !!postRes.data.is_favorited
+        };
+        setPost(mappedPost);
       }
 
       if (commentsRes.success) {
@@ -171,6 +177,7 @@ export default function PostDetailScreen({ route }: Props) {
       await api.toggleFavorite(String(post.id));
     } catch (error) {
       console.error('Error toggling favorite:', error);
+      // Revert on error
       setPost(previousState);
     }
   };
@@ -234,13 +241,57 @@ export default function PostDetailScreen({ route }: Props) {
     }
   };
 
-  const handleCommentLike = (commentId: string) => {
+  const handleCommentMore = (comment: any) => {
     if (isGuest) {
-      handleGuestAction('إضافة إعجاب على التعليق');
+      handleGuestAction('الإبلاغ عن التعليق');
       return;
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Implement comment like functionality
+
+    const isOwnComment = user && comment.user_id === user.id;
+
+    if (isOwnComment) {
+      Alert.alert(
+        'حذف التعليق',
+        'هل تريد حقاً حذف هذا التعليق؟',
+        [
+          { text: 'إلغاء', style: 'cancel' },
+          {
+            text: 'حذف',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                const response = await api.deleteComment(String(comment.id));
+                if (response.success) {
+                  setComments(prev => prev.filter(c => c.id !== comment.id));
+                }
+              } catch (error) {
+                console.error('Error deleting comment:', error);
+                Alert.alert('خطأ', 'فشل حذف التعليق');
+              }
+            }
+          }
+        ]
+      );
+    } else {
+      navigation.navigate('Report', {
+        type: 'comment',
+        id: comment.id,
+        title: comment.content.substring(0, 20) + '...'
+      });
+    }
+  };
+
+  const sortedComments = [...comments].sort((a, b) => {
+    if (!user) return 0;
+    if (a.user_id === user.id && b.user_id !== user.id) return -1;
+    if (a.user_id !== user.id && b.user_id === user.id) return 1;
+    return 0;
+  });
+
+  const getYoutubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
   };
 
   return (
@@ -303,17 +354,29 @@ export default function PostDetailScreen({ route }: Props) {
             </Text>
           </View>
 
+          {/* Post Video (YouTube) */}
+          {post.type === 'video' && post.media_url && getYoutubeId(post.media_url) && (
+            <View style={styles.videoContainer}>
+              <WebView
+                style={styles.webView}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                source={{ uri: `https://www.youtube.com/embed/${getYoutubeId(post.media_url)}` }}
+              />
+            </View>
+          )}
+
           {/* Post Image */}
-          {(post.media_url || post.image) && (
+          {post.type === 'image' && (post.media_url || post.image) && (
             <ExpoImage source={{ uri: api.getFileUrl(post.media_url || post.image) ?? undefined }} style={styles.postImage} contentFit="cover" />
           )}
 
           {/* Post Link */}
-          {post.link && (
+          {post.type === 'link' && (post.link_url || post.link) && (
             <View style={[styles.linkContainer, { backgroundColor: COLORS.background }]}>
               <Ionicons name="link" size={20} color={COLORS.accent} />
               <Text style={[styles.linkText, { color: COLORS.accent }]} numberOfLines={1}>
-                {post.link}
+                {post.link_url || post.link}
               </Text>
             </View>
           )}
@@ -322,26 +385,19 @@ export default function PostDetailScreen({ route }: Props) {
           <View style={[styles.postActions, { borderTopColor: COLORS.border }]}>
             <TouchableOpacity onPress={handleLike} style={styles.actionButton}>
               <Ionicons
-                name={post.isLiked ? 'heart' : 'heart-outline'}
+                name={post.is_liked ? 'heart' : 'heart-outline'}
                 size={24}
-                color={post.isLiked ? '#E94B3C' : COLORS.textSecondary}
+                color={post.is_liked ? '#E94B3C' : COLORS.textSecondary}
               />
               <Text style={[styles.actionText, { color: COLORS.textSecondary }]}>
-                {post.likes}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionButton}>
-              <Ionicons name="chatbubble-outline" size={22} color={COLORS.textSecondary} />
-              <Text style={[styles.actionText, { color: COLORS.textSecondary }]}>
-                {comments.length}
+                {post.likes_count || 0}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleShare} style={styles.actionButton}>
               <Ionicons name="share-outline" size={22} color={COLORS.textSecondary} />
               <Text style={[styles.actionText, { color: COLORS.textSecondary }]}>
-                {post.shares}
+                {post.shares || 0}
               </Text>
             </TouchableOpacity>
 
@@ -349,9 +405,9 @@ export default function PostDetailScreen({ route }: Props) {
 
             <TouchableOpacity onPress={handleFavorite} style={styles.actionButton}>
               <Ionicons
-                name={post.isFavorite ? 'bookmark' : 'bookmark-outline'}
+                name={post.is_favorited ? 'bookmark' : 'bookmark-outline'}
                 size={22}
-                color={post.isFavorite ? COLORS.accent : COLORS.textSecondary}
+                color={post.is_favorited ? COLORS.accent : COLORS.textSecondary}
               />
             </TouchableOpacity>
           </View>
@@ -363,105 +419,52 @@ export default function PostDetailScreen({ route }: Props) {
             التعليقات ({comments.length})
           </Text>
 
-          {comments.map((comment, index) => (
+          {sortedComments.map((comment, index) => (
             <View key={comment.id}>
               <Animated.View
                 entering={FadeInDown.delay(300 + index * 50).springify()}
                 style={[styles.commentCard, { backgroundColor: COLORS.cardBg }]}
               >
-                <TouchableOpacity
-                  style={styles.commentHeader}
-                  onPress={() => handleUserPress(String(comment.user_id || comment.userId))}
-                  activeOpacity={0.7}
-                >
-                  {(comment.user_image || comment.userAvatar) ? (
-                    <ExpoImage
-                      source={{ uri: api.getFileUrl(comment.user_image || comment.userAvatar) ?? undefined }}
-                      style={styles.commentAvatar}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <LinearGradient colors={['#E8B86D', '#D4A574']} style={styles.commentAvatar}>
-                      <Ionicons name="person" size={16} color="#FFF" />
-                    </LinearGradient>
-                  )}
-                  <View style={styles.commentInfo}>
-                    <Text style={[styles.commentUserName, { color: COLORS.text }]}>
-                      {comment.user_name || comment.userName}
-                    </Text>
-                    <Text style={[styles.commentTime, { color: COLORS.textSecondary }]}>
-                      {new Date(comment.createdAt).toLocaleDateString('ar-SA')}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+                <View style={styles.commentHeaderRow}>
+                  <TouchableOpacity
+                    style={styles.commentHeader}
+                    onPress={() => handleUserPress(String(comment.user_id || comment.userId))}
+                    activeOpacity={0.7}
+                  >
+                    {(comment.user_image || comment.userAvatar) ? (
+                      <ExpoImage
+                        source={{ uri: api.getFileUrl(comment.user_image || comment.userAvatar) ?? undefined }}
+                        style={styles.commentAvatar}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <LinearGradient colors={['#E8B86D', '#D4A574']} style={styles.commentAvatar}>
+                        <Ionicons name="person" size={16} color="#FFF" />
+                      </LinearGradient>
+                    )}
+                    <View style={styles.commentInfo}>
+                      <Text style={[styles.commentUserName, { color: COLORS.text }]}>
+                        {comment.user_name || comment.userName}
+                      </Text>
+                      <Text style={[styles.commentTime, { color: COLORS.textSecondary }]}>
+                        {new Date(comment.created_at || comment.createdAt).toLocaleDateString('ar-SA')}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => handleCommentMore(comment)}
+                    style={styles.commentMoreButton}
+                  >
+                    <Ionicons name="ellipsis-vertical" size={18} color={COLORS.textSecondary} />
+                  </TouchableOpacity>
+                </View>
 
                 <Text style={[styles.commentContent, { color: COLORS.textSecondary }]}>
                   {comment.content}
                 </Text>
 
-                <View style={styles.commentActions}>
-                  <TouchableOpacity
-                    onPress={() => handleCommentLike(comment.id)}
-                    style={styles.commentActionButton}
-                  >
-                    <Ionicons
-                      name={comment.isLiked ? 'heart' : 'heart-outline'}
-                      size={18}
-                      color={comment.isLiked ? '#E94B3C' : COLORS.textSecondary}
-                    />
-                    <Text style={[styles.commentActionText, { color: COLORS.textSecondary }]}>
-                      {comment.likes}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.commentActionButton}>
-                    <Ionicons name="chatbubble-outline" size={16} color={COLORS.textSecondary} />
-                    <Text style={[styles.commentActionText, { color: COLORS.textSecondary }]}>
-                      رد
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Replies */}
-                {comment.replies && comment.replies.length > 0 && (
-                  <View style={styles.repliesContainer}>
-                    {comment.replies.map((reply) => (
-                      <View key={reply.id} style={styles.replyCard}>
-                        <TouchableOpacity
-                          style={styles.commentHeader}
-                          onPress={() => handleUserPress(reply.userId)}
-                          activeOpacity={0.7}
-                        >
-                          {(reply.user_image || reply.userAvatar) ? (
-                            <ExpoImage
-                              source={{ uri: api.getFileUrl(reply.user_image || reply.userAvatar) ?? undefined }}
-                              style={styles.replyAvatar}
-                              contentFit="cover"
-                            />
-                          ) : (
-                            <LinearGradient
-                              colors={['#E8B86D', '#D4A574']}
-                              style={styles.replyAvatar}
-                            >
-                              <Ionicons name="person" size={12} color="#FFF" />
-                            </LinearGradient>
-                          )}
-                          <View style={styles.commentInfo}>
-                            <Text style={[styles.replyUserName, { color: COLORS.text }]}>
-                              {reply.user_name || reply.userName}
-                            </Text>
-                            <Text style={[styles.replyTime, { color: COLORS.textSecondary }]}>
-                              {new Date(reply.createdAt).toLocaleDateString('ar-SA')}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                        <Text style={[styles.replyContent, { color: COLORS.textSecondary }]}>
-                          {reply.content}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
+                {/* Removed comment likes and replies per request */}
               </Animated.View>
             </View>
           ))}
@@ -770,5 +773,23 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  videoContainer: {
+    width: '100%',
+    height: 220,
+    backgroundColor: '#000',
+    marginBottom: 16,
+  },
+  webView: {
+    flex: 1,
+  },
+  commentHeaderRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  commentMoreButton: {
+    padding: 4,
   },
 });

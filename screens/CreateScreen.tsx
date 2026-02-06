@@ -21,10 +21,11 @@ import { useEffect } from 'react';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-export default function CreateScreen() {
+export default function CreateScreen({ route }: any) {
   const colorScheme = useColorScheme();
   const navigation = useNavigation<NavigationProp>();
   const { isGuest, logout } = useAuth();
+  const boxIdFromParams = route?.params?.boxId;
 
   // Check if user is guest when screen loads
   useEffect(() => {
@@ -114,7 +115,7 @@ export default function CreateScreen() {
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate(screen);
+    navigation.navigate(screen as any, { initialBoxId: boxIdFromParams } as any);
   };
 
   return (
